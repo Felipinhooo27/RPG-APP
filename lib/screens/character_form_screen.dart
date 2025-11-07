@@ -264,6 +264,7 @@ class _CharacterFormScreenState extends State<CharacterFormScreen> {
         inteligencia: int.parse(_inteligenciaController.text),
         presenca: int.parse(_presencaController.text),
         iniciativaBase: int.parse(_iniciativaBaseController.text),
+        pericias: widget.character?.pericias ?? {},
         poderes: widget.character?.poderes ?? [],
         inventario: widget.character?.inventario ?? [],
       );

@@ -2,9 +2,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/character.dart';
+import '../models/skill.dart';
 import '../services/local_database_service.dart';
 import '../utils/name_generator.dart';
 import '../utils/power_generator.dart';
+import '../utils/item_generator.dart';
+import '../utils/skill_generator.dart';
 
 class AdvancedCharacterGeneratorScreen extends StatefulWidget {
   const AdvancedCharacterGeneratorScreen({super.key});
@@ -20,6 +23,7 @@ class _AdvancedCharacterGeneratorScreenState
   final Random _random = Random();
 
   String _categoria = 'Civil';
+  String _genero = 'random'; // 'male', 'female', 'nonbinary', 'mixed', 'random'
   int _quantidade = 1;
   bool _isGenerating = false;
 
@@ -32,6 +36,14 @@ class _AdvancedCharacterGeneratorScreenState
     'Profissional',
     'Deus',
   ];
+
+  final Map<String, Map<String, dynamic>> _generos = {
+    'male': {'label': 'Masculino', 'icon': Icons.male},
+    'female': {'label': 'Feminino', 'icon': Icons.female},
+    'nonbinary': {'label': 'Não-binário', 'icon': Icons.transgender},
+    'mixed': {'label': 'Misto', 'icon': Icons.people},
+    'random': {'label': 'Aleatório', 'icon': Icons.shuffle},
+  };
 
   // Gerar atributos baseado na categoria
   Map<String, int> _gerarAtributos(String categoria) {
@@ -175,8 +187,11 @@ class _AdvancedCharacterGeneratorScreenState
       for (int i = 0; i < _quantidade; i++) {
         final uuid = const Uuid();
 
-        // Nome completo
-        final nome = NameGenerator.generateFullName(category: _categoria);
+        // Nome completo com gênero
+        final nome = NameGenerator.generateFullName(
+          category: _categoria,
+          gender: _genero,
+        );
 
         // Atributos
         final atributos = _gerarAtributos(_categoria);
@@ -186,6 +201,61 @@ class _AdvancedCharacterGeneratorScreenState
 
         // Poderes
         final poderes = PowerGenerator.generatePowers(_categoria);
+
+        // Perícias baseadas no nível
+        final skillsMap = SkillGenerator.generateSkills(_categoria);
+        final pericias = <String, Skill>{};
+        skillsMap.forEach((skillName, levelString) {
+          // Converter string de nível para SkillLevel enum
+          SkillLevel skillLevel;
+          switch (levelString) {
+            case 'expert':
+              skillLevel = SkillLevel.expert;
+              break;
+            case 'veterano':
+              skillLevel = SkillLevel.veteran;
+              break;
+            case 'treinado':
+              skillLevel = SkillLevel.trained;
+              break;
+            default:
+              skillLevel = SkillLevel.untrained;
+          }
+
+          // Obter categoria e atributo da skill
+          final skillInfo = OrdemSkills.allSkills[skillName];
+          final categoryString = skillInfo?['category'] ?? 'combat';
+          final attribute = skillInfo?['attribute'] ?? 'INT';
+
+          // Converter string de categoria para enum
+          SkillCategory category;
+          switch (categoryString) {
+            case 'investigation':
+              category = SkillCategory.investigation;
+              break;
+            case 'social':
+              category = SkillCategory.social;
+              break;
+            case 'occult':
+              category = SkillCategory.occult;
+              break;
+            case 'survival':
+              category = SkillCategory.survival;
+              break;
+            default:
+              category = SkillCategory.combat;
+          }
+
+          pericias[skillName] = Skill(
+            name: skillName,
+            category: category,
+            level: skillLevel,
+            attribute: attribute,
+          );
+        });
+
+        // Itens baseados na categoria
+        final inventario = ItemGenerator.generateItems(_categoria);
 
         // Classe aleatória
         final classes = ['Combatente', 'Especialista', 'Ocultista'];
@@ -214,8 +284,9 @@ class _AdvancedCharacterGeneratorScreenState
           inteligencia: atributos['int']!,
           presenca: atributos['pre']!,
           iniciativaBase: status['iniciativaBase']!,
+          pericias: pericias,
           poderes: poderes,
-          inventario: [],
+          inventario: inventario,
         );
 
         await _databaseService.createCharacter(character);
@@ -226,6 +297,7 @@ class _AdvancedCharacterGeneratorScreenState
           SnackBar(
             content: Text('$_quantidade personagem(s) gerado(s) com sucesso!'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -440,6 +512,77 @@ class _AdvancedCharacterGeneratorScreenState
 
             const SizedBox(height: 20),
 
+            // Gênero
+            Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.person_outline,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'GÊNERO',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.secondary,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _generos.entries.map((entry) {
+                        final isSelected = _genero == entry.key;
+                        return FilterChip(
+                          selected: isSelected,
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                entry.value['icon'] as IconData,
+                                size: 18,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.secondary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(entry.value['label'] as String),
+                            ],
+                          ),
+                          onSelected: (selected) {
+                            setState(() {
+                              _genero = entry.key;
+                            });
+                          },
+                          selectedColor: Theme.of(context).colorScheme.secondary,
+                          checkmarkColor: Colors.white,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : null,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // Quantidade
             Card(
               elevation: 8,
@@ -575,18 +718,41 @@ class _AdvancedCharacterGeneratorScreenState
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.info_outline, color: Colors.blue[300]),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Nomes, atributos e poderes são gerados aleatoriamente. '
-                        'Profissional sempre tem poder, Líder tem 20% de chance.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue[100],
+                    Row(
+                      children: [
+                        Icon(Icons.auto_awesome, color: Colors.blue[300]),
+                        const SizedBox(width: 12),
+                        Text(
+                          'SISTEMA INTELIGENTE DE GERAÇÃO',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[100],
+                            letterSpacing: 1.2,
+                          ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoRow(Icons.face, '450+ nomes (incluindo 50 deuses e títulos)'),
+                    _buildInfoRow(Icons.flash_on, '110 poderes paranormais únicos'),
+                    _buildInfoRow(Icons.inventory, '165 itens (mundanos a divinos)'),
+                    _buildInfoRow(Icons.school, 'Perícias distribuídas por nível'),
+                    _buildInfoRow(Icons.trending_up, 'Atributos e status balanceados'),
+                    const SizedBox(height: 8),
+                    Text(
+                      '💡 Cada categoria gera personagens com poder proporcional:\n'
+                      '• Civil: 1-2 perícias, itens básicos, sem poderes\n'
+                      '• Soldado: 3-4 perícias, armas, 30% chance de poder\n'
+                      '• Profissional: 6-8 perícias, equipamento avançado, 2-3 poderes\n'
+                      '• Deus: 12-15 perícias, itens divinos, 5-8 poderes!',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.blue[100]?.withOpacity(0.9),
+                        height: 1.4,
                       ),
                     ),
                   ],
@@ -595,6 +761,27 @@ class _AdvancedCharacterGeneratorScreenState
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.blue[200]),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue[100],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

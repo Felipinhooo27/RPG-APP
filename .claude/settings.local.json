@@ -3,7 +3,8 @@
     "allow": [
       "Bash(flutter:*)",
       "Bash(where flutter)",
-      "Bash(C:flutterflutterbinflutter doctor --android-licenses)"
+      "Bash(C:flutterflutterbinflutter doctor --android-licenses)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []

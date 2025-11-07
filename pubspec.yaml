@@ -10,22 +10,55 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Banco de Dados Local
-  sqflite: ^2.3.0
+  # Armazenamento Local (JSON)
+  shared_preferences: ^2.2.2
   path_provider: ^2.1.1
-  path: ^1.8.3
 
   # UI & Navigation
   cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.3.0
+  lottie: ^3.0.0
+  flutter_svg: ^2.0.9
+
+  # 3D Dice Engine
+  flame: ^1.12.0
+
+  # Audio
+  audioplayers: ^5.2.1
 
   # Utilities
   share_plus: ^12.0.0
   uuid: ^4.2.2
+  file_picker: ^8.0.0+1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.9
 
 flutter:
   uses-material-design: true
+
+  # Assets
+  assets:
+    - assets/audio/
+    - assets/splash/
+
+# Configuração do ícone do app
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#0E0E0F"
+  adaptive_icon_foreground: "assets/icon/foreground.png"
+
+# Configuração do splash screen
+flutter_native_splash:
+  color: "#0E0E0F"
+  image: "assets/splash/logo.png"
+  android_12:
+    image: "assets/splash/logo.png"
+    color: "#0E0E0F"

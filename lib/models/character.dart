@@ -1,4 +1,6 @@
 import 'item.dart';
+import 'skill.dart';
+import 'power.dart';
 
 class Character {
   final String id;
@@ -30,10 +32,17 @@ class Character {
   final int iniciativaBase;
 
   // Poderes Paranormais
-  final List<String> poderes;
+  final List<Power> poderes;
+
+  // Perícias (Skills)
+  final Map<String, Skill> pericias;
 
   // Inventário
   final List<Item> inventario;
+
+  // Sistema de Lojas
+  final String? activeShopId;
+  final List<String> purchaseHistory;
 
   Character({
     required this.id,
@@ -58,7 +67,10 @@ class Character {
     required this.presenca,
     required this.iniciativaBase,
     required this.poderes,
+    required this.pericias,
     required this.inventario,
+    this.activeShopId,
+    this.purchaseHistory = const [],
   });
 
   // Construtor para criar um personagem vazio
@@ -86,7 +98,10 @@ class Character {
       presenca: 0,
       iniciativaBase: 0,
       poderes: [],
+      pericias: {},
       inventario: [],
+      activeShopId: null,
+      purchaseHistory: [],
     );
   }
 
@@ -99,10 +114,35 @@ class Character {
       }
     }
 
-    final List<String> poderes = [];
+    final List<Power> poderes = [];
     if (map['poderes'] != null) {
-      for (var poder in map['poderes']) {
-        poderes.add(poder.toString());
+      for (var poderMap in map['poderes']) {
+        // Compatibilidade com formato antigo (lista de strings)
+        if (poderMap is String) {
+          poderes.add(Power(
+            id: '',
+            nome: poderMap,
+            descricao: '',
+            elemento: 'Conhecimento',
+            habilidades: [],
+          ));
+        } else {
+          poderes.add(Power.fromMap(poderMap));
+        }
+      }
+    }
+
+    final Map<String, Skill> pericias = {};
+    if (map['pericias'] != null) {
+      (map['pericias'] as Map<String, dynamic>).forEach((key, value) {
+        pericias[key] = Skill.fromMap(value);
+      });
+    }
+
+    final List<String> purchaseHistory = [];
+    if (map['purchaseHistory'] != null) {
+      for (var item in map['purchaseHistory']) {
+        purchaseHistory.add(item.toString());
       }
     }
 
@@ -129,7 +169,10 @@ class Character {
       presenca: map['atributos']?['pre'] ?? 0,
       iniciativaBase: map['combate']?['iniciativa_base'] ?? 0,
       poderes: poderes,
+      pericias: pericias,
       inventario: items,
+      activeShopId: map['activeShopId'],
+      purchaseHistory: purchaseHistory,
     );
   }
 
@@ -163,10 +206,17 @@ class Character {
       'combate': {
         'iniciativa_base': iniciativaBase,
       },
-      'poderes': poderes,
+      'poderes': poderes.map((power) => power.toMap()).toList(),
+      'pericias': pericias.map((key, value) => MapEntry(key, value.toMap())),
       'inventario': inventario.map((item) => item.toMap()).toList(),
+      'activeShopId': activeShopId,
+      'purchaseHistory': purchaseHistory,
     };
   }
+
+  // JSON serialization methods for import/export
+  Map<String, dynamic> toJson() => toMap();
+  factory Character.fromJson(Map<String, dynamic> json) => Character.fromMap(json);
 
   // Método copyWith para criar cópias com alterações
   Character copyWith({
@@ -191,8 +241,11 @@ class Character {
     int? inteligencia,
     int? presenca,
     int? iniciativaBase,
-    List<String>? poderes,
+    List<Power>? poderes,
+    Map<String, Skill>? pericias,
     List<Item>? inventario,
+    String? activeShopId,
+    List<String>? purchaseHistory,
   }) {
     return Character(
       id: id ?? this.id,
@@ -217,7 +270,43 @@ class Character {
       presenca: presenca ?? this.presenca,
       iniciativaBase: iniciativaBase ?? this.iniciativaBase,
       poderes: poderes ?? this.poderes,
+      pericias: pericias ?? this.pericias,
       inventario: inventario ?? this.inventario,
+      activeShopId: activeShopId ?? this.activeShopId,
+      purchaseHistory: purchaseHistory ?? this.purchaseHistory,
     );
   }
+
+  /// Calcula o modificador de um atributo
+  int getModifier(String attribute) {
+    int value = 0;
+    switch (attribute.toUpperCase()) {
+      case 'FOR':
+        value = forca;
+        break;
+      case 'AGI':
+        value = agilidade;
+        break;
+      case 'VIG':
+        value = vigor;
+        break;
+      case 'INT':
+        value = inteligencia;
+        break;
+      case 'PRE':
+        value = presenca;
+        break;
+    }
+    return ((value - 10) / 2).floor();
+  }
+
+  /// Calcula o bônus total de uma perícia
+  int getSkillBonus(String skillName) {
+    final skill = pericias[skillName];
+    if (skill == null) return 0;
+
+    final attributeMod = getModifier(skill.attribute ?? 'INT');
+    return skill.getBonus(attributeMod);
+  }
 }
+

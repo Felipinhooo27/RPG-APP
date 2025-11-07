@@ -4,10 +4,75 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Background - Abyssal Black -->
     <path
-        android:fillColor="#8B0000"
+        android:fillColor="#0E0E0F"
         android:pathData="M0,0h108v108h-108z" />
+
+    <!-- Outer ritual circle - Ritual Red -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,24C39.088,24 27,36.088 27,51v6c0,14.912 12.088,27 27,27s27,-12.088 27,-27v-6C81,36.088 68.912,24 54,24z" />
+        android:strokeColor="#C12725"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M54,54m-42,0a42,42 0,1,1 84,0a42,42 0,1,1 -84,0" />
+
+    <!-- Inner ritual circle -->
+    <path
+        android:strokeColor="#C12725"
+        android:strokeWidth="1.5"
+        android:fillColor="#1A1B1F"
+        android:pathData="M54,54m-32,0a32,32 0,1,1 64,0a32,32 0,1,1 -64,0" />
+
+    <!-- Ritual symbols - 6 points around the circle -->
+    <!-- Top -->
+    <path
+        android:fillColor="#842047"
+        android:pathData="M54,20a3,3 0,1,1 0,6a3,3 0,1,1 0,-6" />
+    <!-- Top-Right -->
+    <path
+        android:fillColor="#842047"
+        android:pathData="M78,32a3,3 0,1,1 0,6a3,3 0,1,1 0,-6" />
+    <!-- Bottom-Right -->
+    <path
+        android:fillColor="#842047"
+        android:pathData="M78,70a3,3 0,1,1 0,6a3,3 0,1,1 0,-6" />
+    <!-- Bottom -->
+    <path
+        android:fillColor="#842047"
+        android:pathData="M54,82a3,3 0,1,1 0,6a3,3 0,1,1 0,-6" />
+    <!-- Bottom-Left -->
+    <path
+        android:fillColor="#842047"
+        android:pathData="M30,70a3,3 0,1,1 0,6a3,3 0,1,1 0,-6" />
+    <!-- Top-Left -->
+    <path
+        android:fillColor="#842047"
+        android:pathData="M30,32a3,3 0,1,1 0,6a3,3 0,1,1 0,-6" />
+
+    <!-- Center D20 dice shape (icosahedron simplified) -->
+    <!-- Main body - Pentagon shape -->
+    <path
+        android:fillColor="#C12725"
+        android:pathData="M54,36L65,44L61,58L47,58L43,44Z" />
+
+    <!-- Dice highlights -->
+    <path
+        android:fillColor="#F2F2F2"
+        android:fillAlpha="0.3"
+        android:pathData="M54,36L65,44L61,47Z" />
+
+    <!-- Number 20 on the dice face -->
+    <path
+        android:fillColor="#F2F2F2"
+        android:pathData="M51,48v6h1.5v-4.5l1.5,1v-1.8l-3,1.3z" />
+    <path
+        android:fillColor="#F2F2F2"
+        android:pathData="M56,48.5c-1.5,0 -2.5,1 -2.5,2.5s1,2.5 2.5,2.5s2.5,-1 2.5,-2.5s-1,-2.5 -2.5,-2.5zm0,1c0.8,0 1.5,0.7 1.5,1.5s-0.7,1.5 -1.5,1.5s-1.5,-0.7 -1.5,-1.5s0.7,-1.5 1.5,-1.5z" />
+
+    <!-- Glow effect behind dice -->
+    <path
+        android:fillColor="#C12725"
+        android:fillAlpha="0.2"
+        android:pathData="M54,54m-16,0a16,16 0,1,1 32,0a16,16 0,1,1 -32,0" />
 </vector>

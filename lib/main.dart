@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
-import 'screens/mode_selection_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +17,7 @@ class OrdemParanormalApp extends StatelessWidget {
       title: 'Ordem Paranormal RPG',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const ModeSelectionScreen(),
+      home: const SplashScreen(),
     );
   }
 }

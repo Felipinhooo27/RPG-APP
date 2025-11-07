@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Outer ritual circle with glow -->
+    <path
+        android:strokeColor="#C12725"
+        android:strokeWidth="3"
+        android:fillColor="#00000000"
+        android:pathData="M100,100m-80,0a80,80 0,1,1 160,0a80,80 0,1,1 -160,0" />
+
+    <!-- Inner circle -->
+    <path
+        android:strokeColor="#C12725"
+        android:strokeWidth="2"
+        android:fillColor="#1A1B1F"
+        android:pathData="M100,100m-60,0a60,60 0,1,1 120,0a60,60 0,1,1 -120,0" />
+
+    <!-- Ritual symbols around the circle (6 points) -->
+    <path
+        android:fillColor="#842047"
+        android:pathData="M100,25a5,5 0,1,1 0,10a5,5 0,1,1 0,-10" />
+    <path
+        android:fillColor="#842047"
+        android:pathData="M155,60a5,5 0,1,1 0,10a5,5 0,1,1 0,-10" />
+    <path
+        android:fillColor="#842047"
+        android:pathData="M155,130a5,5 0,1,1 0,10a5,5 0,1,1 0,-10" />
+    <path
+        android:fillColor="#842047"
+        android:pathData="M100,165a5,5 0,1,1 0,10a5,5 0,1,1 0,-10" />
+    <path
+        android:fillColor="#842047"
+        android:pathData="M45,130a5,5 0,1,1 0,10a5,5 0,1,1 0,-10" />
+    <path
+        android:fillColor="#842047"
+        android:pathData="M45,60a5,5 0,1,1 0,10a5,5 0,1,1 0,-10" />
+
+    <!-- Center D20 dice -->
+    <path
+        android:fillColor="#C12725"
+        android:pathData="M100,70L120,85L115,110L85,110L80,85Z" />
+
+    <!-- Dice highlight -->
+    <path
+        android:fillColor="#F2F2F2"
+        android:fillAlpha="0.3"
+        android:pathData="M100,70L120,85L115,92Z" />
+
+    <!-- Number "20" on dice -->
+    <path
+        android:fillColor="#F2F2F2"
+        android:pathData="M94,92v10h2.5v-7.5l2.5,1.5v-3l-5,2z" />
+    <path
+        android:fillColor="#F2F2F2"
+        android:pathData="M103,93c-2.5,0 -4,1.5 -4,4s1.5,4 4,4s4,-1.5 4,-4s-1.5,-4 -4,-4zm0,1.5c1.5,0 2.5,1 2.5,2.5s-1,2.5 -2.5,2.5s-2.5,-1 -2.5,-2.5s1,-2.5 2.5,-2.5z" />
+
+    <!-- "HEXATOMBE" text below dice -->
+    <!-- Simplified text as paths would be complex, using a simple representation -->
+    <path
+        android:fillColor="#F2F2F2"
+        android:pathData="M40,135h120v3h-120z" />
+</vector>

@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/character.dart';
 import '../models/combat_tracker.dart';
 import '../services/local_database_service.dart';
-import '../utils/dice_roller.dart';
+import '../theme/app_theme.dart';
+import '../widgets/widgets.dart';
 
 class IniciativaScreen extends StatefulWidget {
   const IniciativaScreen({super.key});
@@ -14,8 +16,8 @@ class IniciativaScreen extends StatefulWidget {
 
 class _IniciativaScreenState extends State<IniciativaScreen> {
   final LocalDatabaseService _databaseService = LocalDatabaseService();
-  final Map<String, bool> _selectedCharacters = {}; // ID -> selecionado
-  final Map<String, bool> _autoUpdatePV = {}; // ID -> auto-update
+  final Map<String, bool> _selectedCharacters = {};
+  final Map<String, bool> _autoUpdatePV = {};
   CombatSession? _combatSession;
   bool _isLoadingCharacters = true;
   List<Character> _allCharacters = [];
@@ -36,7 +38,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
             _isLoadingCharacters = false;
           });
         }
-        break; // Pegar apenas o primeiro resultado
+        break;
       }
     } catch (e) {
       if (mounted) {
@@ -47,26 +49,22 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
     }
   }
 
-  // Rolar iniciativa segundo as regras de AGI
   int _rolarIniciativa(Character character, List<int> dadosRolados) {
     final agi = character.agilidade;
     final iniciativaBase = character.iniciativaBase;
     final random = Random();
 
     if (agi >= 2) {
-      // Rola AGI d20s, pega o maior
       for (int i = 0; i < agi; i++) {
         dadosRolados.add(random.nextInt(20) + 1);
       }
       final maiorDado = dadosRolados.reduce((a, b) => a > b ? a : b);
       return iniciativaBase + maiorDado;
     } else if (agi == 1) {
-      // Rola 1 d20
       final dado = random.nextInt(20) + 1;
       dadosRolados.add(dado);
       return iniciativaBase + dado;
     } else if (agi == 0) {
-      // Rola 2 d20s, pega o menor
       final dado1 = random.nextInt(20) + 1;
       final dado2 = random.nextInt(20) + 1;
       dadosRolados.add(dado1);
@@ -74,7 +72,6 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
       final menorDado = dado1 < dado2 ? dado1 : dado2;
       return iniciativaBase + menorDado;
     } else {
-      // AGI <= -1: Rola 1 d20 (pode ter modificador negativo na base)
       final dado = random.nextInt(20) + 1;
       dadosRolados.add(dado);
       return iniciativaBase + dado;
@@ -89,7 +86,10 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
 
     if (selectedIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione pelo menos um combatente')),
+        const SnackBar(
+          content: Text('Selecione pelo menos um combatente'),
+          backgroundColor: AppTheme.alertYellow,
+        ),
       );
       return;
     }
@@ -144,449 +144,761 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
   }
 
   Widget _buildCharacterSelection() {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sistema de Iniciativa'),
-        actions: [
-          if (_selectedCharacters.values.any((selected) => selected))
-            IconButton(
-              icon: const Icon(Icons.play_arrow),
-              tooltip: 'Iniciar Combate',
-              onPressed: _iniciarCombate,
+    return HexatombeBackground(
+      showParticles: true,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: AppTheme.abyssalBlack.withOpacity(0.9),
+          elevation: 0,
+          title: const Text(
+            'SISTEMA DE INICIATIVA',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'BebasNeue',
+              letterSpacing: 2,
+              color: AppTheme.ritualRed,
             ),
-        ],
-      ),
-      body: _isLoadingCharacters
-          ? const Center(child: CircularProgressIndicator())
-          : _allCharacters.isEmpty
-              ? const Center(
-                  child: Text(
-                    'Nenhum personagem disponível.\nCrie personagens primeiro.',
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Card(
-                      child: Padding(
+          ),
+          actions: [
+            if (_selectedCharacters.values.any((selected) => selected))
+              IconButton(
+                icon: const Icon(Icons.play_arrow, color: AppTheme.mutagenGreen),
+                tooltip: 'Iniciar Combate',
+                onPressed: _iniciarCombate,
+              ),
+          ],
+        ),
+        body: _isLoadingCharacters
+            ? const Center(child: HexLoading.large())
+            : _allCharacters.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: AppTheme.obscureGray,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.ritualRed.withOpacity(0.35),
+                                blurRadius: 6,
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.group,
+                            size: 60,
+                            color: AppTheme.ritualRed,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'NENHUM PERSONAGEM',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.coldGray,
+                            fontFamily: 'BebasNeue',
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Crie personagens primeiro',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.coldGray,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      RitualCard(
+                        glowEffect: true,
+                        glowColor: AppTheme.ritualRed,
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.info_outline,
-                                    color: Theme.of(context).colorScheme.primary),
-                                const SizedBox(width: 8),
-                                Expanded(
+                                const Icon(
+                                  Icons.info_outline,
+                                  color: AppTheme.ritualRed,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
                                   child: Text(
                                     'SELEÇÃO DE COMBATENTES',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: Theme.of(context).colorScheme.primary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.ritualRed,
+                                      fontFamily: 'BebasNeue',
+                                      letterSpacing: 1.5,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
                             const Text(
                               'Selecione os personagens que participarão do combate.\n'
                               'Ative "Auto-Salvar PV" para que mudanças sejam salvas na ficha.',
-                              style: TextStyle(fontSize: 12, color: Colors.white70),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.coldGray,
+                                fontFamily: 'Montserrat',
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ..._allCharacters.map((character) {
-                      final isSelected = _selectedCharacters[character.id] ?? false;
-                      final autoUpdate = _autoUpdatePV[character.id] ?? false;
+                      ).animate().fadeIn(duration: 300.ms),
+                      const SizedBox(height: 16),
+                      ..._allCharacters.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final character = entry.value;
+                        final isSelected = _selectedCharacters[character.id] ?? false;
+                        final autoUpdate = _autoUpdatePV[character.id] ?? false;
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: Column(
-                          children: [
-                            CheckboxListTile(
-                              value: isSelected,
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedCharacters[character.id] = value ?? false;
-                                  if (!value!) {
-                                    _autoUpdatePV[character.id] = false;
-                                  }
-                                });
-                              },
-                              title: Text(
-                                character.nome,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(
-                                '${character.classe} • AGI ${character.agilidade} • '
-                                'Iniciativa Base: ${character.iniciativaBase}',
-                              ),
-                              secondary: CircleAvatar(
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                child: Text(
-                                  character.nome.isNotEmpty
-                                      ? character.nome[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                            if (isSelected)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 16,
-                                  right: 16,
-                                  bottom: 8,
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.save, size: 16),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      'Auto-Salvar PV na Ficha',
-                                      style: TextStyle(fontSize: 12),
+                        return RitualCard(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          glowEffect: isSelected,
+                          glowColor: AppTheme.ritualRed,
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  // Checkbox estilizado
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedCharacters[character.id] = !isSelected;
+                                        if (!isSelected) {
+                                          _autoUpdatePV[character.id] = false;
+                                        }
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? AppTheme.ritualRed.withOpacity(0.2)
+                                            : AppTheme.obscureGray,
+                                        borderRadius: BorderRadius.circular(8),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: (isSelected
+                                                    ? AppTheme.ritualRed
+                                                    : AppTheme.coldGray)
+                                                .withOpacity(0.35),
+                                            blurRadius: 6,
+                                            spreadRadius: 0,
+                                          ),
+                                        ],
+                                      ),
+                                      child: isSelected
+                                          ? const Icon(
+                                              Icons.check,
+                                              color: AppTheme.ritualRed,
+                                              size: 28,
+                                            )
+                                          : null,
                                     ),
-                                    const Spacer(),
-                                    Switch(
-                                      value: autoUpdate,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _autoUpdatePV[character.id] = value;
-                                        });
-                                      },
+                                  ),
+                                  const SizedBox(width: 16),
+
+                                  // Info do personagem
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          character.nome.toUpperCase(),
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.paleWhite,
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${character.classe} • AGI ${character.agilidade} • Init ${character.iniciativaBase}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppTheme.coldGray,
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
+
+                              // Auto-salvar toggle
+                              if (isSelected) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.obscureGray.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (autoUpdate
+                                                ? AppTheme.mutagenGreen
+                                                : AppTheme.coldGray)
+                                            .withOpacity(0.3),
+                                        blurRadius: 4,
+                                        spreadRadius: 0,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.save,
+                                        size: 16,
+                                        color: autoUpdate
+                                            ? AppTheme.mutagenGreen
+                                            : AppTheme.coldGray,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
+                                        child: Text(
+                                          'Auto-Salvar PV na Ficha',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.paleWhite,
+                                            fontFamily: 'Montserrat',
+                                          ),
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: autoUpdate,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _autoUpdatePV[character.id] = value;
+                                          });
+                                        },
+                                        activeColor: AppTheme.mutagenGreen,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        )
+                            .animate()
+                            .fadeIn(delay: (index * 50).ms, duration: 300.ms)
+                            .slideX(begin: -0.1, end: 0);
+                      }),
+                    ],
+                  ),
+      ),
     );
   }
 
   Widget _buildCombatTracker() {
     final session = _combatSession!;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Combate - Rodada ${session.rodadaAtual}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Re-rolar Iniciativas',
-            onPressed: () {
-              setState(() {
-                for (var combatente in session.combatentes) {
-                  final dadosRolados = <int>[];
-                  final novaIniciativa =
-                      _rolarIniciativa(combatente.character, dadosRolados);
-                  final novoCombatente = combatente.copyWith(
-                    iniciativaTotal: novaIniciativa,
-                    dadosRolados: dadosRolados,
-                  );
-                  final index = session.combatentes.indexOf(combatente);
-                  session.combatentes[index] = novoCombatente;
-                }
-                session.ordenarPorIniciativa();
-                session.resetar();
-              });
-            },
+    return HexatombeBackground(
+      showParticles: true,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: AppTheme.abyssalBlack.withOpacity(0.9),
+          elevation: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'COMBATE',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 2,
+                  color: AppTheme.ritualRed,
+                ),
+              ),
+              Text(
+                'Rodada ${session.rodadaAtual}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.coldGray,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: 'Finalizar Combate',
-            onPressed: _finalizarCombate,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Controles de Turno
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: AppTheme.etherealPurple),
+              tooltip: 'Re-rolar Iniciativas',
+              onPressed: () {
+                setState(() {
+                  for (var combatente in session.combatentes) {
+                    final dadosRolados = <int>[];
+                    final novaIniciativa =
+                        _rolarIniciativa(combatente.character, dadosRolados);
+                    final novoCombatente = combatente.copyWith(
+                      iniciativaTotal: novaIniciativa,
+                      dadosRolados: dadosRolados,
+                    );
+                    final index = session.combatentes.indexOf(combatente);
+                    session.combatentes[index] = novoCombatente;
+                  }
+                  session.ordenarPorIniciativa();
+                  session.resetar();
+                });
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: AppTheme.alertYellow),
+              tooltip: 'Finalizar Combate',
+              onPressed: _finalizarCombate,
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Controles de Turno
+            RitualCard(
+              margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              glowEffect: true,
+              glowColor: AppTheme.ritualRed,
+              child: Column(
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        session.turnoAnterior();
-                      });
-                    },
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('Anterior'),
-                  ),
-                  Column(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Rodada ${session.rodadaAtual}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        'RODADA ${session.rodadaAtual}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.ritualRed,
+                          fontFamily: 'BebasNeue',
+                          letterSpacing: 1.5,
+                        ),
                       ),
                       if (session.combatenteAtual != null)
-                        Text(
-                          'Turno: ${session.combatenteAtual!.character.nome}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.ritualRed.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.ritualRed.withOpacity(0.35),
+                                blurRadius: 6,
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            session.combatenteAtual!.character.nome.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.paleWhite,
+                              fontFamily: 'Montserrat',
+                            ),
                           ),
                         ),
                     ],
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        session.proximoTurno();
-                      });
-                    },
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text('Próximo'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GlowingButton(
+                          label: 'Anterior',
+                          icon: Icons.arrow_back,
+                          onPressed: () {
+                            setState(() {
+                              session.turnoAnterior();
+                            });
+                          },
+                          style: GlowingButtonStyle.secondary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GlowingButton(
+                          label: 'Próximo',
+                          icon: Icons.arrow_forward,
+                          onPressed: () {
+                            setState(() {
+                              session.proximoTurno();
+                            });
+                          },
+                          style: GlowingButtonStyle.danger,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
+            ).animate().fadeIn(duration: 300.ms),
+
+            // Lista de Combatentes
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: session.combatentes.length,
+                itemBuilder: (context, index) {
+                  final combatente = session.combatentes[index];
+                  final isTurnoAtual = session.turnoAtualIndex == index;
+
+                  return _buildCombatantCard(
+                    combatente,
+                    index,
+                    isTurnoAtual,
+                    session,
+                  ).animate().fadeIn(delay: (index * 50).ms, duration: 300.ms);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCombatantCard(
+    CombatantTracker combatente,
+    int index,
+    bool isTurnoAtual,
+    CombatSession session,
+  ) {
+    final pvPercent = combatente.percentualVida;
+    Color pvColor = AppTheme.mutagenGreen;
+    if (pvPercent <= 0.25) {
+      pvColor = AppTheme.ritualRed;
+    } else if (pvPercent <= 0.5) {
+      pvColor = AppTheme.alertYellow;
+    }
+
+    return RitualCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      glowEffect: isTurnoAtual,
+      glowColor: AppTheme.ritualRed,
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(top: 16),
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: isTurnoAtual
+                ? AppTheme.ritualRed.withOpacity(0.2)
+                : AppTheme.obscureGray,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: (isTurnoAtual ? AppTheme.ritualRed : AppTheme.coldGray)
+                    .withOpacity(0.35),
+                blurRadius: 6,
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              '${index + 1}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isTurnoAtual ? AppTheme.ritualRed : AppTheme.coldGray,
+                fontFamily: 'BebasNeue',
+              ),
             ),
           ),
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                combatente.character.nome.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.paleWhite,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.etherealPurple.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.etherealPurple.withOpacity(0.35),
+                    blurRadius: 6,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Text(
+                'INIT ${combatente.iniciativaTotal}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.etherealPurple,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            // Barra de PV
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: pvPercent,
+                minHeight: 6,
+                backgroundColor: AppTheme.obscureGray,
+                valueColor: AlwaysStoppedAnimation<Color>(pvColor),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Text(
+                  'PV: ${combatente.pvAtualCombate}/${combatente.character.pvMax}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.coldGray,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'AGI ${combatente.character.agilidade}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.coldGray,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
+                if (combatente.autoUpdatePV) ...[
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.sync,
+                    size: 12,
+                    color: AppTheme.mutagenGreen,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+        children: [
+          // Detalhes da rolagem
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.obscureGray.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'ROLAGEM DE INICIATIVA',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.etherealPurple,
+                    fontFamily: 'BebasNeue',
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Base: ${combatente.character.iniciativaBase} + Dados: ${combatente.dadosRolados.join(", ")} = ${combatente.iniciativaTotal}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.coldGray,
+                    fontFamily: 'Courier',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
-          // Lista de Combatentes
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: session.combatentes.length,
-              itemBuilder: (context, index) {
-                final combatente = session.combatentes[index];
-                final isTurnoAtual = session.turnoAtualIndex == index;
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  color: isTurnoAtual
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                      : null,
-                  child: ExpansionTile(
-                    leading: CircleAvatar(
-                      backgroundColor: isTurnoAtual
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.grey,
-                      child: Text(
-                        '${index + 1}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    title: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            combatente.character.nome,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'INIT ${combatente.iniciativaTotal}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        // Barra de PV
-                        LinearProgressIndicator(
-                          value: combatente.percentualVida,
-                          backgroundColor: Colors.red.withOpacity(0.3),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            combatente.percentualVida > 0.5
-                                ? Colors.green
-                                : combatente.percentualVida > 0.25
-                                    ? Colors.orange
-                                    : Colors.red,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'PV: ${combatente.pvAtualCombate}/${combatente.character.pvMax} • '
-                          'AGI ${combatente.character.agilidade} ${combatente.autoUpdatePV ? "🔄" : ""}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Detalhes da rolagem
-                            Text(
-                              'Rolagem de Iniciativa:',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Base: ${combatente.character.iniciativaBase} + '
-                              'Dados: ${combatente.dadosRolados.join(", ")} = '
-                              '${combatente.iniciativaTotal}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                            const Divider(height: 24),
-
-                            // Controles de PV
-                            Text(
-                              'Ajustar PV:',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () async {
-                                    setState(() {
-                                      combatente.aplicarDano(5);
-                                    });
-                                    await _salvarPVNoBanco(combatente);
-                                  },
-                                  icon: const Text('-5'),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Colors.red.withOpacity(0.2),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () async {
-                                    setState(() {
-                                      combatente.aplicarDano(1);
-                                    });
-                                    await _salvarPVNoBanco(combatente);
-                                  },
-                                  icon: const Text('-1'),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Colors.red.withOpacity(0.2),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Center(
-                                    child: Text(
-                                      '${combatente.pvAtualCombate}',
-                                      style: const TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () async {
-                                    setState(() {
-                                      combatente.curar(1);
-                                    });
-                                    await _salvarPVNoBanco(combatente);
-                                  },
-                                  icon: const Text('+1'),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Colors.green.withOpacity(0.2),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () async {
-                                    setState(() {
-                                      combatente.curar(5);
-                                    });
-                                    await _salvarPVNoBanco(combatente);
-                                  },
-                                  icon: const Text('+5'),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Colors.green.withOpacity(0.2),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Campo de dano customizado
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Dano Customizado',
-                                      hintText: 'Ex: 15',
-                                      isDense: true,
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    onSubmitted: (value) async {
-                                      final dano = int.tryParse(value);
-                                      if (dano != null && dano > 0) {
-                                        setState(() {
-                                          combatente.aplicarDano(dano);
-                                        });
-                                        await _salvarPVNoBanco(combatente);
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    // O dano é aplicado no onSubmitted do TextField
-                                  },
-                                  child: const Text('Aplicar'),
-                                ),
-                              ],
-                            ),
-
-                            // Botão de remover
-                            const SizedBox(height: 8),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                setState(() {
-                                  session.removerCombatente(index);
-                                });
-                              },
-                              icon: const Icon(Icons.remove_circle_outline),
-                              label: const Text('Remover do Combate'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
+          // Controles de PV
+          const Text(
+            'AJUSTAR PV',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.ritualRed,
+              fontFamily: 'BebasNeue',
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildPVButton(
+                  label: '-5',
+                  color: AppTheme.ritualRed,
+                  onPressed: () async {
+                    setState(() {
+                      combatente.aplicarDano(5);
+                    });
+                    await _salvarPVNoBanco(combatente);
+                  },
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildPVButton(
+                  label: '-1',
+                  color: AppTheme.ritualRed,
+                  onPressed: () async {
+                    setState(() {
+                      combatente.aplicarDano(1);
+                    });
+                    await _salvarPVNoBanco(combatente);
+                  },
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: 2,
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.obscureGray,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: pvColor.withOpacity(0.35),
+                        blurRadius: 6,
+                        spreadRadius: 0,
                       ),
                     ],
                   ),
-                );
-              },
-            ),
+                  child: Center(
+                    child: Text(
+                      '${combatente.pvAtualCombate}',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: pvColor,
+                        fontFamily: 'BebasNeue',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildPVButton(
+                  label: '+1',
+                  color: AppTheme.mutagenGreen,
+                  onPressed: () async {
+                    setState(() {
+                      combatente.curar(1);
+                    });
+                    await _salvarPVNoBanco(combatente);
+                  },
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildPVButton(
+                  label: '+5',
+                  color: AppTheme.mutagenGreen,
+                  onPressed: () async {
+                    setState(() {
+                      combatente.curar(5);
+                    });
+                    await _salvarPVNoBanco(combatente);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Remover do combate
+          GlowingButton(
+            label: 'Remover do Combate',
+            icon: Icons.remove_circle_outline,
+            onPressed: () {
+              setState(() {
+                session.removerCombatente(index);
+              });
+            },
+            style: GlowingButtonStyle.danger,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPVButton({
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.2),
+          foregroundColor: color,
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: color, width: 2),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: color,
+            fontFamily: 'BebasNeue',
+          ),
+        ),
       ),
     );
   }

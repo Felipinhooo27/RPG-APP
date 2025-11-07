@@ -42,6 +42,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
+/android/local.properties
 
 # Firebase
 google-services.json

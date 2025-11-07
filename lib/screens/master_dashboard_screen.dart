@@ -1,14 +1,19 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/character.dart';
 import '../services/local_database_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/widgets.dart';
 import 'character_list_screen.dart';
+import 'character_grimoire_screen.dart';
 import 'dice_roller_screen.dart';
 import 'iniciativa_screen.dart';
 import 'notes_screen.dart';
 import 'advanced_character_generator_screen.dart';
 import 'mass_payment_screen.dart';
+import 'master_shop_manager_screen.dart';
 
 class MasterDashboardScreen extends StatefulWidget {
   const MasterDashboardScreen({super.key});
@@ -39,6 +44,12 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
             _currentIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: AppTheme.obscureGray,
+        selectedItemColor: AppTheme.ritualRed,
+        unselectedItemColor: AppTheme.coldGray,
+        selectedLabelStyle: const TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(fontFamily: 'Montserrat'),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -75,480 +86,391 @@ class _MasterHomeTab extends StatefulWidget {
 
 class _MasterHomeTabState extends State<_MasterHomeTab> {
   final LocalDatabaseService _databaseService = LocalDatabaseService();
-  final Set<String> _selectedCharacters = {};
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard do Mestre'),
-      ),
-      body: StreamBuilder<List<Character>>(
-        stream: _databaseService.getAllCharacters(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Erro: ${snapshot.error}'));
-          }
-
-          final characters = snapshot.data ?? [];
-
-          return ListView(
-            padding: const EdgeInsets.all(16),
+    return HexatombeBackground(
+      showParticles: true,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: AppTheme.abyssalBlack.withOpacity(0.9),
+          elevation: 0,
+          title: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Card de Estatísticas
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'ESTATÍSTICAS',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const Divider(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _StatCard(
-                            icon: Icons.people,
-                            label: 'Total',
-                            value: characters.length.toString(),
-                            color: Colors.blue,
-                          ),
-                          _StatCard(
-                            icon: Icons.favorite,
-                            label: 'PV Médio',
-                            value: _calculateAveragePV(characters),
-                            color: Colors.red,
-                          ),
-                          _StatCard(
-                            icon: Icons.stars,
-                            label: 'NEX Médio',
-                            value: _calculateAverageNEX(characters),
-                            color: Colors.amber,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              Text(
+                'DASHBOARD DO MESTRE',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 2,
+                  color: AppTheme.ritualRed,
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Ações do Mestre
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'AÇÕES DO MESTRE',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const Divider(),
-                      ListTile(
-                        leading: const Icon(Icons.share),
-                        title: const Text('Exportar Personagens'),
-                        subtitle: const Text('Compartilhar via WhatsApp'),
-                        onTap: () => _showExportDialog(characters),
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.download),
-                        title: const Text('Importar Personagens'),
-                        subtitle: const Text('Importar do JSON'),
-                        onTap: _showImportDialog,
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.auto_awesome),
-                        title: const Text('Gerador Avançado'),
-                        subtitle: const Text('Civil, Soldado, Líder, Deus...'),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AdvancedCharacterGeneratorScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.monetization_on),
-                        title: const Text('Pagamentos em Massa'),
-                        subtitle: const Text('Adicionar/remover créditos'),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MassPaymentScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+              Text(
+                'Gerencie sua campanha',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.coldGray,
+                  fontFamily: 'Montserrat',
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Lista de Personagens
-              if (characters.isNotEmpty) ...[
-                Text(
-                  'PERSONAGENS NA CAMPANHA',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                ...characters.map((character) => Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          child: Text(
-                            character.nome.isNotEmpty ? character.nome[0].toUpperCase() : '?',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        title: Text(character.nome),
-                        subtitle: Text('${character.classe} - NEX ${character.nex}%'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'PV: ${character.pvAtual}/${character.pvMax}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )),
-              ],
             ],
-          );
-        },
+          ),
+        ),
+        body: StreamBuilder<List<Character>>(
+          stream: _databaseService.getAllCharacters(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: HexLoading.large());
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: AppTheme.alertYellow),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Erro ao carregar',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.paleWhite,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final characters = snapshot.data ?? [];
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Ações do Mestre
+                  _buildActionsSection(context, characters),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  String _calculateAveragePV(List<Character> characters) {
-    if (characters.isEmpty) return '0';
-    final total = characters.fold<int>(0, (sum, char) => sum + char.pvMax);
-    return (total / characters.length).toStringAsFixed(0);
+  Widget _buildActionsSection(BuildContext context, List<Character> characters) {
+    return RitualCard(
+      glowEffect: true,
+      glowColor: AppTheme.chaoticMagenta,
+      ritualCorners: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'AÇÕES DO MESTRE',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.ritualRed,
+              fontFamily: 'BebasNeue',
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Exportar
+          _ActionTile(
+            icon: Icons.share,
+            iconColor: AppTheme.mutagenGreen,
+            title: 'Exportar Personagens',
+            subtitle: 'Compartilhar via WhatsApp',
+            onTap: () => _showExportDialog(characters),
+          ),
+          const SizedBox(height: 8),
+
+          // Importar
+          _ActionTile(
+            icon: Icons.download,
+            iconColor: AppTheme.etherealPurple,
+            title: 'Importar Personagens',
+            subtitle: 'Importar do JSON',
+            onTap: _showImportDialog,
+          ),
+          const SizedBox(height: 8),
+
+          // Gerador Avançado
+          _ActionTile(
+            icon: Icons.auto_awesome,
+            iconColor: AppTheme.alertYellow,
+            title: 'Gerador Avançado',
+            subtitle: 'Civil, Soldado, Líder, Deus...',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AdvancedCharacterGeneratorScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+
+          // Pagamentos em Massa
+          _ActionTile(
+            icon: Icons.monetization_on,
+            iconColor: AppTheme.ritualRed,
+            title: 'Pagamentos em Massa',
+            subtitle: 'Adicionar/remover créditos',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MassPaymentScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+
+          // Gerenciar Lojas
+          _ActionTile(
+            icon: Icons.store,
+            iconColor: AppTheme.alertYellow,
+            title: 'Gerenciar Lojas',
+            subtitle: 'Criar e editar lojas para jogadores',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MasterShopManagerScreen(
+                    masterId: 'master_001',
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2, end: 0);
   }
 
-  String _calculateAverageNEX(List<Character> characters) {
-    if (characters.isEmpty) return '0';
-    final total = characters.fold<int>(0, (sum, char) => sum + char.nex);
-    return (total / characters.length).toStringAsFixed(0);
-  }
-
+  // Dialog de Exportar
   Future<void> _showExportDialog(List<Character> characters) async {
     if (characters.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum personagem para exportar')),
+        const SnackBar(
+          content: Text('Nenhum personagem para exportar'),
+          backgroundColor: AppTheme.alertYellow,
+        ),
       );
       return;
     }
 
-    await showDialog(
-      context: context,
-      builder: (context) => _ExportDialog(
-        characters: characters,
-        databaseService: _databaseService,
-      ),
-    );
-  }
-
-  Future<void> _showImportDialog() async {
-    await showDialog(
-      context: context,
-      builder: (context) => _ImportDialog(
-        databaseService: _databaseService,
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, size: 32, color: color),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Colors.white70),
-        ),
-      ],
-    );
-  }
-}
-
-class _ExportDialog extends StatefulWidget {
-  final List<Character> characters;
-  final LocalDatabaseService databaseService;
-
-  const _ExportDialog({
-    required this.characters,
-    required this.databaseService,
-  });
-
-  @override
-  State<_ExportDialog> createState() => _ExportDialogState();
-}
-
-class _ExportDialogState extends State<_ExportDialog> {
-  final Set<String> _selectedIds = {};
-  bool _selectAll = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Exportar Personagens'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CheckboxListTile(
-              title: const Text('Selecionar Todos'),
-              value: _selectAll,
-              onChanged: (value) {
-                setState(() {
-                  _selectAll = value ?? false;
-                  if (_selectAll) {
-                    _selectedIds.addAll(widget.characters.map((c) => c.id));
-                  } else {
-                    _selectedIds.clear();
-                  }
-                });
-              },
-            ),
-            const Divider(),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: widget.characters.length,
-                itemBuilder: (context, index) {
-                  final character = widget.characters[index];
-                  return CheckboxListTile(
-                    title: Text(character.nome),
-                    subtitle: Text(character.classe),
-                    value: _selectedIds.contains(character.id),
-                    onChanged: (value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedIds.add(character.id);
-                        } else {
-                          _selectedIds.remove(character.id);
-                        }
-                        _selectAll = _selectedIds.length == widget.characters.length;
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton.icon(
-          onPressed: _selectedIds.isEmpty ? null : _exportCharacters,
-          icon: const Icon(Icons.share),
-          label: const Text('Compartilhar'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _exportCharacters() async {
-    final selectedCharacters = widget.characters
-        .where((c) => _selectedIds.contains(c.id))
-        .toList();
-
-    // Converter para JSON formatado
-    final jsonData = selectedCharacters.map((c) => c.toMap()).toList();
-    final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
-
-    // Compartilhar via WhatsApp ou outros apps
+    final json = jsonEncode(characters.map((c) => c.toMap()).toList());
     await Share.share(
-      jsonString,
-      subject: 'Personagens de Ordem Paranormal RPG',
+      json,
+      subject: 'Personagens Hexatombe RPG',
     );
+  }
 
-    if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${selectedCharacters.length} personagem(s) exportado(s)!'),
+  // Dialog de Importar
+  Future<void> _showImportDialog() async {
+    final controller = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: AppTheme.etherealPurple,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'IMPORTAR PERSONAGENS',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.etherealPurple,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                maxLines: 5,
+                style: const TextStyle(
+                  color: AppTheme.paleWhite,
+                  fontFamily: 'SpaceMono',
+                  fontSize: 12,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Cole o JSON aqui...',
+                  hintStyle: TextStyle(color: AppTheme.coldGray),
+                  filled: true,
+                  fillColor: AppTheme.obscureGray,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.etherealPurple, width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.coldGray, width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.etherealPurple, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Cancelar',
+                      onPressed: () => Navigator.pop(context),
+                      style: GlowingButtonStyle.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Importar',
+                      icon: Icons.download,
+                      onPressed: () async {
+                        try {
+                          final json = controller.text.trim();
+                          final List<dynamic> data = jsonDecode(json);
+                          final characters = data.map((e) => Character.fromMap(e)).toList();
+
+                          await _databaseService.importCharacters(characters, 'master_001');
+
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${characters.length} personagem(ns) importado(s)!'),
+                                backgroundColor: AppTheme.mutagenGreen,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Erro: JSON inválido'),
+                                backgroundColor: AppTheme.ritualRed,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: GlowingButtonStyle.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      );
-    }
+      ),
+    );
   }
 }
 
-class _ImportDialog extends StatefulWidget {
-  final LocalDatabaseService databaseService;
+// Widget customizado para as ações
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
-  const _ImportDialog({required this.databaseService});
-
-  @override
-  State<_ImportDialog> createState() => _ImportDialogState();
-}
-
-class _ImportDialogState extends State<_ImportDialog> {
-  final TextEditingController _jsonController = TextEditingController();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _jsonController.dispose();
-    super.dispose();
-  }
+  const _ActionTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Importar Personagens'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Cole o JSON dos personagens abaixo:',
-              style: TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _jsonController,
-              decoration: const InputDecoration(
-                hintText: 'Cole o JSON aqui...',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 10,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.obscureGray,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: iconColor.withOpacity(0.35),
+              blurRadius: 6,
+              spreadRadius: 0,
             ),
           ],
         ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: [
+                  BoxShadow(
+                    color: iconColor.withOpacity(0.35),
+                    blurRadius: 6,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.paleWhite,
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.coldGray,
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: AppTheme.coldGray, size: 16),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton.icon(
-          onPressed: _isLoading ? null : _importCharacters,
-          icon: _isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.download),
-          label: const Text('Importar'),
-        ),
-      ],
     );
-  }
-
-  Future<void> _importCharacters() async {
-    final jsonText = _jsonController.text.trim();
-
-    if (jsonText.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cole o JSON primeiro')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Decodificar JSON
-      final decoded = jsonDecode(jsonText);
-
-      List<Character> characters = [];
-
-      if (decoded is List) {
-        // Array de personagens
-        for (var item in decoded) {
-          characters.add(Character.fromMap(item as Map<String, dynamic>));
-        }
-      } else if (decoded is Map) {
-        // Um único personagem
-        characters.add(Character.fromMap(decoded as Map<String, dynamic>));
-      } else {
-        throw Exception('Formato de JSON inválido');
-      }
-
-      // Importar para o banco local
-      await widget.databaseService.importCharacters(
-        characters,
-        'master_001', // ID do mestre
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${characters.length} personagem(s) importado(s) com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao importar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 }

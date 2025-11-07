@@ -385,10 +385,13 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary,
-              width: 2,
-            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.35),
+                blurRadius: 6,
+                spreadRadius: 0,
+              ),
+            ],
           ),
           child: Center(
             child: Text(

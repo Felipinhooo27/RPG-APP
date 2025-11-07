@@ -1,16 +1,23 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../models/character.dart';
 import '../models/note.dart';
+import '../models/skill.dart';
 
+/// Serviço de armazenamento local usando SharedPreferences e JSON
+/// Substitui o antigo sistema SQL para armazenamento mais simples
 class LocalDatabaseService {
-  static Database? _database;
+  static SharedPreferences? _prefs;
   final _uuid = const Uuid();
 
-  // StreamController para simular o comportamento de streams do Firestore
+  // Storage keys
+  static const String _charactersKey = 'characters_json';
+  static const String _notesKey = 'notes_json';
+  static const String _shopsKey = 'shops_json';
+
+  // StreamController para reatividade
   final _charactersController = StreamController<List<Character>>.broadcast();
   final _notesController = StreamController<List<Note>>.broadcast();
 
@@ -19,155 +26,101 @@ class LocalDatabaseService {
   factory LocalDatabaseService() => _instance;
   LocalDatabaseService._internal();
 
-  // Inicializar banco de dados
-  Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
+  /// Inicializar SharedPreferences
+  Future<SharedPreferences> get prefs async {
+    if (_prefs != null) return _prefs!;
+    _prefs = await SharedPreferences.getInstance();
+    return _prefs!;
   }
 
-  Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'ordem_paranormal.db');
+  // ==================== CHARACTERS ====================
 
-    return await openDatabase(
-      path,
-      version: 2,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE characters (
-            id TEXT PRIMARY KEY,
-            data TEXT NOT NULL
-          )
-        ''');
-        await db.execute('''
-          CREATE TABLE notes (
-            id TEXT PRIMARY KEY,
-            data TEXT NOT NULL
-          )
-        ''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute('''
-            CREATE TABLE notes (
-              id TEXT PRIMARY KEY,
-              data TEXT NOT NULL
-            )
-          ''');
-        }
-      },
-    );
-  }
-
-  // CRUD - Create
   Future<void> createCharacter(Character character) async {
-    try {
-      final db = await database;
-      final newId = character.id.isEmpty ? _uuid.v4() : character.id;
-      final characterWithId = character.copyWith(id: newId);
+    final sp = await prefs;
+    final characters = await getAllCharactersList();
 
-      await db.insert(
-        'characters',
-        {
-          'id': newId,
-          'data': jsonEncode(characterWithId.toMap()),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+    // Adicionar novo personagem
+    characters.add(character);
 
-      _notifyListeners();
-    } catch (e) {
-      throw Exception('Erro ao criar personagem: $e');
-    }
+    // Salvar lista atualizada
+    final jsonList = characters.map((c) => c.toJson()).toList();
+    await sp.setString(_charactersKey, jsonEncode(jsonList));
+
+    // Notificar listeners
+    await _notifyListeners();
   }
 
-  // CRUD - Read (Todos os personagens) - Stream
   Stream<List<Character>> getAllCharacters() {
-    // Retorna o stream e atualiza os dados
-    _notifyListeners();
+    Future.microtask(() => _notifyListeners());
     return _charactersController.stream;
   }
 
-  // CRUD - Read (Personagens do usuário) - Stream
   Stream<List<Character>> getCharactersByUser(String userId) {
+    Future.microtask(() => _notifyListeners());
     return _charactersController.stream.map((characters) {
       return characters.where((c) => c.createdBy == userId).toList();
     });
   }
 
-  // CRUD - Read (Todos os personagens) - Future
   Future<List<Character>> getAllCharactersList() async {
-    try {
-      final db = await database;
-      final List<Map<String, dynamic>> maps = await db.query('characters');
+    final sp = await prefs;
+    final jsonString = sp.getString(_charactersKey);
 
-      return maps.map((map) {
-        final data = jsonDecode(map['data'] as String) as Map<String, dynamic>;
-        return Character.fromMap(data);
-      }).toList();
+    if (jsonString == null || jsonString.isEmpty) {
+      return [];
+    }
+
+    try {
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      return jsonList.map((json) => Character.fromJson(json)).toList();
     } catch (e) {
-      throw Exception('Erro ao buscar personagens: $e');
+      print('Erro ao carregar personagens: $e');
+      return [];
     }
   }
 
-  // CRUD - Read (Um personagem específico)
   Future<Character?> getCharacter(String id) async {
+    final characters = await getAllCharactersList();
     try {
-      final db = await database;
-      final List<Map<String, dynamic>> maps = await db.query(
-        'characters',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-
-      if (maps.isNotEmpty) {
-        final data = jsonDecode(maps.first['data'] as String) as Map<String, dynamic>;
-        return Character.fromMap(data);
-      }
+      return characters.firstWhere((c) => c.id == id);
+    } catch (e) {
       return null;
-    } catch (e) {
-      throw Exception('Erro ao buscar personagem: $e');
     }
   }
 
-  // CRUD - Update
   Future<void> updateCharacter(Character character) async {
-    try {
-      final db = await database;
-      await db.update(
-        'characters',
-        {
-          'id': character.id,
-          'data': jsonEncode(character.toMap()),
-        },
-        where: 'id = ?',
-        whereArgs: [character.id],
-      );
+    final sp = await prefs;
+    final characters = await getAllCharactersList();
 
-      _notifyListeners();
-    } catch (e) {
-      throw Exception('Erro ao atualizar personagem: $e');
+    // Encontrar e atualizar personagem
+    final index = characters.indexWhere((c) => c.id == character.id);
+    if (index != -1) {
+      characters[index] = character;
+
+      // Salvar lista atualizada
+      final jsonList = characters.map((c) => c.toJson()).toList();
+      await sp.setString(_charactersKey, jsonEncode(jsonList));
+
+      // Notificar listeners
+      await _notifyListeners();
     }
   }
 
-  // CRUD - Delete
   Future<void> deleteCharacter(String id) async {
-    try {
-      final db = await database;
-      await db.delete(
-        'characters',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
+    final sp = await prefs;
+    final characters = await getAllCharactersList();
 
-      _notifyListeners();
-    } catch (e) {
-      throw Exception('Erro ao excluir personagem: $e');
-    }
+    // Remover personagem
+    characters.removeWhere((c) => c.id == id);
+
+    // Salvar lista atualizada
+    final jsonList = characters.map((c) => c.toJson()).toList();
+    await sp.setString(_charactersKey, jsonEncode(jsonList));
+
+    // Notificar listeners
+    await _notifyListeners();
   }
 
-  // Atualizar apenas os status (PV, PE, PS, Créditos)
   Future<void> updateCharacterStatus({
     required String characterId,
     int? pvAtual,
@@ -175,186 +128,220 @@ class LocalDatabaseService {
     int? psAtual,
     int? creditos,
   }) async {
-    try {
-      final character = await getCharacter(characterId);
-      if (character == null) return;
+    final character = await getCharacter(characterId);
+    if (character == null) return;
 
-      final updatedCharacter = character.copyWith(
-        pvAtual: pvAtual ?? character.pvAtual,
-        peAtual: peAtual ?? character.peAtual,
-        psAtual: psAtual ?? character.psAtual,
-        creditos: creditos ?? character.creditos,
+    final updatedCharacter = character.copyWith(
+      pvAtual: pvAtual ?? character.pvAtual,
+      peAtual: peAtual ?? character.peAtual,
+      psAtual: psAtual ?? character.psAtual,
+      creditos: creditos ?? character.creditos,
+    );
+
+    await updateCharacter(updatedCharacter);
+  }
+
+  Future<void> updateCharacterSkills({
+    required String characterId,
+    required Map<String, Skill> pericias,
+  }) async {
+    final character = await getCharacter(characterId);
+    if (character == null) return;
+
+    final updatedCharacter = character.copyWith(pericias: pericias);
+    await updateCharacter(updatedCharacter);
+  }
+
+  Future<void> updateSkillLevel({
+    required String characterId,
+    required String skillName,
+    required SkillLevel level,
+  }) async {
+    final character = await getCharacter(characterId);
+    if (character == null) return;
+
+    final updatedSkills = Map<String, Skill>.from(character.pericias);
+    final currentSkill = updatedSkills[skillName];
+
+    if (currentSkill != null) {
+      updatedSkills[skillName] = currentSkill.copyWith(level: level);
+      await updateCharacterSkills(
+        characterId: characterId,
+        pericias: updatedSkills,
       );
-
-      await updateCharacter(updatedCharacter);
-    } catch (e) {
-      throw Exception('Erro ao atualizar status do personagem: $e');
     }
   }
 
-  // Importar múltiplos personagens
   Future<void> importCharacters(List<Character> characters, String userId) async {
-    try {
-      final db = await database;
-      final batch = db.batch();
+    final sp = await prefs;
+    final existingCharacters = await getAllCharactersList();
 
-      for (var character in characters) {
-        final newId = _uuid.v4();
-        final characterWithNewId = character.copyWith(
-          id: newId,
-          createdBy: userId,
-        );
-
-        batch.insert(
-          'characters',
-          {
-            'id': newId,
-            'data': jsonEncode(characterWithNewId.toMap()),
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-
-      await batch.commit(noResult: true);
-      _notifyListeners();
-    } catch (e) {
-      throw Exception('Erro ao importar personagens: $e');
+    // Adicionar personagens importados
+    for (var character in characters) {
+      // Gerar novo ID para evitar conflitos
+      final newCharacter = character.copyWith(
+        id: _uuid.v4(),
+        createdBy: userId,
+      );
+      existingCharacters.add(newCharacter);
     }
+
+    // Salvar lista atualizada
+    final jsonList = existingCharacters.map((c) => c.toJson()).toList();
+    await sp.setString(_charactersKey, jsonEncode(jsonList));
+
+    // Notificar listeners
+    await _notifyListeners();
   }
 
-  // Notificar listeners (simular comportamento de stream)
+  // ==================== EXPORT/IMPORT INDIVIDUAL CHARACTER ====================
+
+  /// Exportar personagem individual para JSON
+  Future<String> exportCharacter(String characterId) async {
+    final character = await getCharacter(characterId);
+    if (character == null) throw Exception('Personagem não encontrado');
+
+    final exportData = {
+      'version': '1.0',
+      'character': character.toJson(),
+      'exportDate': DateTime.now().toIso8601String(),
+    };
+
+    return const JsonEncoder.withIndent('  ').convert(exportData);
+  }
+
+  /// Importar personagem individual de JSON
+  Future<Character> importCharacter(String jsonString, String newCreatedBy) async {
+    final data = jsonDecode(jsonString);
+
+    final characterData = data['character'] as Map<String, dynamic>;
+    final character = Character.fromJson(characterData);
+
+    // Criar novo personagem com novo ID e createdBy
+    final newCharacter = character.copyWith(
+      id: _uuid.v4(),
+      createdBy: newCreatedBy,
+    );
+
+    await createCharacter(newCharacter);
+
+    return newCharacter;
+  }
+
   Future<void> _notifyListeners() async {
     final characters = await getAllCharactersList();
     _charactersController.add(characters);
-  }
 
-  // Limpar banco de dados (útil para testes)
-  Future<void> clearDatabase() async {
-    try {
-      final db = await database;
-      await db.delete('characters');
-      _notifyListeners();
-    } catch (e) {
-      throw Exception('Erro ao limpar banco de dados: $e');
-    }
-  }
-
-  // ========== NOTAS ==========
-
-  // CRUD - Create Note
-  Future<void> createNote(Note note) async {
-    try {
-      final db = await database;
-      final newId = note.id.isEmpty ? _uuid.v4() : note.id;
-      final noteWithId = note.copyWith(id: newId);
-
-      await db.insert(
-        'notes',
-        {
-          'id': newId,
-          'data': jsonEncode(noteWithId.toMap()),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-
-      _notifyNotesListeners();
-    } catch (e) {
-      throw Exception('Erro ao criar nota: $e');
-    }
-  }
-
-  // CRUD - Read All Notes - Stream
-  Stream<List<Note>> getAllNotes() {
-    _notifyNotesListeners();
-    return _notesController.stream;
-  }
-
-  // CRUD - Read All Notes - Future
-  Future<List<Note>> getAllNotesList() async {
-    try {
-      final db = await database;
-      final List<Map<String, dynamic>> maps = await db.query('notes');
-
-      return maps.map((map) {
-        final data = jsonDecode(map['data'] as String) as Map<String, dynamic>;
-        return Note.fromMap(data);
-      }).toList();
-    } catch (e) {
-      throw Exception('Erro ao buscar notas: $e');
-    }
-  }
-
-  // CRUD - Read One Note
-  Future<Note?> getNote(String id) async {
-    try {
-      final db = await database;
-      final List<Map<String, dynamic>> maps = await db.query(
-        'notes',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-
-      if (maps.isNotEmpty) {
-        final data = jsonDecode(maps.first['data'] as String) as Map<String, dynamic>;
-        return Note.fromMap(data);
-      }
-      return null;
-    } catch (e) {
-      throw Exception('Erro ao buscar nota: $e');
-    }
-  }
-
-  // CRUD - Update Note
-  Future<void> updateNote(Note note) async {
-    try {
-      final db = await database;
-      final updatedNote = note.copyWith(
-        dataModificacao: DateTime.now(),
-      );
-
-      await db.update(
-        'notes',
-        {
-          'id': updatedNote.id,
-          'data': jsonEncode(updatedNote.toMap()),
-        },
-        where: 'id = ?',
-        whereArgs: [updatedNote.id],
-      );
-
-      _notifyNotesListeners();
-    } catch (e) {
-      throw Exception('Erro ao atualizar nota: $e');
-    }
-  }
-
-  // CRUD - Delete Note
-  Future<void> deleteNote(String id) async {
-    try {
-      final db = await database;
-      await db.delete(
-        'notes',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-
-      _notifyNotesListeners();
-    } catch (e) {
-      throw Exception('Erro ao excluir nota: $e');
-    }
-  }
-
-  // Notificar listeners de notas
-  Future<void> _notifyNotesListeners() async {
     final notes = await getAllNotesList();
     _notesController.add(notes);
   }
 
-  // Fechar banco de dados
-  Future<void> close() async {
-    final db = await database;
-    await db.close();
-    await _charactersController.close();
-    await _notesController.close();
+  Future<void> clearDatabase() async {
+    final sp = await prefs;
+    await sp.remove(_charactersKey);
+    await sp.remove(_notesKey);
+    await sp.remove(_shopsKey);
+    await _notifyListeners();
+  }
+
+  // ==================== NOTES ====================
+
+  Future<void> createNote(Note note) async {
+    final sp = await prefs;
+    final notes = await getAllNotesList();
+
+    // Adicionar nova nota
+    notes.add(note);
+
+    // Salvar lista atualizada
+    final jsonList = notes.map((n) => n.toMap()).toList();
+    await sp.setString(_notesKey, jsonEncode(jsonList));
+
+    // Notificar listeners
+    await _notifyListeners();
+  }
+
+  Stream<List<Note>> getAllNotes() {
+    Future.microtask(() => _notifyListeners());
+    return _notesController.stream;
+  }
+
+  Future<List<Note>> getAllNotesList() async {
+    final sp = await prefs;
+    final jsonString = sp.getString(_notesKey);
+
+    if (jsonString == null || jsonString.isEmpty) {
+      return [];
+    }
+
+    try {
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      return jsonList.map((json) => Note.fromMap(json)).toList();
+    } catch (e) {
+      print('Erro ao carregar notas: $e');
+      return [];
+    }
+  }
+
+  Future<Note?> getNote(String id) async {
+    final notes = await getAllNotesList();
+    try {
+      return notes.firstWhere((n) => n.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> updateNote(Note note) async {
+    final sp = await prefs;
+    final notes = await getAllNotesList();
+
+    // Encontrar e atualizar nota
+    final index = notes.indexWhere((n) => n.id == note.id);
+    if (index != -1) {
+      notes[index] = note;
+
+      // Salvar lista atualizada
+      final jsonList = notes.map((n) => n.toMap()).toList();
+      await sp.setString(_notesKey, jsonEncode(jsonList));
+
+      // Notificar listeners
+      await _notifyListeners();
+    }
+  }
+
+  Future<void> deleteNote(String id) async {
+    final sp = await prefs;
+    final notes = await getAllNotesList();
+
+    // Remover nota
+    notes.removeWhere((n) => n.id == id);
+
+    // Salvar lista atualizada
+    final jsonList = notes.map((n) => n.toMap()).toList();
+    await sp.setString(_notesKey, jsonEncode(jsonList));
+
+    // Notificar listeners
+    await _notifyListeners();
+  }
+
+  // ==================== SHOPS ====================
+  // Métodos para shops são usados pelo ShopService
+
+  Future<String?> getShopsJson() async {
+    final sp = await prefs;
+    return sp.getString(_shopsKey);
+  }
+
+  Future<void> setShopsJson(String jsonString) async {
+    final sp = await prefs;
+    await sp.setString(_shopsKey, jsonString);
+  }
+
+  // ==================== DISPOSE ====================
+
+  void dispose() {
+    _charactersController.close();
+    _notesController.close();
   }
 }

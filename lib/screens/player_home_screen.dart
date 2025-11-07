@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'character_list_screen.dart';
 import 'dice_roller_screen.dart';
+import 'player_options_screen.dart';
+import 'shop_screen.dart';
+import '../models/character.dart';
+import '../services/local_database_service.dart';
+import '../theme/app_theme.dart';
 
 class PlayerHomeScreen extends StatefulWidget {
   const PlayerHomeScreen({super.key});
@@ -11,10 +16,42 @@ class PlayerHomeScreen extends StatefulWidget {
 
 class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
   int _currentIndex = 0;
+  final LocalDatabaseService _dbService = LocalDatabaseService();
+  Character? _selectedCharacter;
 
-  final List<Widget> _screens = const [
-    CharacterListScreen(isMasterMode: false),
-    DiceRollerScreen(),
+  @override
+  void initState() {
+    super.initState();
+    _loadSelectedCharacter();
+  }
+
+  Future<void> _loadSelectedCharacter() async {
+    try {
+      // Get first character as default (in a real app, would persist selection)
+      final characters = await _dbService.getAllCharactersList();
+      if (characters.isNotEmpty && mounted) {
+        setState(() {
+          _selectedCharacter = characters.first;
+        });
+      }
+    } catch (e) {
+      // Silently fail, user can select character later
+    }
+  }
+
+  List<Widget> get _screens => [
+    const CharacterListScreen(isMasterMode: false),
+    const DiceRollerScreen(),
+    if (_selectedCharacter != null)
+      ShopScreen(character: _selectedCharacter!)
+    else
+      const Center(
+        child: Text(
+          'Selecione um personagem primeiro',
+          style: TextStyle(color: AppTheme.coldGray),
+        ),
+      ),
+    const PlayerOptionsScreen(),
   ];
 
   @override
@@ -28,6 +65,18 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
             _currentIndex = index;
           });
         },
+        backgroundColor: AppTheme.abyssalBlack,
+        selectedItemColor: AppTheme.ritualRed,
+        unselectedItemColor: AppTheme.coldGray,
+        selectedLabelStyle: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 10,
+        ),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
@@ -36,6 +85,14 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.casino),
             label: 'Dados',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.store),
+            label: 'Loja',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Opções',
           ),
         ],
       ),

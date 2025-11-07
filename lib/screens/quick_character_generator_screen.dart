@@ -283,6 +283,8 @@ class _QuickCharacterGeneratorScreenState
         inteligencia: atributos['int']!,
         presenca: atributos['pre']!,
         iniciativaBase: iniciativaBase,
+        pericias: {},
+        poderes: [],
         inventario: [],
       );
 
