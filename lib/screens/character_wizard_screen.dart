@@ -5,6 +5,7 @@ import '../models/skill.dart';
 import '../services/local_database_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
+import 'dart:async';
 
 /// Wizard de criação de personagem com tema Hexatombe
 class CharacterWizardScreen extends StatefulWidget {
@@ -128,29 +129,44 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
             ],
           ),
         ),
-        body: Column(
+        body: Stack(
           children: [
-            // Progress indicator
-            _buildProgressIndicator(),
+            Column(
+              children: [
+                // Progress indicator
+                _buildProgressIndicator(),
 
-            // Content
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildStep1BasicInfo(),
-                  _buildStep2OriginClass(),
-                  _buildStep3Attributes(),
-                  _buildStep4Stats(),
-                  _buildStep5Skills(),
-                  _buildStep6Review(),
-                ],
-              ),
+                // Content
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _buildStep1BasicInfo(),
+                      _buildStep2OriginClass(),
+                      _buildStep3Attributes(),
+                      _buildStep4Stats(),
+                      _buildStep5Skills(),
+                      _buildStep6Review(),
+                    ],
+                  ),
+                ),
+
+                // Navigation buttons
+                _buildNavigationButtons(),
+              ],
             ),
-
-            // Navigation buttons
-            _buildNavigationButtons(),
+            // Loading overlay
+            if (_isLoading)
+              Container(
+                color: AppTheme.abyssalBlack.withOpacity(0.8),
+                child: const Center(
+                  child: HexLoading.large(
+                    color: AppTheme.ritualRed,
+                    message: 'Salvando Agente...',
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -159,25 +175,52 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
 
   Widget _buildProgressIndicator() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: List.generate(_totalSteps, (index) {
-          final isActive = index == _currentStep;
-          final isCompleted = index < _currentStep;
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: List.generate(_totalSteps, (index) {
+              final isActive = index == _currentStep;
+              final isCompleted = index < _currentStep;
 
-          return Expanded(
-            child: Container(
-              height: 4,
-              margin: EdgeInsets.only(right: index < _totalSteps - 1 ? 8 : 0),
-              decoration: BoxDecoration(
-                color: isCompleted || isActive
-                    ? AppTheme.ritualRed
-                    : AppTheme.coldGray.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
+              return Expanded(
+                child: Container(
+                  height: 6,
+                  margin: EdgeInsets.only(right: index < _totalSteps - 1 ? 8 : 0),
+                  decoration: BoxDecoration(
+                    color: isCompleted || isActive
+                        ? AppTheme.ritualRed
+                        : AppTheme.coldGray.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(3),
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.ritualRed.withOpacity(0.4),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
+                ).animate().fadeIn(duration: 300.ms, delay: (index * 50).ms),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              'Progresso: ${(_currentStep + 1)} de $_totalSteps',
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppTheme.coldGray,
+                fontFamily: 'Montserrat',
+                letterSpacing: 0.5,
               ),
-            ).animate().fadeIn(duration: 300.ms, delay: (index * 50).ms),
-          );
-        }),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -403,12 +446,30 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
             glowEffect: true,
             glowColor: AppTheme.alertYellow,
             ritualCorners: true,
-            padding: const EdgeInsets.all(20),
-            child: const Column(
+            child: Column(
               children: [
-                Icon(Icons.school, color: AppTheme.alertYellow, size: 48),
-                SizedBox(height: 16),
-                Text(
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppTheme.alertYellow.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.alertYellow.withOpacity(0.4),
+                        blurRadius: 12,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.school_rounded,
+                    color: AppTheme.alertYellow,
+                    size: 56,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
                   'PERÍCIAS',
                   style: TextStyle(
                     fontSize: 20,
@@ -418,14 +479,48 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
                     letterSpacing: 2,
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Você poderá configurar as perícias após criar o personagem',
+                const SizedBox(height: 12),
+                const Text(
+                  'Você poderá configurar as perícias após criar o personagem. Isso permite ajustar habilidades específicas conforme sua estratégia.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
                     color: AppTheme.coldGray,
                     fontFamily: 'Montserrat',
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.alertYellow.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: AppTheme.alertYellow.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.info_rounded,
+                        color: AppTheme.alertYellow,
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Dica: Escolha perícias que complementem sua classe e origem.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.alertYellow,
+                            fontFamily: 'Montserrat',
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -545,15 +640,15 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
             filled: true,
             fillColor: AppTheme.obscureGray,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               borderSide: const BorderSide(color: AppTheme.ritualRed, width: 2),
             ),
           ),
@@ -572,11 +667,11 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
         filled: true,
         fillColor: AppTheme.obscureGray,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
         ),
       ),
@@ -646,7 +741,7 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
               height: 60,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
                 boxShadow: [
                   BoxShadow(
                     color: color.withOpacity(0.35),
@@ -731,52 +826,66 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
   }
 
   Widget _buildNavigationButtons() {
+    final isFinalStep = _currentStep == _totalSteps - 1;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.abyssalBlack.withOpacity(0.9),
+        color: AppTheme.abyssalBlack.withOpacity(0.95),
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.coldGray.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.abyssalBlack.withOpacity(0.5),
-            blurRadius: 10,
+            color: AppTheme.abyssalBlack.withOpacity(0.6),
+            blurRadius: 12,
             offset: const Offset(0, -5),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          if (_currentStep > 0)
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            if (_currentStep > 0)
+              Expanded(
+                child: GlowingButton(
+                  label: 'Anterior',
+                  icon: Icons.arrow_back_rounded,
+                  onPressed: _previousStep,
+                  style: GlowingButtonStyle.secondary,
+                ),
+              ),
+            if (_currentStep > 0) const SizedBox(width: 12),
             Expanded(
               child: GlowingButton(
-                label: 'Voltar',
-                icon: Icons.arrow_back,
-                onPressed: _previousStep,
-                style: GlowingButtonStyle.secondary,
+                label: isFinalStep ? 'Finalizar' : 'Próximo',
+                icon: isFinalStep ? Icons.check_circle_rounded : Icons.arrow_forward_rounded,
+                onPressed: isFinalStep ? _saveCharacter : _nextStep,
+                isLoading: _isLoading,
+                pulsateGlow: isFinalStep,
+                style: isFinalStep
+                    ? GlowingButtonStyle.primary
+                    : GlowingButtonStyle.primary,
               ),
             ),
-          if (_currentStep > 0) const SizedBox(width: 16),
-          Expanded(
-            child: GlowingButton(
-              label: _currentStep == _totalSteps - 1 ? 'Salvar' : 'Próximo',
-              icon: _currentStep == _totalSteps - 1 ? Icons.save : Icons.arrow_forward,
-              onPressed: _currentStep == _totalSteps - 1 ? _saveCharacter : _nextStep,
-              isLoading: _isLoading,
-              pulsateGlow: _currentStep == _totalSteps - 1,
-              style: GlowingButtonStyle.primary,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Future<void> _saveCharacter() async {
     if (_nomeController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, preencha o nome do personagem'),
-          backgroundColor: AppTheme.ritualRed,
-        ),
+      _showModernDialog(
+        title: 'VALIDAÇÃO',
+        message: 'Por favor, preencha o nome do personagem',
+        icon: Icons.warning_rounded,
+        accentColor: AppTheme.alertYellow,
+        hasConfirmButton: true,
       );
       return;
     }
@@ -818,23 +927,28 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.character == null ? 'Agente criado com sucesso!' : 'Agente atualizado!',
-            ),
-            backgroundColor: AppTheme.mutagenGreen,
-          ),
+        _showModernDialog(
+          title: widget.character == null ? 'SUCESSO' : 'ATUALIZADO',
+          message: widget.character == null
+            ? 'Agente criado com sucesso! Prepare-se para a jornada.'
+            : 'Agente atualizado com êxito.',
+          icon: Icons.check_circle_rounded,
+          accentColor: AppTheme.mutagenGreen,
+          hasConfirmButton: true,
+          onConfirm: () {
+            Navigator.pop(context);
+            Navigator.pop(context, true);
+          },
         );
-        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro: $e'),
-            backgroundColor: AppTheme.ritualRed,
-          ),
+        _showModernDialog(
+          title: 'ERRO',
+          message: 'Falha ao salvar: ${e.toString()}',
+          icon: Icons.error_rounded,
+          accentColor: AppTheme.ritualRed,
+          hasConfirmButton: true,
         );
       }
     } finally {
@@ -842,5 +956,101 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showModernDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color accentColor,
+    bool hasConfirmButton = false,
+    VoidCallback? onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => Dialog(
+        backgroundColor: AppTheme.obscureGray,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.obscureGray, AppTheme.industrialGray],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withOpacity(0.3),
+                blurRadius: 16,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: accentColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accentColor.withOpacity(0.4),
+                        blurRadius: 12,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 48,
+                    color: accentColor,
+                  ),
+                ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
+                const SizedBox(height: 20),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                    fontFamily: 'BebasNeue',
+                    letterSpacing: 2,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.coldGray,
+                    fontFamily: 'Montserrat',
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                GlowingButton(
+                  label: 'Confirmar',
+                  icon: Icons.check,
+                  onPressed: onConfirm ?? () => Navigator.pop(context),
+                  style: GlowingButtonStyle.primary,
+                  fullWidth: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
