@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/character.dart';
 import '../services/local_database_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/hex_loading.dart';
+import '../widgets/ritual_card.dart';
+import '../widgets/glowing_button.dart';
 
 class QuickCharacterGeneratorScreen extends StatefulWidget {
   const QuickCharacterGeneratorScreen({super.key});
@@ -327,162 +331,302 @@ class _QuickCharacterGeneratorScreenState
       appBar: AppBar(
         title: const Text('Gerador Rápido de Personagens'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.auto_awesome,
-                          color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 8),
-                      Text(
-                        'GERADOR DE NPCs',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
+          // Conteúdo principal
+          ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Header com apresentação
+              RitualCard(
+                glowEffect: true,
+                glowColor: AppTheme.ritualRed,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          color: AppTheme.ritualRed,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'GERADOR DE NPCs',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: AppTheme.ritualRed,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Gere personagens rapidamente para combates e encontros. '
+                      'Deixe os campos em branco para geração totalmente aleatória.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.coldGray,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Gere personagens rapidamente para combates e encontros. '
-                    'Deixe os campos em branco para geração totalmente aleatória.',
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Nível de Poder
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Nível de Poder',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 12),
-                  ..._niveisPoder.map((nivel) {
-                    return RadioListTile<String>(
-                      value: nivel,
-                      groupValue: _nivelPoder,
-                      onChanged: (value) {
-                        setState(() {
-                          _nivelPoder = value!;
-                        });
-                      },
-                      title: Text(nivel),
-                      dense: true,
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Campos Opcionais
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Personalização (Opcional)',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _nomeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome Personalizado',
-                      hintText: 'Ex: Capanga 3, Cultista Alpha',
-                      helperText: 'Deixe vazio para gerar automaticamente',
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _iniciativaBaseController,
-                    decoration: const InputDecoration(
-                      labelText: 'Iniciativa Base',
-                      hintText: 'Ex: 15',
-                      helperText: 'Deixe vazio para gerar automaticamente',
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-          // Botão Gerar
-          ElevatedButton.icon(
-            onPressed: _isGenerating ? null : _gerarPersonagem,
-            icon: _isGenerating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.auto_awesome),
-            label: Text(_isGenerating ? 'Gerando...' : 'Gerar Personagem'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.all(16),
-            ),
-          ),
-          const SizedBox(height: 16),
+              // Seleção de Nível de Poder
+              RitualCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nível de Poder',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    ..._niveisPoder.asMap().entries.map((entry) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildPowerLevelOption(entry.key, entry.value),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
-          // Informações
-          Card(
-            color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline,
-                          size: 16, color: Colors.blue[300]),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Como funciona',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue[300],
+              // Campos Opcionais
+              RitualCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Personalização (Opcional)',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _nomeController,
+                      decoration: InputDecoration(
+                        labelText: 'Nome Personalizado',
+                        hintText: 'Ex: Capanga 3, Cultista Alpha',
+                        helperText: 'Deixe vazio para gerar automaticamente',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppTheme.ritualRed,
+                            width: 2,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '• Atributos, Status e Créditos são gerados automaticamente baseados no nível de poder\n'
-                    '• Origem, Classe e Trilha são escolhidos aleatoriamente\n'
-                    '• O personagem é salvo imediatamente no banco de dados\n'
-                    '• Use para gerar NPCs, inimigos e aliados rapidamente',
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _iniciativaBaseController,
+                      decoration: InputDecoration(
+                        labelText: 'Iniciativa Base',
+                        hintText: 'Ex: 15',
+                        helperText: 'Deixe vazio para gerar automaticamente',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: AppTheme.ritualRed,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(height: 24),
+
+              // Botão Gerar com GlowingButton
+              GlowingButton(
+                label: _isGenerating ? 'Gerando Personagem...' : 'Gerar Personagem',
+                onPressed: _isGenerating ? null : _gerarPersonagem,
+                icon: Icons.auto_awesome,
+                isLoading: _isGenerating,
+                fullWidth: true,
+                pulsateGlow: !_isGenerating,
+              ),
+              const SizedBox(height: 20),
+
+              // Informações com design moderno
+              RitualCard(
+                glowColor: AppTheme.etherealPurple,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.etherealPurple.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.info_outline,
+                            color: AppTheme.etherealPurple,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Como Funciona',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppTheme.etherealPurple,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildInfoPoint(
+                      'Atributos, Status e Créditos são gerados automaticamente baseados no nível de poder',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoPoint(
+                      'Origem, Classe e Trilha são escolhidos aleatoriamente',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoPoint(
+                      'O personagem é salvo imediatamente no banco de dados',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoPoint(
+                      'Use para gerar NPCs, inimigos e aliados rapidamente',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
+
+          // Loading Overlay
+          if (_isGenerating)
+            const HexLoadingOverlay(
+              message: 'Gerando personagem...',
+            ),
         ],
       ),
+    );
+  }
+
+  /// Constrói opção de nível de poder com estilo moderno
+  Widget _buildPowerLevelOption(int index, String nivel) {
+    final isSelected = _nivelPoder == nivel;
+    final colors = [
+      AppTheme.ritualRed,
+      AppTheme.chaoticMagenta,
+      AppTheme.etherealPurple,
+      AppTheme.alertYellow,
+    ];
+    final accentColor = colors[index % colors.length];
+
+    return GestureDetector(
+      onTap: () => setState(() => _nivelPoder = nivel),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? accentColor : AppTheme.industrialGray,
+            width: isSelected ? 2 : 1,
+          ),
+          color: isSelected
+              ? accentColor.withOpacity(0.1)
+              : AppTheme.industrialGray.withOpacity(0.3),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: accentColor.withOpacity(0.3),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: accentColor,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: accentColor,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              nivel,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: isSelected ? accentColor : AppTheme.paleWhite,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Constrói ponto de informação com ícone
+  Widget _buildInfoPoint(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.etherealPurple,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppTheme.coldGray,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
