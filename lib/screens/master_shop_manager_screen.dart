@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -84,7 +83,7 @@ class _MasterShopManagerScreenState extends State<MasterShopManagerScreen> {
           ],
         ),
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: HexLoading.large())
             : _shops.isEmpty
                 ? _buildEmptyState()
                 : _buildShopsList(),
@@ -100,52 +99,12 @@ class _MasterShopManagerScreenState extends State<MasterShopManagerScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppTheme.obscureGray,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.alertYellow.withOpacity(0.35),
-                  blurRadius: 6,
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.store,
-              size: 60,
-              color: AppTheme.alertYellow,
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'NENHUMA LOJA',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.coldGray,
-              fontFamily: 'BebasNeue',
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Crie ou gere uma loja para começar',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppTheme.coldGray,
-              fontFamily: 'Montserrat',
-            ),
-          ),
-        ],
-      ),
+    return EmptyState(
+      icon: Icons.store,
+      title: 'NENHUMA LOJA',
+      message: 'Crie ou gere uma loja para começar',
+      actionLabel: 'Gerar Loja',
+      onAction: _showGenerateShopDialog,
     );
   }
 
@@ -220,51 +179,7 @@ class _MasterShopManagerScreenState extends State<MasterShopManagerScreen> {
                     ],
                   ),
                 ),
-                PopupMenuButton(
-                  icon: const Icon(Icons.more_vert, color: AppTheme.coldGray),
-                  color: AppTheme.obscureGray,
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, color: AppTheme.etherealPurple, size: 20),
-                          SizedBox(width: 12),
-                          Text('Editar', style: TextStyle(color: AppTheme.paleWhite)),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'export',
-                      child: Row(
-                        children: [
-                          Icon(Icons.download, color: AppTheme.mutagenGreen, size: 20),
-                          SizedBox(width: 12),
-                          Text('Exportar', style: TextStyle(color: AppTheme.paleWhite)),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: AppTheme.ritualRed, size: 20),
-                          SizedBox(width: 12),
-                          Text('Excluir', style: TextStyle(color: AppTheme.paleWhite)),
-                        ],
-                      ),
-                    ),
-                  ],
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _editShop(shop);
-                    } else if (value == 'export') {
-                      _exportShop(shop);
-                    } else if (value == 'delete') {
-                      _deleteShop(shop);
-                    }
-                  },
-                ),
+                _buildShopActionMenu(shop),
               ],
             ),
             if (shop.descricao.isNotEmpty) ...[
@@ -286,12 +201,60 @@ class _MasterShopManagerScreenState extends State<MasterShopManagerScreen> {
     );
   }
 
+  Widget _buildShopActionMenu(Shop shop) {
+    return PopupMenuButton(
+      icon: const Icon(Icons.more_vert, color: AppTheme.coldGray),
+      color: AppTheme.obscureGray,
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit, color: AppTheme.etherealPurple, size: 20),
+              SizedBox(width: 12),
+              Text('Editar', style: TextStyle(color: AppTheme.paleWhite)),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'export',
+          child: Row(
+            children: [
+              Icon(Icons.download, color: AppTheme.mutagenGreen, size: 20),
+              SizedBox(width: 12),
+              Text('Exportar', style: TextStyle(color: AppTheme.paleWhite)),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete, color: AppTheme.ritualRed, size: 20),
+              SizedBox(width: 12),
+              Text('Excluir', style: TextStyle(color: AppTheme.paleWhite)),
+            ],
+          ),
+        ),
+      ],
+      onSelected: (value) {
+        if (value == 'edit') {
+          _editShop(shop);
+        } else if (value == 'export') {
+          _exportShop(shop);
+        } else if (value == 'delete') {
+          _deleteShop(shop);
+        }
+      },
+    );
+  }
+
   Widget _buildBadge(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(7),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.35),
@@ -319,106 +282,85 @@ class _MasterShopManagerScreenState extends State<MasterShopManagerScreen> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => Dialog(
-          backgroundColor: Colors.transparent,
-          child: RitualCard(
-            glowEffect: true,
-            glowColor: AppTheme.mutagenGreen,
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.auto_awesome, color: AppTheme.mutagenGreen, size: 48),
-                const SizedBox(height: 16),
-                const Text(
-                  'GERAR LOJA AUTOMÁTICA',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.mutagenGreen,
-                    fontFamily: 'BebasNeue',
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                DropdownButtonFormField<String>(
-                  value: selectedType,
-                  decoration: InputDecoration(
-                    labelText: 'Tipo de Loja',
-                    labelStyle: const TextStyle(color: AppTheme.coldGray),
-                    filled: true,
-                    fillColor: AppTheme.obscureGray,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 2),
+        builder: (context, setDialogState) => _ModernDialog(
+          title: 'GERAR LOJA AUTOMÁTICA',
+          icon: Icons.auto_awesome,
+          glowColor: AppTheme.mutagenGreen,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                decoration: _buildInputDecoration('Tipo de Loja', Icons.store, AppTheme.mutagenGreen),
+                dropdownColor: AppTheme.obscureGray,
+                style: const TextStyle(color: AppTheme.paleWhite),
+                items: ['Armeiro', 'Curas', 'Materiais', 'Munições', 'Geral']
+                    .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                    .toList(),
+                onChanged: (value) {
+                  setDialogState(() {
+                    selectedType = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quantidade de Itens: $itemCount',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.paleWhite,
+                      fontFamily: 'Montserrat',
                     ),
                   ),
-                  dropdownColor: AppTheme.obscureGray,
-                  style: const TextStyle(color: AppTheme.paleWhite),
-                  items: ['Armeiro', 'Curas', 'Materiais', 'Munições', 'Geral']
-                      .map((type) => DropdownMenuItem(value: type, child: Text(type)))
-                      .toList(),
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedType = value!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Quantidade de Itens: $itemCount',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.paleWhite,
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                    Slider(
-                      value: itemCount.toDouble(),
-                      min: 5,
-                      max: 50,
-                      divisions: 9,
-                      activeColor: AppTheme.mutagenGreen,
-                      inactiveColor: AppTheme.obscureGray,
-                      onChanged: (value) {
-                        setDialogState(() {
-                          itemCount = value.toInt();
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GlowingButton(
-                        label: 'Cancelar',
-                        onPressed: () => Navigator.pop(context),
-                        style: GlowingButtonStyle.secondary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GlowingButton(
-                        label: 'Gerar',
-                        icon: Icons.auto_awesome,
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _generateShop(selectedType, itemCount);
-                        },
-                        style: GlowingButtonStyle.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+                  Slider(
+                    value: itemCount.toDouble(),
+                    min: 5,
+                    max: 50,
+                    divisions: 9,
+                    activeColor: AppTheme.mutagenGreen,
+                    inactiveColor: AppTheme.obscureGray,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        itemCount = value.toInt();
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          onConfirm: () {
+            Navigator.pop(context);
+            _generateShop(selectedType, itemCount);
+          },
+          confirmLabel: 'Gerar',
+          confirmIcon: Icons.auto_awesome,
         ),
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String label, IconData icon, Color color) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppTheme.coldGray),
+      prefixIcon: Icon(icon, color: color, size: 20),
+      filled: true,
+      fillColor: AppTheme.obscureGray,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: color, width: 2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: color, width: 2),
       ),
     );
   }
@@ -538,61 +480,13 @@ class _MasterShopManagerScreenState extends State<MasterShopManagerScreen> {
   Future<void> _deleteShop(Shop shop) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: RitualCard(
-          glowEffect: true,
-          glowColor: AppTheme.ritualRed,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.warning, color: AppTheme.ritualRed, size: 48),
-              const SizedBox(height: 16),
-              const Text(
-                'EXCLUIR LOJA',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.ritualRed,
-                  fontFamily: 'BebasNeue',
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Deseja excluir "${shop.nome}"?',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.paleWhite,
-                  fontFamily: 'Montserrat',
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: GlowingButton(
-                      label: 'Cancelar',
-                      onPressed: () => Navigator.pop(context, false),
-                      style: GlowingButtonStyle.secondary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GlowingButton(
-                      label: 'Excluir',
-                      icon: Icons.delete,
-                      onPressed: () => Navigator.pop(context, true),
-                      style: GlowingButtonStyle.danger,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+      builder: (context) => _ConfirmDialog(
+        title: 'EXCLUIR LOJA',
+        message: 'Deseja excluir "${shop.nome}"?',
+        icon: Icons.warning,
+        glowColor: AppTheme.ritualRed,
+        confirmLabel: 'Excluir',
+        confirmStyle: GlowingButtonStyle.danger,
       ),
     );
 
@@ -679,105 +573,157 @@ class _ShopFormDialogState extends State<_ShopFormDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: RitualCard(
-        glowEffect: true,
-        glowColor: AppTheme.alertYellow,
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'CRIAR LOJA',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.alertYellow,
-                  fontFamily: 'BebasNeue',
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _nomeController,
-                style: const TextStyle(color: AppTheme.paleWhite),
-                decoration: InputDecoration(
-                  labelText: 'Nome da Loja',
-                  labelStyle: const TextStyle(color: AppTheme.coldGray),
-                  filled: true,
-                  fillColor: AppTheme.obscureGray,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
-                  ),
-                ),
-                validator: (value) => value?.isEmpty == true ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descricaoController,
-                style: const TextStyle(color: AppTheme.paleWhite),
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Descrição',
-                  labelStyle: const TextStyle(color: AppTheme.coldGray),
-                  filled: true,
-                  fillColor: AppTheme.obscureGray,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedTipo,
-                decoration: InputDecoration(
-                  labelText: 'Tipo',
-                  filled: true,
-                  fillColor: AppTheme.obscureGray,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                dropdownColor: AppTheme.obscureGray,
-                style: const TextStyle(color: AppTheme.paleWhite),
-                items: ['Armeiro', 'Curas', 'Materiais', 'Munições', 'Geral', 'Personalizada']
-                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedTipo = value!),
-              ),
-              const SizedBox(height: 24),
-              Row(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+          maxWidth: 500,
+        ),
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: AppTheme.alertYellow,
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: 20 + MediaQuery.of(context).viewInsets.bottom * 0.5,
+          ),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: GlowingButton(
-                      label: 'Cancelar',
-                      onPressed: () => Navigator.pop(context),
-                      style: GlowingButtonStyle.secondary,
+                  Text(
+                    widget.shop == null ? 'CRIAR LOJA' : 'EDITAR LOJA',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.alertYellow,
+                      fontFamily: 'BebasNeue',
+                      letterSpacing: 2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _nomeController,
+                    style: const TextStyle(color: AppTheme.paleWhite),
+                    decoration: InputDecoration(
+                      labelText: 'Nome da Loja',
+                      labelStyle: const TextStyle(color: AppTheme.coldGray),
+                      filled: true,
+                      fillColor: AppTheme.obscureGray,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
+                      ),
+                    ),
+                    validator: (value) => value?.isEmpty == true ? 'Obrigatório' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 100),
+                    child: TextFormField(
+                      controller: _descricaoController,
+                      style: const TextStyle(color: AppTheme.paleWhite, fontSize: 13),
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      decoration: InputDecoration(
+                        labelText: 'Descrição',
+                        labelStyle: const TextStyle(color: AppTheme.coldGray),
+                        filled: true,
+                        fillColor: AppTheme.obscureGray,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GlowingButton(
-                      label: 'Criar',
-                      icon: Icons.check,
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          Navigator.pop(context, {
-                            'nome': _nomeController.text,
-                            'descricao': _descricaoController.text,
-                            'tipo': _selectedTipo,
-                          });
-                        }
-                      },
-                      style: GlowingButtonStyle.primary,
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedTipo,
+                    decoration: InputDecoration(
+                      labelText: 'Tipo',
+                      filled: true,
+                      fillColor: AppTheme.obscureGray,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
+                      ),
                     ),
+                    dropdownColor: AppTheme.obscureGray,
+                    style: const TextStyle(color: AppTheme.paleWhite),
+                    items: ['Armeiro', 'Curas', 'Materiais', 'Munições', 'Geral', 'Personalizada']
+                        .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                        .toList(),
+                    onChanged: (value) => setState(() => _selectedTipo = value!),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: GlowingButton(
+                            label: 'Cancelar',
+                            onPressed: () => Navigator.pop(context),
+                            style: GlowingButtonStyle.secondary,
+                            width: 110,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: GlowingButton(
+                            label: widget.shop == null ? 'Criar' : 'Salvar',
+                            icon: Icons.check,
+                            onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                Navigator.pop(context, {
+                                  'nome': _nomeController.text,
+                                  'descricao': _descricaoController.text,
+                                  'tipo': _selectedTipo,
+                                });
+                              }
+                            },
+                            style: GlowingButtonStyle.primary,
+                            width: 110,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+        ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+      ),
     );
   }
 }
@@ -827,23 +773,10 @@ class _ShopEditorScreenState extends State<ShopEditorScreen> {
           ],
         ),
         body: _items.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.inventory_2, size: 80, color: AppTheme.coldGray),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'NENHUM ITEM',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.coldGray,
-                        fontFamily: 'BebasNeue',
-                      ),
-                    ),
-                  ],
-                ),
+            ? EmptyState(
+                icon: Icons.inventory_2,
+                title: 'NENHUM ITEM',
+                message: 'Adicione itens para começar',
               )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -1030,145 +963,98 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   Widget build(BuildContext context) {
     final isEditing = widget.item != null;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: RitualCard(
-        glowEffect: true,
-        glowColor: AppTheme.etherealPurple,
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return _ModernDialog(
+      title: isEditing ? 'EDITAR ITEM' : 'ADICIONAR ITEM',
+      icon: isEditing ? Icons.edit : Icons.add_shopping_cart,
+      glowColor: AppTheme.etherealPurple,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Nome
+            TextFormField(
+              controller: _nomeController,
+              style: const TextStyle(color: AppTheme.paleWhite),
+              decoration: _buildInputDecoration('Nome do Item', Icons.label, AppTheme.etherealPurple),
+              validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Tipo
+            DropdownButtonFormField<String>(
+              value: _selectedTipo,
+              decoration: _buildInputDecoration('Tipo', Icons.category, AppTheme.etherealPurple),
+              dropdownColor: AppTheme.obscureGray,
+              style: const TextStyle(color: AppTheme.paleWhite),
+              items: _tipos.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+              onChanged: (value) => setState(() => _selectedTipo = value!),
+            ),
+            const SizedBox(height: 16),
+
+            // Descrição
+            TextFormField(
+              controller: _descricaoController,
+              style: const TextStyle(color: AppTheme.paleWhite),
+              maxLines: 3,
+              decoration: _buildInputDecoration('Descrição', Icons.description, AppTheme.etherealPurple),
+            ),
+            const SizedBox(height: 16),
+
+            // Preço e Patente
+            Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      isEditing ? Icons.edit : Icons.add_shopping_cart,
-                      color: AppTheme.etherealPurple,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      isEditing ? 'EDITAR ITEM' : 'ADICIONAR ITEM',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.etherealPurple,
-                        fontFamily: 'BebasNeue',
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ],
+                Expanded(
+                  child: TextFormField(
+                    controller: _precoController,
+                    style: const TextStyle(color: AppTheme.paleWhite),
+                    keyboardType: TextInputType.number,
+                    decoration: _buildInputDecoration('Preço (¢)', Icons.attach_money, AppTheme.etherealPurple),
+                    validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
+                  ),
                 ),
-                const SizedBox(height: 24),
-
-                // Nome
-                TextFormField(
-                  controller: _nomeController,
-                  style: const TextStyle(color: AppTheme.paleWhite),
-                  decoration: _buildInputDecoration('Nome do Item', Icons.label),
-                  validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
-                ),
-                const SizedBox(height: 16),
-
-                // Tipo
-                DropdownButtonFormField<String>(
-                  value: _selectedTipo,
-                  decoration: _buildInputDecoration('Tipo', Icons.category),
-                  dropdownColor: AppTheme.obscureGray,
-                  style: const TextStyle(color: AppTheme.paleWhite),
-                  items: _tipos.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-                  onChanged: (value) => setState(() => _selectedTipo = value!),
-                ),
-                const SizedBox(height: 16),
-
-                // Descrição
-                TextFormField(
-                  controller: _descricaoController,
-                  style: const TextStyle(color: AppTheme.paleWhite),
-                  maxLines: 3,
-                  decoration: _buildInputDecoration('Descrição', Icons.description),
-                ),
-                const SizedBox(height: 16),
-
-                // Preço e Patente
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _precoController,
-                        style: const TextStyle(color: AppTheme.paleWhite),
-                        keyboardType: TextInputType.number,
-                        decoration: _buildInputDecoration('Preço (¢)', Icons.attach_money),
-                        validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _patenteController,
-                        style: const TextStyle(color: AppTheme.paleWhite),
-                        keyboardType: TextInputType.number,
-                        decoration: _buildInputDecoration('Patente', Icons.military_tech),
-                        validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Espaço
-                TextFormField(
-                  controller: _espacoController,
-                  style: const TextStyle(color: AppTheme.paleWhite),
-                  keyboardType: TextInputType.number,
-                  decoration: _buildInputDecoration('Espaço', Icons.inventory_2),
-                  validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
-                ),
-                const SizedBox(height: 24),
-
-                // Botões
-                Row(
-                  children: [
-                    Expanded(
-                      child: GlowingButton(
-                        label: 'Cancelar',
-                        onPressed: () => Navigator.pop(context),
-                        style: GlowingButtonStyle.secondary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GlowingButton(
-                        label: isEditing ? 'Salvar' : 'Adicionar',
-                        icon: isEditing ? Icons.check : Icons.add,
-                        onPressed: _submitForm,
-                        style: GlowingButtonStyle.primary,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _patenteController,
+                    style: const TextStyle(color: AppTheme.paleWhite),
+                    keyboardType: TextInputType.number,
+                    decoration: _buildInputDecoration('Patente', Icons.military_tech, AppTheme.etherealPurple),
+                    validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
+                  ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 16),
+
+            // Espaço
+            TextFormField(
+              controller: _espacoController,
+              style: const TextStyle(color: AppTheme.paleWhite),
+              keyboardType: TextInputType.number,
+              decoration: _buildInputDecoration('Espaço', Icons.inventory_2, AppTheme.etherealPurple),
+              validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
+            ),
+          ],
         ),
-      ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+      ),
+      onConfirm: _submitForm,
+      confirmLabel: isEditing ? 'Salvar' : 'Adicionar',
+      confirmIcon: isEditing ? Icons.check : Icons.add,
     );
   }
 
-  InputDecoration _buildInputDecoration(String label, IconData icon) {
+  InputDecoration _buildInputDecoration(String label, IconData icon, Color color) {
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(color: AppTheme.coldGray),
-      prefixIcon: Icon(icon, color: AppTheme.etherealPurple, size: 20),
+      prefixIcon: Icon(icon, color: color, size: 20),
       filled: true,
       fillColor: AppTheme.obscureGray,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppTheme.etherealPurple, width: 2),
+        borderSide: BorderSide(color: color, width: 2),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -1176,7 +1062,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppTheme.etherealPurple, width: 2),
+        borderSide: BorderSide(color: color, width: 2),
       ),
     );
   }
@@ -1196,5 +1082,172 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
 
       Navigator.pop(context, item);
     }
+  }
+}
+
+class _ModernDialog extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color glowColor;
+  final Widget child;
+  final VoidCallback onConfirm;
+  final String confirmLabel;
+  final IconData? confirmIcon;
+
+  const _ModernDialog({
+    required this.title,
+    required this.icon,
+    required this.glowColor,
+    required this.child,
+    required this.onConfirm,
+    required this.confirmLabel,
+    this.confirmIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+          maxWidth: 500,
+        ),
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: glowColor,
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: glowColor, size: 28),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: glowColor,
+                          fontFamily: 'BebasNeue',
+                          letterSpacing: 2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                child,
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GlowingButton(
+                        label: 'Cancelar',
+                        onPressed: () => Navigator.pop(context),
+                        style: GlowingButtonStyle.secondary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GlowingButton(
+                        label: confirmLabel,
+                        icon: confirmIcon,
+                        onPressed: onConfirm,
+                        style: GlowingButtonStyle.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+      ),
+    );
+  }
+}
+
+class _ConfirmDialog extends StatelessWidget {
+  final String title;
+  final String message;
+  final IconData icon;
+  final Color glowColor;
+  final String confirmLabel;
+  final GlowingButtonStyle confirmStyle;
+
+  const _ConfirmDialog({
+    required this.title,
+    required this.message,
+    required this.icon,
+    required this.glowColor,
+    required this.confirmLabel,
+    required this.confirmStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: RitualCard(
+        glowEffect: true,
+        glowColor: glowColor,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: glowColor, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: glowColor,
+                fontFamily: 'BebasNeue',
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.paleWhite,
+                fontFamily: 'Montserrat',
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: GlowingButton(
+                    label: 'Cancelar',
+                    onPressed: () => Navigator.pop(context, false),
+                    style: GlowingButtonStyle.secondary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GlowingButton(
+                    label: confirmLabel,
+                    onPressed: () => Navigator.pop(context, true),
+                    style: confirmStyle,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+    );
   }
 }

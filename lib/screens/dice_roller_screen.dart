@@ -172,7 +172,7 @@ class _DiceRollerScreenState extends State<DiceRollerScreen> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: AppTheme.ritualRed.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         boxShadow: [
                           BoxShadow(
                             color: AppTheme.ritualRed.withOpacity(0.4),
@@ -243,7 +243,7 @@ class _DiceRollerScreenState extends State<DiceRollerScreen> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: AppTheme.mutagenGreen.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         boxShadow: [
                           BoxShadow(
                             color: AppTheme.mutagenGreen.withOpacity(0.4),
@@ -425,7 +425,7 @@ class _DiceRollerScreenState extends State<DiceRollerScreen> {
                 AppTheme.abyssalBlack,
               ],
             ),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             boxShadow: [
               BoxShadow(
                 color: AppTheme.chaoticMagenta.withOpacity(0.5),
@@ -436,19 +436,19 @@ class _DiceRollerScreenState extends State<DiceRollerScreen> {
           ),
           child: Column(
             children: [
-              // Handle
+              // Handle com melhor design
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                width: 40,
-                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 14),
+                width: 42,
+                height: 5,
                 decoration: BoxDecoration(
                   color: AppTheme.coldGray,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
-              // Header
+              // Header com layout melhorado
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -462,14 +462,28 @@ class _DiceRollerScreenState extends State<DiceRollerScreen> {
                         letterSpacing: 2,
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_sweep, color: AppTheme.ritualRed),
-                      onPressed: () {
-                        setState(() => _history.clear());
-                        Navigator.pop(context);
-                      },
-                      tooltip: 'Limpar histórico',
-                    ),
+                    if (_history.isNotEmpty)
+                      Tooltip(
+                        message: 'Limpar histórico',
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() => _history.clear());
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.ritualRed.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(
+                              Icons.delete_sweep,
+                              color: AppTheme.ritualRed,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -477,14 +491,12 @@ class _DiceRollerScreenState extends State<DiceRollerScreen> {
               // List
               Expanded(
                 child: _history.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Nenhuma rolagem no histórico',
-                          style: TextStyle(
-                            color: AppTheme.coldGray,
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
+                    ? EmptyState(
+                        icon: Icons.history,
+                        title: 'Nenhuma Rolagem',
+                        message: 'Role alguns dados para ver o histórico aqui',
+                        actionLabel: null,
+                        onAction: null,
                       )
                     : ListView.builder(
                         controller: scrollController,
@@ -635,10 +647,12 @@ class _RollingAnimationDialogState extends State<_RollingAnimationDialog>
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
+      elevation: 0,
       child: RitualCard(
         glowEffect: true,
         glowColor: AppTheme.chaoticMagenta,
         pulsate: _isRolling,
+        ritualCorners: true,
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -658,7 +672,7 @@ class _RollingAnimationDialogState extends State<_RollingAnimationDialog>
                       AppTheme.chaoticMagenta,
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(6),
                   boxShadow: [
                     BoxShadow(
                       color: AppTheme.paleWhite.withOpacity(0.3),
@@ -765,7 +779,7 @@ class _HistoryCardRedesigned extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppTheme.ritualRed.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(7),
                   boxShadow: [
                     BoxShadow(
                       color: AppTheme.ritualRed.withOpacity(0.4),

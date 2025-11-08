@@ -165,7 +165,7 @@ class _CharacterFullEditorScreenState extends State<CharacterFullEditorScreen> w
                 child: SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: Loading(),
                 ),
               ),
           ],
@@ -204,10 +204,23 @@ class _CharacterFullEditorScreenState extends State<CharacterFullEditorScreen> w
       padding: const EdgeInsets.all(16),
       children: [
         // Informações Básicas
-        RitualCard(
-          glowEffect: true,
-          glowColor: AppTheme.alertYellow,
+        Container(
           margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.obscureGray, AppTheme.industrialGray],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.alertYellow.withOpacity(0.4),
+                blurRadius: 16,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,10 +277,23 @@ class _CharacterFullEditorScreenState extends State<CharacterFullEditorScreen> w
         ),
 
         // Atributos
-        RitualCard(
-          glowEffect: true,
-          glowColor: AppTheme.ritualRed,
+        Container(
           margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.obscureGray, AppTheme.industrialGray],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.ritualRed.withOpacity(0.4),
+                blurRadius: 16,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,10 +311,23 @@ class _CharacterFullEditorScreenState extends State<CharacterFullEditorScreen> w
         ),
 
         // Status
-        RitualCard(
-          glowEffect: true,
-          glowColor: AppTheme.mutagenGreen,
+        Container(
           margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.obscureGray, AppTheme.industrialGray],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.mutagenGreen.withOpacity(0.4),
+                blurRadius: 16,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,9 +356,22 @@ class _CharacterFullEditorScreenState extends State<CharacterFullEditorScreen> w
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        RitualCard(
-          glowEffect: true,
-          glowColor: AppTheme.etherealPurple,
+        Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.obscureGray, AppTheme.industrialGray],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.etherealPurple.withOpacity(0.4),
+                blurRadius: 16,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +411,7 @@ class _CharacterFullEditorScreenState extends State<CharacterFullEditorScreen> w
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppTheme.obscureGray.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         boxShadow: [
           BoxShadow(
             color: (level != 'nao_treinado' ? AppTheme.etherealPurple : AppTheme.coldGray).withOpacity(0.35),
@@ -700,15 +752,15 @@ class _CharacterFullEditorScreenState extends State<CharacterFullEditorScreen> w
       filled: true,
       fillColor: AppTheme.obscureGray,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
       ),
     );
@@ -819,7 +871,7 @@ class _CharacterFullEditorScreenState extends State<CharacterFullEditorScreen> w
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.35),
@@ -1018,9 +1070,27 @@ class _PowerFormDialogState extends State<_PowerFormDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: RitualCard(
-        glowEffect: true,
-        glowColor: AppTheme.ritualRed,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.obscureGray, AppTheme.industrialGray],
+          ),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.ritualRed.withOpacity(0.4),
+              blurRadius: 24,
+              spreadRadius: 2,
+            ),
+            BoxShadow(
+              color: AppTheme.ritualRed.withOpacity(0.2),
+              blurRadius: 48,
+              spreadRadius: 4,
+            ),
+          ],
+        ),
         padding: const EdgeInsets.all(24),
         child: SingleChildScrollView(
           child: Column(
@@ -1041,11 +1111,19 @@ class _PowerFormDialogState extends State<_PowerFormDialog> {
               TextFormField(
                 controller: _nomeController,
                 style: const TextStyle(color: AppTheme.paleWhite),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nome do Poder',
-                  labelStyle: TextStyle(color: AppTheme.coldGray),
+                  labelStyle: const TextStyle(color: AppTheme.coldGray),
                   filled: true,
                   fillColor: AppTheme.obscureGray,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.ritualRed, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1054,21 +1132,37 @@ class _PowerFormDialogState extends State<_PowerFormDialog> {
                 controller: _descricaoController,
                 style: const TextStyle(color: AppTheme.paleWhite),
                 maxLines: 3,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Descrição',
-                  labelStyle: TextStyle(color: AppTheme.coldGray),
+                  labelStyle: const TextStyle(color: AppTheme.coldGray),
                   filled: true,
                   fillColor: AppTheme.obscureGray,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.ritualRed, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
 
               DropdownButtonFormField<String>(
                 value: _elemento,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Elemento',
                   filled: true,
                   fillColor: AppTheme.obscureGray,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.ritualRed, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                  ),
                 ),
                 dropdownColor: AppTheme.obscureGray,
                 style: const TextStyle(color: AppTheme.paleWhite),
@@ -1162,9 +1256,27 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: RitualCard(
-        glowEffect: true,
-        glowColor: AppTheme.mutagenGreen,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.obscureGray, AppTheme.industrialGray],
+          ),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.mutagenGreen.withOpacity(0.4),
+              blurRadius: 24,
+              spreadRadius: 2,
+            ),
+            BoxShadow(
+              color: AppTheme.mutagenGreen.withOpacity(0.2),
+              blurRadius: 48,
+              spreadRadius: 4,
+            ),
+          ],
+        ),
         padding: const EdgeInsets.all(24),
         child: SingleChildScrollView(
           child: Column(
@@ -1185,20 +1297,36 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
               TextFormField(
                 controller: _nomeController,
                 style: const TextStyle(color: AppTheme.paleWhite),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nome',
                   filled: true,
                   fillColor: AppTheme.obscureGray,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
 
               DropdownButtonFormField<String>(
                 value: _categoria,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Categoria',
                   filled: true,
                   fillColor: AppTheme.obscureGray,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                  ),
                 ),
                 dropdownColor: AppTheme.obscureGray,
                 style: const TextStyle(color: AppTheme.paleWhite),
@@ -1213,10 +1341,18 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                 controller: _descricaoController,
                 style: const TextStyle(color: AppTheme.paleWhite),
                 maxLines: 2,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Descrição',
                   filled: true,
                   fillColor: AppTheme.obscureGray,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1228,10 +1364,18 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                       controller: _precoController,
                       style: const TextStyle(color: AppTheme.paleWhite),
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Preço (¢)',
                         filled: true,
                         fillColor: AppTheme.obscureGray,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                        ),
                       ),
                     ),
                   ),
@@ -1241,10 +1385,18 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                       controller: _espacoController,
                       style: const TextStyle(color: AppTheme.paleWhite),
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Espaço',
                         filled: true,
                         fillColor: AppTheme.obscureGray,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                        ),
                       ),
                     ),
                   ),
@@ -1254,10 +1406,18 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                       controller: _quantidadeController,
                       style: const TextStyle(color: AppTheme.paleWhite),
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Qtd',
                         filled: true,
                         fillColor: AppTheme.obscureGray,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: const BorderSide(color: AppTheme.coldGray, width: 1),
+                        ),
                       ),
                     ),
                   ),

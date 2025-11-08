@@ -112,7 +112,7 @@ class _ShopScreenState extends State<ShopScreen> {
         backgroundColor: Colors.transparent,
         appBar: _buildAppBar(),
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: HexLoading.large(message: 'Carregando loja...'))
             : _currentShop == null
                 ? _buildNoShopState()
                 : Column(
@@ -173,40 +173,45 @@ class _ShopScreenState extends State<ShopScreen> {
     const maxInventorySpace = 100;
     final availableSpace = maxInventorySpace - _currentInventorySpace;
 
-    return Container(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.obscureGray.withOpacity(0.5),
-        border: Border(
-          bottom: BorderSide(
-            color: AppTheme.alertYellow.withOpacity(0.3),
-            width: 2,
-          ),
+      child: RitualCard(
+        glowEffect: false,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            _buildStatItem(
+              icon: Icons.attach_money,
+              label: 'CRÉDITOS',
+              value: '${widget.character.creditos}',
+              color: AppTheme.alertYellow,
+            ),
+            Container(
+              width: 1,
+              height: 40,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              color: AppTheme.industrialGray,
+            ),
+            _buildStatItem(
+              icon: Icons.military_tech,
+              label: 'PATENTE',
+              value: widget.character.patente.split(' ').first,
+              color: AppTheme.etherealPurple,
+            ),
+            Container(
+              width: 1,
+              height: 40,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              color: AppTheme.industrialGray,
+            ),
+            _buildStatItem(
+              icon: Icons.inventory_2,
+              label: 'ESPAÇO',
+              value: '$availableSpace',
+              color: AppTheme.mutagenGreen,
+            ),
+          ],
         ),
-      ),
-      child: Row(
-        children: [
-          _buildStatItem(
-            icon: Icons.attach_money,
-            label: 'CRÉDITOS',
-            value: '${widget.character.creditos}',
-            color: AppTheme.alertYellow,
-          ),
-          const SizedBox(width: 16),
-          _buildStatItem(
-            icon: Icons.military_tech,
-            label: 'PATENTE',
-            value: widget.character.patente.split(' ').first,
-            color: AppTheme.etherealPurple,
-          ),
-          const SizedBox(width: 16),
-          _buildStatItem(
-            icon: Icons.inventory_2,
-            label: 'ESPAÇO',
-            value: '$availableSpace',
-            color: AppTheme.mutagenGreen,
-          ),
-        ],
       ),
     );
   }
@@ -218,49 +223,31 @@ class _ShopScreenState extends State<ShopScreen> {
     required Color color,
   }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 4,
-              spreadRadius: 0,
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: color,
+              fontFamily: 'SpaceMono',
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: color,
-                    fontFamily: 'BebasNeue',
-                    letterSpacing: 1,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                    fontFamily: 'BebasNeue',
-                  ),
-                ),
-              ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 9,
+              color: AppTheme.coldGray,
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -297,16 +284,16 @@ class _ShopScreenState extends State<ShopScreen> {
           filled: true,
           fillColor: AppTheme.obscureGray,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: AppTheme.alertYellow, width: 1.5),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: AppTheme.industrialGray, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.alertYellow, width: 2),
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: AppTheme.alertYellow, width: 1.5),
           ),
         ),
       ),
@@ -357,16 +344,22 @@ class _ShopScreenState extends State<ShopScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? chipColor.withOpacity(0.2)
+                    ? chipColor.withOpacity(0.15)
                     : AppTheme.obscureGray,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: isSelected ? chipColor.withOpacity(0.4) : AppTheme.coldGray.withOpacity(0.3),
-                    blurRadius: isSelected ? 6 : 4,
-                    spreadRadius: 0,
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isSelected ? chipColor : AppTheme.industrialGray,
+                  width: 1.5,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: chipColor.withOpacity(0.3),
+                          blurRadius: 4,
+                          spreadRadius: 0,
+                        ),
+                      ]
+                    : null,
               ),
               child: Row(
                 children: [
@@ -396,87 +389,20 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildNoShopState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppTheme.obscureGray,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.alertYellow.withOpacity(0.4),
-                  blurRadius: 6,
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.store,
-              size: 60,
-              color: AppTheme.alertYellow,
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'NENHUMA LOJA ATIVA',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.coldGray,
-              fontFamily: 'BebasNeue',
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Aguarde o mestre configurar uma loja',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppTheme.coldGray,
-              fontFamily: 'Montserrat',
-            ),
-          ),
-        ],
-      ),
+    return EmptyState(
+      icon: Icons.store_outlined,
+      title: 'Nenhuma loja ativa',
+      message: 'Aguarde o mestre configurar uma loja para realizar compras',
+      actionLabel: 'Importar Loja',
+      onAction: _importShop,
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.search_off,
-            size: 80,
-            color: AppTheme.coldGray,
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'NENHUM ITEM ENCONTRADO',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.coldGray,
-              fontFamily: 'BebasNeue',
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Tente ajustar os filtros',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppTheme.coldGray,
-              fontFamily: 'Montserrat',
-            ),
-          ),
-        ],
-      ),
+    return const EmptyState(
+      icon: Icons.search_off,
+      title: 'Nenhum item encontrado',
+      message: 'Tente ajustar os filtros de busca ou categoria',
     );
   }
 

@@ -8,6 +8,8 @@ import '../utils/name_generator.dart';
 import '../utils/power_generator.dart';
 import '../utils/item_generator.dart';
 import '../utils/skill_generator.dart';
+import '../widgets/ritual_card.dart';
+import '../widgets/glowing_button.dart';
 
 class AdvancedCharacterGeneratorScreen extends StatefulWidget {
   const AdvancedCharacterGeneratorScreen({super.key});
@@ -333,430 +335,347 @@ class _AdvancedCharacterGeneratorScreenState
             end: Alignment.bottomCenter,
             colors: [
               Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.surface,
             ],
           ),
         ),
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+            // Header com RitualCard
+            RitualCardLarge(
+              title: 'GERADOR AVANÇADO',
+              subtitle: 'Crie personagens completos instantaneamente',
+              icon: const Icon(
+                Icons.auto_awesome,
+                size: 48,
+                color: Colors.white,
               ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.auto_awesome,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'GERADOR AVANÇADO',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Crie personagens completos instantaneamente',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+              accentColor: Theme.of(context).colorScheme.primary,
             ),
 
             const SizedBox(height: 24),
 
-            // Categoria
-            Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.category,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'CATEGORIA',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ..._categorias.map((cat) {
-                      final IconData icon;
-                      final String desc;
-                      final Color color;
-
-                      switch (cat) {
-                        case 'Civil':
-                          icon = Icons.person;
-                          desc = '2 pts • Fraco, sem poderes';
-                          color = Colors.grey;
-                          break;
-                        case 'Mercenário':
-                          icon = Icons.shield_outlined;
-                          desc = '6 pts • Combate básico';
-                          color = Colors.blue;
-                          break;
-                        case 'Soldado':
-                          icon = Icons.military_tech;
-                          desc = '8 pts • Treinamento militar';
-                          color = Colors.green;
-                          break;
-                        case 'Chefe':
-                          icon = Icons.star;
-                          desc = '12 pts • Líder de grupo';
-                          color = Colors.orange;
-                          break;
-                        case 'Líder':
-                          icon = Icons.stars;
-                          desc = '15 pts • 20% chance de poder';
-                          color = Colors.purple;
-                          break;
-                        case 'Profissional':
-                          icon = Icons.workspace_premium;
-                          desc = '20 pts • Sempre tem poder';
-                          color = Colors.amber;
-                          break;
-                        case 'Deus':
-                          icon = Icons.flash_on;
-                          desc = '40 pts • Extremamente poderoso, 5-8 poderes';
-                          color = Colors.red;
-                          break;
-                        default:
-                          icon = Icons.help;
-                          desc = '';
-                          color = Colors.grey;
-                      }
-
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        color: _categoria == cat
-                            ? color.withOpacity(0.2)
-                            : null,
-                        child: RadioListTile<String>(
-                          value: cat,
-                          groupValue: _categoria,
-                          onChanged: (value) {
-                            setState(() {
-                              _categoria = value!;
-                            });
-                          },
-                          title: Row(
-                            children: [
-                              Icon(icon, color: color, size: 28),
-                              const SizedBox(width: 12),
-                              Text(
-                                cat,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: _categoria == cat ? color : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(left: 40, top: 4),
-                            child: Text(
-                              desc,
-                              style: TextStyle(fontSize: 12),
+            // Categoria com RitualCards
+            RitualCard(
+              glowEffect: true,
+              glowColor: Theme.of(context).colorScheme.primary,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.category,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'CATEGORIA',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
                             ),
-                          ),
-                          activeColor: color,
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ..._categorias.map((cat) {
+                    final IconData icon;
+                    final String desc;
+                    final Color color;
 
-            const SizedBox(height: 20),
+                    switch (cat) {
+                      case 'Civil':
+                        icon = Icons.person;
+                        desc = '2 pts • Fraco, sem poderes';
+                        color = Colors.grey;
+                        break;
+                      case 'Mercenário':
+                        icon = Icons.shield_outlined;
+                        desc = '6 pts • Combate básico';
+                        color = Colors.blue;
+                        break;
+                      case 'Soldado':
+                        icon = Icons.military_tech;
+                        desc = '8 pts • Treinamento militar';
+                        color = Colors.green;
+                        break;
+                      case 'Chefe':
+                        icon = Icons.star;
+                        desc = '12 pts • Líder de grupo';
+                        color = Colors.orange;
+                        break;
+                      case 'Líder':
+                        icon = Icons.stars;
+                        desc = '15 pts • 20% chance de poder';
+                        color = Colors.purple;
+                        break;
+                      case 'Profissional':
+                        icon = Icons.workspace_premium;
+                        desc = '20 pts • Sempre tem poder';
+                        color = Colors.amber;
+                        break;
+                      case 'Deus':
+                        icon = Icons.flash_on;
+                        desc = '40 pts • Extremamente poderoso, 5-8 poderes';
+                        color = Colors.red;
+                        break;
+                      default:
+                        icon = Icons.help;
+                        desc = '';
+                        color = Colors.grey;
+                    }
 
-            // Gênero
-            Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person_outline,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'GÊNERO',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.secondary,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _generos.entries.map((entry) {
-                        final isSelected = _genero == entry.key;
-                        return FilterChip(
-                          selected: isSelected,
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                entry.value['icon'] as IconData,
-                                size: 18,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Theme.of(context).colorScheme.secondary,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(entry.value['label'] as String),
-                            ],
-                          ),
-                          onSelected: (selected) {
-                            setState(() {
-                              _genero = entry.key;
-                            });
-                          },
-                          selectedColor: Theme.of(context).colorScheme.secondary,
-                          checkmarkColor: Colors.white,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : null,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Quantidade
-            Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.format_list_numbered,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'QUANTIDADE',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            if (_quantidade > 1) {
-                              setState(() {
-                                _quantidade--;
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.remove_circle),
-                          iconSize: 36,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              '$_quantidade',
-                              style: const TextStyle(
-                                fontSize: 48,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            if (_quantidade < 50) {
-                              setState(() {
-                                _quantidade++;
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.add_circle),
-                          iconSize: 36,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ],
-                    ),
-                    Slider(
-                      value: _quantidade.toDouble(),
-                      min: 1,
-                      max: 50,
-                      divisions: 49,
-                      label: '$_quantidade',
-                      onChanged: (value) {
+                    return RitualCard(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      glowEffect: _categoria == cat,
+                      glowColor: color,
+                      onTap: () {
                         setState(() {
-                          _quantidade = value.toInt();
+                          _categoria = cat;
                         });
                       },
-                    ),
-                  ],
-                ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Icon(icon, color: color, size: 28),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  cat,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: _categoria == cat ? color : null,
+                                  ),
+                                ),
+                                Text(
+                                  desc,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_categoria == cat)
+                            Icon(Icons.check_circle, color: color, size: 24),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Gênero com RitualCard
+            RitualCard(
+              glowEffect: true,
+              glowColor: Theme.of(context).colorScheme.secondary,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.person_outline,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'GÊNERO',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _generos.entries.map((entry) {
+                      final isSelected = _genero == entry.key;
+                      return RitualCard(
+                        margin: EdgeInsets.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        glowEffect: isSelected,
+                        glowColor: Theme.of(context).colorScheme.secondary,
+                        onTap: () {
+                          setState(() {
+                            _genero = entry.key;
+                          });
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              entry.value['icon'] as IconData,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(entry.value['label'] as String),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Quantidade com RitualCard
+            RitualCard(
+              glowEffect: true,
+              glowColor: Theme.of(context).colorScheme.primary,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.format_list_numbered,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'QUANTIDADE',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          if (_quantidade > 1) {
+                            setState(() {
+                              _quantidade--;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.remove_circle),
+                        iconSize: 36,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            '$_quantidade',
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          if (_quantidade < 50) {
+                            setState(() {
+                              _quantidade++;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.add_circle),
+                        iconSize: 36,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: _quantidade.toDouble(),
+                    min: 1,
+                    max: 50,
+                    divisions: 49,
+                    label: '$_quantidade',
+                    onChanged: (value) {
+                      setState(() {
+                        _quantidade = value.toInt();
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(height: 24),
 
-            // Botão Gerar
-            ElevatedButton(
+            // Botão Gerar com GlowingButton
+            GlowingButton.occult(
+              label: _isGenerating
+                  ? 'GERANDO...'
+                  : 'GERAR ${_quantidade} PERSONAGEM${_quantidade > 1 ? "S" : ""}',
               onPressed: _isGenerating ? null : _gerarPersonagens,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 8,
-              ),
-              child: _isGenerating
-                  ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.auto_awesome, size: 28),
-                        const SizedBox(width: 12),
-                        Text(
-                          _isGenerating
-                              ? 'GERANDO...'
-                              : 'GERAR ${_quantidade} PERSONAGEM${_quantidade > 1 ? "S" : ""}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
+              isLoading: _isGenerating,
+              icon: Icons.auto_awesome,
+              fullWidth: true,
+              height: 56,
             ),
 
             const SizedBox(height: 20),
 
-            // Info
-            Card(
-              color: Colors.blue.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.auto_awesome, color: Colors.blue[300]),
-                        const SizedBox(width: 12),
-                        Text(
-                          'SISTEMA INTELIGENTE DE GERAÇÃO',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[100],
-                            letterSpacing: 1.2,
-                          ),
+            // Info com RitualCard e diálogo moderno
+            RitualCard(
+              glowEffect: true,
+              glowColor: Colors.blue,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.auto_awesome, color: Colors.blue[300]),
+                      const SizedBox(width: 12),
+                      Text(
+                        'SISTEMA INTELIGENTE DE GERAÇÃO',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[100],
+                          letterSpacing: 1.2,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildInfoRow(Icons.face, '450+ nomes (incluindo 50 deuses e títulos)'),
-                    _buildInfoRow(Icons.flash_on, '110 poderes paranormais únicos'),
-                    _buildInfoRow(Icons.inventory, '165 itens (mundanos a divinos)'),
-                    _buildInfoRow(Icons.school, 'Perícias distribuídas por nível'),
-                    _buildInfoRow(Icons.trending_up, 'Atributos e status balanceados'),
-                    const SizedBox(height: 8),
-                    Text(
-                      '💡 Cada categoria gera personagens com poder proporcional:\n'
-                      '• Civil: 1-2 perícias, itens básicos, sem poderes\n'
-                      '• Soldado: 3-4 perícias, armas, 30% chance de poder\n'
-                      '• Profissional: 6-8 perícias, equipamento avançado, 2-3 poderes\n'
-                      '• Deus: 12-15 perícias, itens divinos, 5-8 poderes!',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.blue[100]?.withOpacity(0.9),
-                        height: 1.4,
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(Icons.face, '450+ nomes (incluindo 50 deuses e títulos)'),
+                  _buildInfoRow(Icons.flash_on, '110 poderes paranormais únicos'),
+                  _buildInfoRow(Icons.inventory, '165 itens (mundanos a divinos)'),
+                  _buildInfoRow(Icons.school, 'Perícias distribuídas por nível'),
+                  _buildInfoRow(Icons.trending_up, 'Atributos e status balanceados'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Cada categoria gera personagens com poder proporcional:\n'
+                    '• Civil: 1-2 perícias, itens básicos, sem poderes\n'
+                    '• Soldado: 3-4 perícias, armas, 30% chance de poder\n'
+                    '• Profissional: 6-8 perícias, equipamento avançado, 2-3 poderes\n'
+                    '• Deus: 12-15 perícias, itens divinos, 5-8 poderes!',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.blue[100]?.withValues(alpha: 0.9),
+                      height: 1.4,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -783,6 +702,63 @@ class _AdvancedCharacterGeneratorScreenState
           ),
         ],
       ),
+    );
+  }
+
+  void showModernDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    Color? accentColor,
+  }) {
+    final color = accentColor ?? Colors.blue;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(16),
+          child: RitualCard(
+            glowEffect: true,
+            glowColor: color,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 48, color: color),
+                const SizedBox(height: 16),
+                Text(
+                  title.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                    letterSpacing: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                GlowingButton(
+                  label: 'Fechar',
+                  onPressed: () => Navigator.pop(context),
+                  fullWidth: true,
+                  height: 44,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

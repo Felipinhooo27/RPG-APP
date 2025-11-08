@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
-import '../widgets/hex_card.dart';
+import '../widgets/ritual_card.dart';
 import 'player_home_screen.dart';
 import 'master_dashboard_screen.dart';
 
@@ -40,7 +40,7 @@ class ModeSelectionScreen extends StatelessWidget {
                         title: 'JOGADOR',
                         subtitle: 'Gerencie seus personagens',
                         description: 'Crie fichas, role dados e controle seu inventário',
-                        variant: HexCardVariant.ritual,
+                        accentColor: AppTheme.ritualRed,
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -61,7 +61,7 @@ class ModeSelectionScreen extends StatelessWidget {
                         title: 'MESTRE',
                         subtitle: 'Controle total da campanha',
                         description: 'Gerencie personagens, combate e anotações',
-                        variant: HexCardVariant.occult,
+                        accentColor: AppTheme.chaoticMagenta,
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -310,13 +310,13 @@ class _FloatingParticle extends StatelessWidget {
   }
 }
 
-/// Large mode selection card with glowing border
-class _ModeCard extends StatefulWidget {
+/// Large mode selection card with RitualCard for modern Hexatombe design
+class _ModeCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final String description;
-  final HexCardVariant variant;
+  final Color accentColor;
   final VoidCallback onPressed;
 
   const _ModeCard({
@@ -324,118 +324,88 @@ class _ModeCard extends StatefulWidget {
     required this.title,
     required this.subtitle,
     required this.description,
-    required this.variant,
+    required this.accentColor,
     required this.onPressed,
   });
 
   @override
-  State<_ModeCard> createState() => _ModeCardState();
-}
-
-class _ModeCardState extends State<_ModeCard> {
-  bool _isPressed = false;
-
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onPressed();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()..scale(_isPressed ? 0.98 : 1.0),
-        child: HexCard(
-          variant: widget.variant,
-          enableGlow: true,
-          elevation: 8,
-          padding: const EdgeInsets.all(24),
-          margin: EdgeInsets.zero,
-          child: Row(
-            children: [
-              // Icon
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: widget.variant == HexCardVariant.ritual
-                      ? AppTheme.ritualRed.withOpacity(0.1)
-                      : AppTheme.chaoticMagenta.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (widget.variant == HexCardVariant.ritual
-                              ? AppTheme.ritualRed
-                              : AppTheme.chaoticMagenta)
-                          .withOpacity(0.35),
-                      blurRadius: 6,
-                      spreadRadius: 0,
-                    ),
-                  ],
+    return RitualCard(
+      glowEffect: true,
+      glowColor: accentColor,
+      onTap: onPressed,
+      padding: const EdgeInsets.all(24),
+      margin: EdgeInsets.zero,
+      child: Row(
+        children: [
+          // Icon container with dynamic border radius (7px for consistency)
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(7),
+              boxShadow: [
+                BoxShadow(
+                  color: accentColor.withOpacity(0.35),
+                  blurRadius: 6,
+                  spreadRadius: 0,
                 ),
-                child: Icon(
-                  widget.icon,
-                  size: 36,
-                  color: widget.variant == HexCardVariant.ritual
-                      ? AppTheme.ritualRed
-                      : AppTheme.chaoticMagenta,
-                ),
-              ),
-
-              const SizedBox(width: 20),
-
-              // Text content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: GoogleFonts.bebasNeue(
-                        fontSize: 32,
-                        letterSpacing: 2,
-                        color: AppTheme.paleWhite,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.subtitle,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: widget.variant == HexCardVariant.ritual
-                            ? AppTheme.ritualRed
-                            : AppTheme.chaoticMagenta,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.description,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppTheme.coldGray,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Arrow icon
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: widget.variant == HexCardVariant.ritual
-                    ? AppTheme.ritualRed
-                    : AppTheme.chaoticMagenta,
-                size: 24,
-              ),
-            ],
+              ],
+            ),
+            child: Icon(
+              icon,
+              size: 36,
+              color: accentColor,
+            ),
           ),
-        ),
+
+          const SizedBox(width: 20),
+
+          // Text content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.bebasNeue(
+                    fontSize: 32,
+                    letterSpacing: 2,
+                    color: AppTheme.paleWhite,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: accentColor,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.coldGray,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Arrow icon
+          Icon(
+            Icons.arrow_forward_rounded,
+            color: accentColor,
+            size: 24,
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/character.dart';
 import '../services/local_database_service.dart';
+import '../widgets/hex_loading.dart';
+import '../widgets/ritual_card.dart';
+import '../widgets/glowing_button.dart';
+import '../theme/app_theme.dart';
 
 class CharacterFormScreen extends StatefulWidget {
   final Character? character;
@@ -85,106 +89,150 @@ class _CharacterFormScreenState extends State<CharacterFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.character == null ? 'Novo Personagem' : 'Editar Personagem'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Informações Básicas
-            _buildSectionHeader('INFORMAÇÕES BÁSICAS'),
-            _buildTextField('Nome', _nomeController, required: true),
-            _buildTextField('Patente', _patenteController),
-            _buildNumberField('NEX', _nexController),
-            _buildTextField('Origem', _origemController),
-            _buildTextField('Classe', _classeController),
-            _buildTextField('Trilha', _trilhaController),
-
-            const SizedBox(height: 24),
-
-            // Status
-            _buildSectionHeader('STATUS MÁXIMO'),
-            Row(
-              children: [
-                Expanded(child: _buildNumberField('PV Máx', _pvMaxController)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildNumberField('PE Máx', _peMaxController)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildNumberField('PS Máx', _psMaxController)),
-              ],
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: Text(
+              widget.character == null ? 'Novo Personagem' : 'Editar Personagem',
             ),
-            _buildNumberField('Créditos', _creditosController),
-
-            const SizedBox(height: 24),
-
-            // Atributos
-            _buildSectionHeader('ATRIBUTOS'),
-            Row(
+          ),
+          body: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
               children: [
-                Expanded(child: _buildNumberField('FOR', _forcaController)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildNumberField('AGI', _agilidadeController)),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(child: _buildNumberField('VIG', _vigorController)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildNumberField('INT', _inteligenciaController)),
-              ],
-            ),
-            _buildNumberField('PRE', _presencaController),
-
-            const SizedBox(height: 24),
-
-            // Combate
-            _buildSectionHeader('COMBATE'),
-            _buildNumberField('Iniciativa Base', _iniciativaBaseController),
-
-            const SizedBox(height: 32),
-
-            // Botões
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
-                  ),
+                // Informações Básicas
+                _buildSectionCard(
+                  title: 'INFORMAÇÕES BÁSICAS',
+                  children: [
+                    _buildTextField('Nome', _nomeController, required: true),
+                    _buildTextField('Patente', _patenteController),
+                    _buildNumberField('NEX', _nexController),
+                    _buildTextField('Origem', _origemController),
+                    _buildTextField('Classe', _classeController),
+                    _buildTextField('Trilha', _trilhaController),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _saveCharacter,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Salvar'),
-                  ),
+
+                const SizedBox(height: 24),
+
+                // Status
+                _buildSectionCard(
+                  title: 'STATUS MÁXIMO',
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: _buildNumberField('PV Máx', _pvMaxController)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildNumberField('PE Máx', _peMaxController)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildNumberField('PS Máx', _psMaxController)),
+                      ],
+                    ),
+                    _buildNumberField('Créditos', _creditosController),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Atributos
+                _buildSectionCard(
+                  title: 'ATRIBUTOS',
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: _buildNumberField('FOR', _forcaController)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildNumberField('AGI', _agilidadeController)),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(child: _buildNumberField('VIG', _vigorController)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildNumberField('INT', _inteligenciaController)),
+                      ],
+                    ),
+                    _buildNumberField('PRE', _presencaController),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Combate
+                _buildSectionCard(
+                  title: 'COMBATE',
+                  children: [
+                    _buildNumberField('Iniciativa Base', _iniciativaBaseController),
+                  ],
+                ),
+
+                const SizedBox(height: 32),
+
+                // Botões
+                Row(
+                  children: [
+                    Expanded(
+                      child: GlowingButton(
+                        label: 'Cancelar',
+                        style: GlowingButtonStyle.secondary,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: GlowingButton(
+                        label: 'Salvar',
+                        style: GlowingButtonStyle.primary,
+                        isLoading: _isLoading,
+                        onPressed: _isLoading ? null : _saveCharacter,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
+        // Loading overlay
+        if (_isLoading)
+          Container(
+            color: AppTheme.abyssalBlack.withValues(alpha: 0.7),
+            child: const Center(
+              child: HexLoading.large(
+                message: 'Salvando personagem...',
+              ),
+            ),
+          ),
+      ],
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return RitualCard(
+      glowEffect: false,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppTheme.ritualRed,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
             ),
+          ),
+          ...children,
+        ],
       ),
     );
   }
@@ -195,7 +243,26 @@ class _CharacterFormScreenState extends State<CharacterFormScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(7),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(7),
+            borderSide: BorderSide(
+              color: AppTheme.industrialGray,
+              width: 1.5,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(7),
+            borderSide: BorderSide(
+              color: AppTheme.ritualRed,
+              width: 2,
+            ),
+          ),
+        ),
         validator: required
             ? (value) {
                 if (value == null || value.isEmpty) {
@@ -213,7 +280,26 @@ class _CharacterFormScreenState extends State<CharacterFormScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(7),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(7),
+            borderSide: BorderSide(
+              color: AppTheme.industrialGray,
+              width: 1.5,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(7),
+            borderSide: BorderSide(
+              color: AppTheme.ritualRed,
+              width: 2,
+            ),
+          ),
+        ),
         keyboardType: TextInputType.number,
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -276,25 +362,112 @@ class _CharacterFormScreenState extends State<CharacterFormScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.character == null
-                ? 'Personagem criado com sucesso!'
-                : 'Personagem atualizado com sucesso!'),
-          ),
+        _showSuccessDialog(
+          isCreation: widget.character == null,
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar personagem: $e')),
-        );
+        _showErrorDialog(error: e.toString());
       }
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  void _showSuccessDialog({required bool isCreation}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => RitualCard(
+        glowEffect: true,
+        glowColor: AppTheme.mutagenGreen,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              color: AppTheme.mutagenGreen,
+              size: 56,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isCreation ? 'Personagem Criado!' : 'Personagem Atualizado!',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppTheme.mutagenGreen,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isCreation
+                  ? 'Seu novo personagem foi criado com sucesso!'
+                  : 'As alterações foram salvas com sucesso!',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.coldGray,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            GlowingButton(
+              label: 'Continuar',
+              style: GlowingButtonStyle.primary,
+              fullWidth: true,
+              onPressed: () {
+                Navigator.pop(context); // Fechar diálogo
+                Navigator.pop(context); // Voltar para lista
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showErrorDialog({required String error}) {
+    showDialog(
+      context: context,
+      builder: (context) => RitualCard(
+        glowEffect: true,
+        glowColor: AppTheme.alertYellow,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: AppTheme.alertYellow,
+              size: 56,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Erro ao Salvar',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppTheme.alertYellow,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.coldGray,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            GlowingButton(
+              label: 'Tentar Novamente',
+              style: GlowingButtonStyle.primary,
+              fullWidth: true,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

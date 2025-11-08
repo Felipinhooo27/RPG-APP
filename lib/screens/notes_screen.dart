@@ -51,15 +51,20 @@ class _NotesScreenState extends State<NotesScreen> {
         appBar: AppBar(
           backgroundColor: AppTheme.abyssalBlack.withOpacity(0.9),
           elevation: 0,
-          title: const Text(
+          title: Text(
             'NOTAS DO MESTRE',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'BebasNeue',
-              letterSpacing: 2,
-              color: AppTheme.etherealPurple,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 2,
+                  color: AppTheme.etherealPurple,
+                ) ??
+                const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 2,
+                  color: AppTheme.etherealPurple,
+                ),
           ),
           actions: [
             PopupMenuButton<String>(
@@ -112,30 +117,18 @@ class _NotesScreenState extends State<NotesScreen> {
           stream: _databaseService.getAllNotes(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: HexLoading.large());
+              return const Center(
+                child: HexLoading.large(message: 'Carregando notas...'),
+              );
             }
 
             if (snapshot.hasError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: AppTheme.ritualRed,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Erro ao carregar notas',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppTheme.coldGray,
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                  ],
-                ),
+              return EmptyState(
+                icon: Icons.error_outline,
+                title: 'Erro ao Carregar',
+                message: 'Não foi possível carregar suas notas',
+                actionLabel: 'Tentar Novamente',
+                onAction: () => setState(() {}),
               );
             }
 
@@ -150,55 +143,8 @@ class _NotesScreenState extends State<NotesScreen> {
             notes.sort((a, b) => b.dataModificacao.compareTo(a.dataModificacao));
 
             if (notes.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: AppTheme.obscureGray,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.etherealPurple.withOpacity(0.35),
-                            blurRadius: 6,
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.note_add,
-                        size: 60,
-                        color: AppTheme.etherealPurple,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      _filtroCategoria == 'Todas'
-                          ? 'NENHUMA NOTA AINDA'
-                          : 'NENHUMA NOTA EM "$_filtroCategoria"',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.coldGray,
-                        fontFamily: 'BebasNeue',
-                        letterSpacing: 2,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Toque no botão abaixo para criar',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.coldGray,
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                  ],
-                ),
+              return EmptyState.noNotes(
+                onAction: () => _showNoteDialog(),
               );
             }
 
@@ -230,11 +176,12 @@ class _NotesScreenState extends State<NotesScreen> {
 
     return RitualCard(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      glowEffect: false,
+      padding: const EdgeInsets.all(14),
+      glowEffect: true,
+      glowColor: color,
       child: InkWell(
         onTap: () => _showNoteDialog(note: note),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -245,7 +192,7 @@ class _NotesScreenState extends State<NotesScreen> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
                         color: color.withOpacity(0.35),
@@ -263,12 +210,16 @@ class _NotesScreenState extends State<NotesScreen> {
                     children: [
                       Text(
                         note.titulo.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.paleWhite,
-                          fontFamily: 'Montserrat',
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontFamily: 'Montserrat',
+                              color: AppTheme.paleWhite,
+                            ) ??
+                            const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.paleWhite,
+                              fontFamily: 'Montserrat',
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -304,11 +255,15 @@ class _NotesScreenState extends State<NotesScreen> {
                           const SizedBox(width: 8),
                           Text(
                             dataFormatada,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.coldGray,
-                              fontFamily: 'SpaceMono',
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontFamily: 'SpaceMono',
+                                  color: AppTheme.coldGray,
+                                ) ??
+                                const TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.coldGray,
+                                  fontFamily: 'SpaceMono',
+                                ),
                           ),
                         ],
                       ),
@@ -329,12 +284,17 @@ class _NotesScreenState extends State<NotesScreen> {
               const SizedBox(height: 12),
               Text(
                 note.conteudo,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.coldGray,
-                  fontFamily: 'Montserrat',
-                  height: 1.4,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontFamily: 'Montserrat',
+                      color: AppTheme.coldGray,
+                      height: 1.4,
+                    ) ??
+                    const TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.coldGray,
+                      fontFamily: 'Montserrat',
+                      height: 1.4,
+                    ),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -378,7 +338,7 @@ class _NotesScreenState extends State<NotesScreen> {
         child: RitualCard(
           glowEffect: true,
           glowColor: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           ritualCorners: true,
           child: StatefulBuilder(
             builder: (context, setDialogState) {
@@ -394,13 +354,18 @@ class _NotesScreenState extends State<NotesScreen> {
                     const SizedBox(height: 12),
                     Text(
                       isEditing ? 'EDITAR NOTA' : 'NOVA NOTA',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
-                        fontFamily: 'BebasNeue',
-                        letterSpacing: 2,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontFamily: 'BebasNeue',
+                            letterSpacing: 2,
+                            color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
+                          ) ??
+                          TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
+                            fontFamily: 'BebasNeue',
+                            letterSpacing: 2,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -417,18 +382,18 @@ class _NotesScreenState extends State<NotesScreen> {
                         filled: true,
                         fillColor: AppTheme.obscureGray,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           borderSide: BorderSide(
                             color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
-                            width: 2,
+                            width: 1.5,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           borderSide: BorderSide(
                             color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
                             width: 2,
@@ -437,60 +402,16 @@ class _NotesScreenState extends State<NotesScreen> {
                       ),
                       autofocus: !isEditing,
                     ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: categoriaSelecionada,
-                      dropdownColor: AppTheme.obscureGray,
-                      style: const TextStyle(
-                        color: AppTheme.paleWhite,
-                        fontFamily: 'Montserrat',
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Categoria',
-                        labelStyle: const TextStyle(color: AppTheme.coldGray),
-                        filled: true,
-                        fillColor: AppTheme.obscureGray,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
-                            width: 2,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      items: _categorias
-                          .where((c) => c != 'Todas')
-                          .map((categoria) {
-                        final color = _categoriasColors[categoria] ?? AppTheme.coldGray;
-                        return DropdownMenuItem(
-                          value: categoria,
-                          child: Row(
-                            children: [
-                              Icon(_categoriasIcons[categoria], size: 20, color: color),
-                              const SizedBox(width: 12),
-                              Text(categoria),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
+                    const SizedBox(height: 14),
+                    _buildCategoryChips(
+                      selected: categoriaSelecionada,
+                      onSelected: (category) {
                         setDialogState(() {
-                          categoriaSelecionada = value!;
+                          categoriaSelecionada = category;
                         });
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     TextField(
                       controller: conteudoController,
                       style: const TextStyle(
@@ -507,18 +428,18 @@ class _NotesScreenState extends State<NotesScreen> {
                         filled: true,
                         fillColor: AppTheme.obscureGray,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           borderSide: BorderSide(
                             color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
-                            width: 2,
+                            width: 1.5,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           borderSide: BorderSide(
                             color: _categoriasColors[categoriaSelecionada] ?? AppTheme.etherealPurple,
                             width: 2,
@@ -610,6 +531,67 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
+  Widget _buildCategoryChips({
+    required String selected,
+    required Function(String) onSelected,
+  }) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _categorias
+          .where((c) => c != 'Todas')
+          .map((categoria) {
+            final color = _categoriasColors[categoria] ?? AppTheme.coldGray;
+            final isSelected = selected == categoria;
+
+            return GestureDetector(
+              onTap: () => onSelected(categoria),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
+                  border: Border.all(
+                    color: isSelected ? color : AppTheme.industrialGray,
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: color.withOpacity(0.25),
+                            blurRadius: 4,
+                            spreadRadius: 0,
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _categoriasIcons[categoria],
+                      size: 16,
+                      color: color,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      categoria,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: color,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          })
+          .toList(),
+    );
+  }
+
   Future<void> _confirmDelete(Note note) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -618,38 +600,49 @@ class _NotesScreenState extends State<NotesScreen> {
         child: RitualCard(
           glowEffect: true,
           glowColor: AppTheme.ritualRed,
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           ritualCorners: true,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
                 Icons.warning_amber_rounded,
-                size: 64,
+                size: 56,
                 color: AppTheme.ritualRed,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'EXCLUIR NOTA',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.ritualRed,
-                  fontFamily: 'BebasNeue',
-                  letterSpacing: 2,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontFamily: 'BebasNeue',
+                      letterSpacing: 2,
+                      color: AppTheme.ritualRed,
+                    ) ??
+                    const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.ritualRed,
+                      fontFamily: 'BebasNeue',
+                      letterSpacing: 2,
+                    ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 'Deseja realmente excluir a nota "${note.titulo}"?',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.paleWhite,
-                  fontFamily: 'Montserrat',
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontFamily: 'Montserrat',
+                      color: AppTheme.paleWhite,
+                    ) ??
+                    const TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.paleWhite,
+                      fontFamily: 'Montserrat',
+                    ),
                 textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
@@ -659,7 +652,7 @@ class _NotesScreenState extends State<NotesScreen> {
                       style: GlowingButtonStyle.secondary,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: GlowingButton(
                       label: 'Excluir',

@@ -65,18 +65,11 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
             _currentIndex = index;
           });
         },
-        backgroundColor: AppTheme.abyssalBlack,
+        backgroundColor: AppTheme.obscureGray,
         selectedItemColor: AppTheme.ritualRed,
         unselectedItemColor: AppTheme.coldGray,
-        selectedLabelStyle: const TextStyle(
-          fontFamily: 'Montserrat',
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Montserrat',
-          fontSize: 10,
-        ),
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.people),

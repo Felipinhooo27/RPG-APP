@@ -124,7 +124,7 @@ class _MasterHomeTabState extends State<_MasterHomeTab> {
           stream: _databaseService.getAllCharacters(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: HexLoading.large());
+              return const Center(child: HexLoading.large(message: 'Carregando...'));
             }
 
             if (snapshot.hasError) {
@@ -170,7 +170,7 @@ class _MasterHomeTabState extends State<_MasterHomeTab> {
     return RitualCard(
       glowEffect: true,
       glowColor: AppTheme.chaoticMagenta,
-      ritualCorners: true,
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -289,100 +289,128 @@ class _MasterHomeTabState extends State<_MasterHomeTab> {
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
-        child: RitualCard(
-          glowEffect: true,
-          glowColor: AppTheme.etherealPurple,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'IMPORTAR PERSONAGENS',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.etherealPurple,
-                  fontFamily: 'BebasNeue',
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                maxLines: 5,
-                style: const TextStyle(
-                  color: AppTheme.paleWhite,
-                  fontFamily: 'SpaceMono',
-                  fontSize: 12,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Cole o JSON aqui...',
-                  hintStyle: TextStyle(color: AppTheme.coldGray),
-                  filled: true,
-                  fillColor: AppTheme.obscureGray,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.etherealPurple, width: 2),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.coldGray, width: 1.5),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.etherealPurple, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+            maxWidth: 500,
+          ),
+          child: RitualCard(
+            glowEffect: true,
+            glowColor: AppTheme.etherealPurple,
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 16 + MediaQuery.of(context).viewInsets.bottom * 0.5,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: GlowingButton(
-                      label: 'Cancelar',
-                      onPressed: () => Navigator.pop(context),
-                      style: GlowingButtonStyle.secondary,
+                  const Text(
+                    'IMPORTAR PERSONAGENS',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.etherealPurple,
+                      fontFamily: 'BebasNeue',
+                      letterSpacing: 2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 150),
+                    child: TextField(
+                      controller: controller,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      style: const TextStyle(
+                        color: AppTheme.paleWhite,
+                        fontFamily: 'SpaceMono',
+                        fontSize: 11,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Cole o JSON aqui...',
+                        hintStyle: TextStyle(color: AppTheme.coldGray),
+                        filled: true,
+                        fillColor: AppTheme.obscureGray,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(color: AppTheme.etherealPurple, width: 2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(color: AppTheme.coldGray, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          borderSide: BorderSide(color: AppTheme.etherealPurple, width: 2),
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GlowingButton(
-                      label: 'Importar',
-                      icon: Icons.download,
-                      onPressed: () async {
-                        try {
-                          final json = controller.text.trim();
-                          final List<dynamic> data = jsonDecode(json);
-                          final characters = data.map((e) => Character.fromMap(e)).toList();
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: GlowingButton(
+                            label: 'Cancelar',
+                            onPressed: () => Navigator.pop(context),
+                            style: GlowingButtonStyle.secondary,
+                            width: 120,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: GlowingButton(
+                            label: 'Importar',
+                            icon: Icons.download,
+                            onPressed: () async {
+                              try {
+                                final json = controller.text.trim();
+                                final List<dynamic> data = jsonDecode(json);
+                                final characters = data.map((e) => Character.fromMap(e)).toList();
 
-                          await _databaseService.importCharacters(characters, 'master_001');
+                                await _databaseService.importCharacters(characters, 'master_001');
 
-                          if (mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${characters.length} personagem(ns) importado(s)!'),
-                                backgroundColor: AppTheme.mutagenGreen,
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Erro: JSON inválido'),
-                                backgroundColor: AppTheme.ritualRed,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      style: GlowingButtonStyle.primary,
-                    ),
+                                if (mounted) {
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('${characters.length} personagem(ns) importado(s)!'),
+                                      backgroundColor: AppTheme.mutagenGreen,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Erro: JSON inválido'),
+                                      backgroundColor: AppTheme.ritualRed,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            style: GlowingButtonStyle.primary,
+                            width: 120,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -410,19 +438,10 @@ class _ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: RitualCard(
+        glowEffect: true,
+        glowColor: iconColor,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.obscureGray,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: iconColor.withOpacity(0.35),
-              blurRadius: 6,
-              spreadRadius: 0,
-            ),
-          ],
-        ),
         child: Row(
           children: [
             Container(

@@ -3,6 +3,10 @@ import '../models/character.dart';
 import '../services/local_database_service.dart';
 import 'character_form_screen.dart';
 import 'inventory_screen.dart';
+import '../widgets/hex_loading.dart';
+import '../widgets/ritual_card.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/glowing_button.dart';
 
 class CharacterDetailScreen extends StatefulWidget {
   final Character character;
@@ -25,6 +29,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   late int _peAtual;
   late int _psAtual;
   late int _creditos;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -40,73 +45,67 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.character.nome),
+        elevation: 0,
         actions: [
           if (widget.isMasterMode)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CharacterFormScreen(
-                      character: widget.character,
-                      userId: widget.character.createdBy,
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GlowingButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CharacterFormScreen(
+                        character: widget.character,
+                        userId: widget.character.createdBy,
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+                icon: Icons.edit,
+                label: 'Editar',
+              ),
             ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Informações Básicas
-          _buildInfoCard(),
-          const SizedBox(height: 16),
+      body: _isLoading
+          ? HexLoading(message: 'Carregando ${widget.character.nome}...')
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Informações Básicas
+                _buildInfoCard(),
+                const SizedBox(height: 16),
 
-          // Status (PV, PE, PS)
-          _buildStatusCard(),
-          const SizedBox(height: 16),
+                // Status (PV, PE, PS)
+                _buildStatusCard(),
+                const SizedBox(height: 16),
 
-          // Créditos
-          _buildCreditsCard(),
-          const SizedBox(height: 16),
+                // Créditos
+                _buildCreditsCard(),
+                const SizedBox(height: 16),
 
-          // Atributos
-          _buildAttributesCard(),
-          const SizedBox(height: 16),
+                // Atributos
+                _buildAttributesCard(),
+                const SizedBox(height: 16),
 
-          // Inventário
-          _buildInventoryButton(),
-        ],
-      ),
+                // Inventário
+                _buildInventoryButton(),
+              ],
+            ),
     );
   }
 
   Widget _buildInfoCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'INFORMAÇÕES',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const Divider(),
-            _buildInfoRow('Patente', widget.character.patente),
-            _buildInfoRow('NEX', '${widget.character.nex}%'),
-            _buildInfoRow('Origem', widget.character.origem),
-            _buildInfoRow('Classe', widget.character.classe),
-            _buildInfoRow('Trilha', widget.character.trilha),
-          ],
-        ),
-      ),
+    return RitualCard(
+      title: 'INFORMAÇÕES',
+      children: [
+        _buildInfoRow('Patente', widget.character.patente),
+        _buildInfoRow('NEX', '${widget.character.nex}%'),
+        _buildInfoRow('Origem', widget.character.origem),
+        _buildInfoRow('Classe', widget.character.classe),
+        _buildInfoRow('Trilha', widget.character.trilha),
+      ],
     );
   }
 
@@ -131,61 +130,48 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   }
 
   Widget _buildStatusCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'STATUS',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const Divider(),
-            _buildStatusControl(
-              'Pontos de Vida (PV)',
-              _pvAtual,
-              widget.character.pvMax,
-              Colors.red,
-              (newValue) {
-                setState(() {
-                  _pvAtual = newValue.clamp(0, widget.character.pvMax);
-                });
-                _updateStatus(pvAtual: _pvAtual);
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildStatusControl(
-              'Pontos de Esforço (PE)',
-              _peAtual,
-              widget.character.peMax,
-              Colors.blue,
-              (newValue) {
-                setState(() {
-                  _peAtual = newValue.clamp(0, widget.character.peMax);
-                });
-                _updateStatus(peAtual: _peAtual);
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildStatusControl(
-              'Pontos de Sanidade (PS)',
-              _psAtual,
-              widget.character.psMax,
-              Colors.purple,
-              (newValue) {
-                setState(() {
-                  _psAtual = newValue.clamp(0, widget.character.psMax);
-                });
-                _updateStatus(psAtual: _psAtual);
-              },
-            ),
-          ],
+    return RitualCard(
+      title: 'STATUS',
+      children: [
+        _buildStatusControl(
+          'Pontos de Vida (PV)',
+          _pvAtual,
+          widget.character.pvMax,
+          Colors.red,
+          (newValue) {
+            setState(() {
+              _pvAtual = newValue.clamp(0, widget.character.pvMax);
+            });
+            _updateStatus(pvAtual: _pvAtual);
+          },
         ),
-      ),
+        const SizedBox(height: 16),
+        _buildStatusControl(
+          'Pontos de Esforço (PE)',
+          _peAtual,
+          widget.character.peMax,
+          Colors.blue,
+          (newValue) {
+            setState(() {
+              _peAtual = newValue.clamp(0, widget.character.peMax);
+            });
+            _updateStatus(peAtual: _peAtual);
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildStatusControl(
+          'Pontos de Sanidade (PS)',
+          _psAtual,
+          widget.character.psMax,
+          Colors.purple,
+          (newValue) {
+            setState(() {
+              _psAtual = newValue.clamp(0, widget.character.psMax);
+            });
+            _updateStatus(psAtual: _psAtual);
+          },
+        ),
+      ],
     );
   }
 
@@ -256,115 +242,89 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   }
 
   Widget _buildCreditsCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return RitualCard(
+      title: 'CRÉDITOS',
+      children: [
+        Row(
           children: [
-            Text(
-              'CRÉDITOS',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _creditos = (_creditos - 10).clamp(0, 999999);
+                });
+                _updateStatus(creditos: _creditos);
+              },
+              icon: const Icon(Icons.remove_circle),
+              color: Colors.amber,
             ),
-            const Divider(),
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _creditos = (_creditos - 10).clamp(0, 999999);
-                    });
-                    _updateStatus(creditos: _creditos);
-                  },
-                  icon: const Icon(Icons.remove_circle),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _creditos = (_creditos - 1).clamp(0, 999999);
+                });
+                _updateStatus(creditos: _creditos);
+              },
+              icon: const Icon(Icons.remove),
+              color: Colors.amber,
+            ),
+            Expanded(
+              child: Text(
+                'T\$ $_creditos',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                   color: Colors.amber,
                 ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _creditos = (_creditos - 1).clamp(0, 999999);
-                    });
-                    _updateStatus(creditos: _creditos);
-                  },
-                  icon: const Icon(Icons.remove),
-                  color: Colors.amber,
-                ),
-                Expanded(
-                  child: Text(
-                    'T\$ $_creditos',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _creditos = (_creditos + 1).clamp(0, 999999);
-                    });
-                    _updateStatus(creditos: _creditos);
-                  },
-                  icon: const Icon(Icons.add),
-                  color: Colors.amber,
-                ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _creditos = (_creditos + 10).clamp(0, 999999);
-                    });
-                    _updateStatus(creditos: _creditos);
-                  },
-                  icon: const Icon(Icons.add_circle),
-                  color: Colors.amber,
-                ),
-              ],
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _creditos = (_creditos + 1).clamp(0, 999999);
+                });
+                _updateStatus(creditos: _creditos);
+              },
+              icon: const Icon(Icons.add),
+              color: Colors.amber,
+            ),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _creditos = (_creditos + 10).clamp(0, 999999);
+                });
+                _updateStatus(creditos: _creditos);
+              },
+              icon: const Icon(Icons.add_circle),
+              color: Colors.amber,
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildAttributesCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return RitualCard(
+      title: 'ATRIBUTOS',
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Text(
-              'ATRIBUTOS',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildAttributeBadge('FOR', widget.character.forca),
-                _buildAttributeBadge('AGI', widget.character.agilidade),
-                _buildAttributeBadge('VIG', widget.character.vigor),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildAttributeBadge('INT', widget.character.inteligencia),
-                _buildAttributeBadge('PRE', widget.character.presenca),
-              ],
-            ),
+            _buildAttributeBadge('FOR', widget.character.forca),
+            _buildAttributeBadge('AGI', widget.character.agilidade),
+            _buildAttributeBadge('VIG', widget.character.vigor),
           ],
         ),
-      ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildAttributeBadge('INT', widget.character.inteligencia),
+            _buildAttributeBadge('PRE', widget.character.presenca),
+          ],
+        ),
+      ],
     );
   }
 
@@ -384,7 +344,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           height: 60,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(7),
             boxShadow: [
               BoxShadow(
                 color: Theme.of(context).colorScheme.primary.withOpacity(0.35),
@@ -408,7 +368,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
   }
 
   Widget _buildInventoryButton() {
-    return ElevatedButton.icon(
+    return GlowingButton(
       onPressed: () {
         Navigator.push(
           context,
@@ -420,11 +380,8 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
           ),
         );
       },
-      icon: const Icon(Icons.backpack),
-      label: const Text('Ver Inventário'),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.all(16),
-      ),
+      icon: Icons.backpack,
+      label: 'Ver Inventário',
     );
   }
 
@@ -435,6 +392,7 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     int? creditos,
   }) async {
     try {
+      setState(() => _isLoading = true);
       await _databaseService.updateCharacterStatus(
         characterId: widget.character.id,
         pvAtual: pvAtual,
@@ -442,12 +400,65 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
         psAtual: psAtual,
         creditos: creditos,
       );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSuccessDialog('Status atualizado com sucesso!');
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar status: $e')),
-        );
+        setState(() => _isLoading = false);
+        _showErrorDialog('Erro ao atualizar status: $e');
       }
     }
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Sucesso'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.error, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Erro'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }

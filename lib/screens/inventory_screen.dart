@@ -153,37 +153,45 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _buildStatsBar() {
-    return Container(
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.obscureGray.withOpacity(0.5),
-        border: Border(
-          bottom: BorderSide(color: AppTheme.mutagenGreen.withOpacity(0.3), width: 2),
+      child: RitualCard(
+        glowEffect: false,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            _buildStatItem(
+              icon: Icons.inventory_2,
+              label: 'ITENS',
+              value: '${_items.length}',
+              color: AppTheme.mutagenGreen,
+            ),
+            Container(
+              width: 1,
+              height: 40,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              color: AppTheme.industrialGray,
+            ),
+            _buildStatItem(
+              icon: Icons.storage,
+              label: 'ESPAÇO',
+              value: '$_totalEspaco',
+              color: AppTheme.etherealPurple,
+            ),
+            Container(
+              width: 1,
+              height: 40,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              color: AppTheme.industrialGray,
+            ),
+            _buildStatItem(
+              icon: Icons.attach_money,
+              label: 'CRÉDITOS',
+              value: '${widget.character.creditos}',
+              color: AppTheme.alertYellow,
+            ),
+          ],
         ),
-      ),
-      child: Row(
-        children: [
-          _buildStatItem(
-            icon: Icons.inventory_2,
-            label: 'ITENS',
-            value: '${_items.length}',
-            color: AppTheme.mutagenGreen,
-          ),
-          const SizedBox(width: 16),
-          _buildStatItem(
-            icon: Icons.storage,
-            label: 'ESPAÇO',
-            value: '$_totalEspaco',
-            color: AppTheme.etherealPurple,
-          ),
-          const SizedBox(width: 16),
-          _buildStatItem(
-            icon: Icons.attach_money,
-            label: 'CRÉDITOS',
-            value: '${widget.character.creditos}',
-            color: AppTheme.alertYellow,
-          ),
-        ],
       ),
     );
   }
@@ -195,49 +203,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
     required Color color,
   }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 4,
-              spreadRadius: 0,
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: color,
+              fontFamily: 'SpaceMono',
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: color,
-                    fontFamily: 'BebasNeue',
-                    letterSpacing: 1,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                    fontFamily: 'BebasNeue',
-                  ),
-                ),
-              ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 9,
+              color: AppTheme.coldGray,
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -271,16 +261,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
           filled: true,
           fillColor: AppTheme.obscureGray,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 2),
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 1.5),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: AppTheme.industrialGray, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 2),
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: AppTheme.mutagenGreen, width: 1.5),
           ),
         ),
       ),
@@ -331,16 +321,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? chipColor.withOpacity(0.2)
+                    ? chipColor.withOpacity(0.15)
                     : AppTheme.obscureGray,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: isSelected ? chipColor.withOpacity(0.4) : AppTheme.coldGray.withOpacity(0.3),
-                    blurRadius: isSelected ? 6 : 4,
-                    spreadRadius: 0,
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isSelected ? chipColor : AppTheme.industrialGray,
+                  width: 1.5,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: chipColor.withOpacity(0.3),
+                          blurRadius: 4,
+                          spreadRadius: 0,
+                        ),
+                      ]
+                    : null,
               ),
               child: Row(
                 children: [
@@ -370,56 +366,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: AppTheme.obscureGray,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.mutagenGreen.withOpacity(0.4),
-                  blurRadius: 6,
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.backpack_outlined,
-              size: 60,
-              color: AppTheme.mutagenGreen,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            _searchQuery.isNotEmpty || _selectedFilter != 'Todos'
-                ? 'NENHUM ITEM ENCONTRADO'
-                : 'INVENTÁRIO VAZIO',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.coldGray,
-              fontFamily: 'BebasNeue',
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _searchQuery.isNotEmpty || _selectedFilter != 'Todos'
-                ? 'Tente ajustar os filtros'
-                : 'Adicione itens ao inventário',
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppTheme.coldGray,
-              fontFamily: 'Montserrat',
-            ),
-          ),
-        ],
-      ),
+    final bool hasFilters = _searchQuery.isNotEmpty || _selectedFilter != 'Todos';
+
+    return EmptyState(
+      icon: hasFilters ? Icons.search_off : Icons.backpack_outlined,
+      title: hasFilters ? 'Nenhum item encontrado' : 'Inventário vazio',
+      message: hasFilters
+          ? 'Tente ajustar os filtros de busca'
+          : 'Adicione itens ao inventário do personagem',
+      actionLabel: hasFilters ? null : 'Adicionar Item',
+      onAction: hasFilters ? null : _addItem,
     );
   }
 

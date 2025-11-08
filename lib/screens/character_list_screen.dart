@@ -30,29 +30,36 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.abyssalBlack,
-      appBar: AppBar(
-        backgroundColor: AppTheme.abyssalBlack.withOpacity(0.95),
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          widget.isMasterMode ? 'TODOS OS PERSONAGENS' : 'MEUS PERSONAGENS',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-            letterSpacing: 1.5,
-          ),
-        ),
-        actions: widget.isMasterMode
-            ? null
-            : [
-                IconButton(
-                  icon: const Icon(Icons.download_outlined, size: 22),
-                  onPressed: _importCharacter,
+    return HexatombeBackground(
+      showParticles: false,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: AppTheme.abyssalBlack.withOpacity(0.9),
+          elevation: 0,
+          centerTitle: true,
+          title: Column(
+            children: [
+              Text(
+                widget.isMasterMode ? 'TODOS OS PERSONAGENS' : 'MEUS PERSONAGENS',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  letterSpacing: 1.5,
+                  color: AppTheme.paleWhite,
                 ),
-              ],
-      ),
+              ),
+            ],
+          ),
+          actions: widget.isMasterMode
+              ? null
+              : [
+                  IconButton(
+                    icon: const Icon(Icons.download_outlined, size: 22),
+                    onPressed: _importCharacter,
+                  ),
+                ],
+        ),
       body: StreamBuilder<List<Character>>(
         stream: widget.isMasterMode
             ? _databaseService.getAllCharacters()
@@ -80,7 +87,7 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.90,
+              childAspectRatio: 0.80,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
@@ -107,72 +114,26 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
           );
         },
       ),
-      floatingActionButton: _buildModernFAB(),
+        floatingActionButton: _buildModernFAB(),
+      ),
     );
   }
 
-  // Loading state com skeleton
+  // Loading state com HexLoading
   Widget _buildLoadingState() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.90,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+    return const Center(
+      child: HexLoading.large(
+        message: 'Carregando personagens...',
       ),
-      itemCount: 4,
-      itemBuilder: (context, index) => _SkeletonCard(),
     );
   }
 
-  // Error state melhorado
+  // Error state usando EmptyState
   Widget _buildErrorState(String error) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.alertYellow.withOpacity(0.3),
-                    AppTheme.ritualRed.withOpacity(0.3),
-                  ],
-                ),
-              ),
-              child: const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppTheme.alertYellow,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Erro ao carregar',
-              style: GoogleFonts.montserrat(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.paleWhite,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppTheme.coldGray,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return EmptyState(
+      icon: Icons.error_outline,
+      title: 'Erro ao carregar',
+      message: error,
     );
   }
 
@@ -249,34 +210,65 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
     );
   }
 
-  // Delete com confirmação
+  // Delete com confirmação usando RitualCard
   Future<void> _deleteCharacter(String characterId) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.obscureGray,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'CONFIRMAR EXCLUSÃO',
-          style: GoogleFonts.montserrat(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          'Tem certeza que deseja excluir este personagem? Esta ação não pode ser desfeita.',
-          style: GoogleFonts.inter(color: AppTheme.coldGray),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('CANCELAR', style: GoogleFonts.montserrat()),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: AppTheme.alertYellow,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppTheme.alertYellow,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'CONFIRMAR EXCLUSÃO',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontSize: 18,
+                  color: AppTheme.alertYellow,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Tem certeza que deseja excluir este personagem? Esta ação não pode ser desfeita.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.coldGray,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Cancelar',
+                      onPressed: () => Navigator.pop(context, false),
+                      style: GlowingButtonStyle.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Excluir',
+                      icon: Icons.delete,
+                      onPressed: () => Navigator.pop(context, true),
+                      style: GlowingButtonStyle.danger,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.ritualRed,
-            ),
-            child: Text('EXCLUIR', style: GoogleFonts.montserrat()),
-          ),
-        ],
+        ),
       ),
     );
 
@@ -549,47 +541,20 @@ class _ModernCharacterCardState extends State<_ModernCharacterCard> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       onLongPress: _showContextMenu,
-      child: AnimatedContainer(
+      child: AnimatedScale(
         duration: const Duration(milliseconds: 200),
-        transform: Matrix4.identity()..scale(_isPressed ? 0.96 : 1.0),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppTheme.obscureGray,
-              AppTheme.industrialGray.withOpacity(0.8),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: isDanger
-                  ? AppTheme.alertYellow.withOpacity(0.3)
-                  : AppTheme.abyssalBlack.withOpacity(0.5),
-              blurRadius: 12,
-              spreadRadius: 0,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: AppTheme.abyssalBlack.withOpacity(0.3),
-              blurRadius: 4,
-              spreadRadius: -2,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        scale: _isPressed ? 0.96 : 1.0,
+        child: RitualCard(
+          glowEffect: isDanger,
+          glowColor: isDanger ? AppTheme.alertYellow : classColor,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Ícone grande centralizado
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
                     gradient: RadialGradient(
                       colors: [
@@ -608,7 +573,7 @@ class _ModernCharacterCardState extends State<_ModernCharacterCard> {
                   ),
                   child: Icon(
                     classIcon,
-                    size: 32,
+                    size: 28,
                     color: AppTheme.paleWhite,
                   ),
                 ).animate(
@@ -619,13 +584,13 @@ class _ModernCharacterCardState extends State<_ModernCharacterCard> {
                   duration: isDanger ? 1500.ms : 0.ms,
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
 
                 // Nome
                 Text(
                   widget.character.nome.toUpperCase(),
                   style: GoogleFonts.montserrat(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.paleWhite,
                     letterSpacing: 0.5,
@@ -635,13 +600,13 @@ class _ModernCharacterCardState extends State<_ModernCharacterCard> {
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
 
                 // Classe
                 Text(
                   widget.character.classe.toUpperCase(),
                   style: GoogleFonts.montserrat(
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: classColor,
                     letterSpacing: 0.8,
@@ -650,20 +615,20 @@ class _ModernCharacterCardState extends State<_ModernCharacterCard> {
                   overflow: TextOverflow.ellipsis,
                 ),
 
-                const SizedBox(height: 2),
-
                 // NEX
-                if (widget.character.nex > 0)
+                if (widget.character.nex > 0) ...[
+                  const SizedBox(height: 2),
                   Text(
                     'NEX ${widget.character.nex}%',
                     style: GoogleFonts.spaceMono(
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.limestoneGray,
                     ),
                   ),
+                ],
 
-                const Spacer(),
+                const SizedBox(height: 8),
 
                 // Barras modernas
                 _ModernStatBar(
@@ -672,14 +637,14 @@ class _ModernCharacterCardState extends State<_ModernCharacterCard> {
                   maximum: widget.character.pvMax,
                   color: AppTheme.ritualRed,
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 _ModernStatBar(
                   label: 'PE',
                   current: widget.character.peAtual,
                   maximum: widget.character.peMax,
                   color: AppTheme.etherealPurple,
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 _ModernStatBar(
                   label: 'PS',
                   current: widget.character.psAtual,
@@ -690,7 +655,6 @@ class _ModernCharacterCardState extends State<_ModernCharacterCard> {
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -698,33 +662,48 @@ class _ModernCharacterCardState extends State<_ModernCharacterCard> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppTheme.obscureGray,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.isMasterMode && widget.onExport != null)
-              ListTile(
-                leading: const Icon(Icons.share, color: AppTheme.mutagenGreen),
-                title: Text('Exportar', style: GoogleFonts.montserrat()),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onExport!();
-                },
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: classColor,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle visual
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.industrialGray,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: AppTheme.alertYellow),
-              title: Text('Deletar', style: GoogleFonts.montserrat()),
-              onTap: () {
-                Navigator.pop(context);
-                widget.onDelete();
-              },
-            ),
-          ],
+              if (widget.isMasterMode && widget.onExport != null) ...[
+                GlowingButton(
+                  label: 'Exportar Personagem',
+                  icon: Icons.share,
+                  onPressed: () {
+                    Navigator.pop(context);
+                    widget.onExport!();
+                  },
+                  style: GlowingButtonStyle.secondary,
+                ),
+                const SizedBox(height: 12),
+              ],
+              GlowingButton(
+                label: 'Deletar Personagem',
+                icon: Icons.delete,
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onDelete();
+                },
+                style: GlowingButtonStyle.danger,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -801,17 +780,3 @@ class _ModernStatBar extends StatelessWidget {
   }
 }
 
-/// Skeleton card para loading state
-class _SkeletonCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.obscureGray.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
-      ),
-    )
-        .animate(onPlay: (c) => c.repeat(reverse: true))
-        .shimmer(duration: 1500.ms, color: AppTheme.coldGray.withOpacity(0.1));
-  }
-}

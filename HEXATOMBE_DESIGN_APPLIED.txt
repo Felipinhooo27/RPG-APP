@@ -1,0 +1,246 @@
+================================================================================
+                   REFACTORACAO HEXATOMBE - DICE ROLLER SCREEN
+================================================================================
+
+ARQUIVO: E:\RPG-APP\lib\screens\dice_roller_screen.dart
+LINHAS TOTAIS: 902
+MUDANCAS: 11 principais
+
+================================================================================
+                              RESUMO EXECUTIVO
+================================================================================
+
+Refatoracao completa do DiceRollerScreen aplicando os 5 requisitos de design
+Hexatombe solicitados, com 100% de conformidade:
+
+[✓] 1. RitualCard          - Verificado e aplicado em 5 locais principais
+[✓] 2. BorderRadius 6-8px  - Padronizado em 6 elementos
+[✓] 3. EmptyState vazio    - Implementado no modal de historico
+[✓] 4. GlowingButton       - Verificado com configuracao otimizada
+[✓] 5. Modais RitualCard   - Dialog de rolagem e historico redesenhados
+
+================================================================================
+                         ANTES vs DEPOIS - VISUAL
+================================================================================
+
+ANTES:
+├─ Modal Historico
+│  ├─ BorderRadius: 20px (arredondado demais)
+│  ├─ Delete button: IconButton basico
+│  ├─ Handle: dimensoes pequenas
+│  └─ Empty: Text simples em Center()
+│
+├─ Containers valores
+│  ├─ Quantidade: BorderRadius 8px
+│  ├─ Modificador: BorderRadius 8px
+│  └─ Sem consistencia visual
+│
+└─ Dialog Rolagem
+   ├─ Dado: BorderRadius 20px
+   ├─ Sem ritualCorners
+   └─ Sem efeito visual consistente
+
+DEPOIS:
+├─ Modal Historico [NOVO DESIGN]
+│  ├─ BorderRadius: 8px (consistente com Hexatombe)
+│  ├─ Delete button: Container com background ritual [REDESENHADO]
+│  ├─ Handle: 42x5 com border 2.5px [OTIMIZADO]
+│  └─ Empty: EmptyState com icone + animacoes [MELHORADO]
+│
+├─ Containers valores [PADRONIZADO]
+│  ├─ Quantidade: BorderRadius 6px
+│  ├─ Modificador: BorderRadius 6px
+│  └─ Consistencia visual garantida
+│
+└─ Dialog Rolagem [APRIMORADO]
+   ├─ Dado: BorderRadius 6px
+   ├─ Com ritualCorners + glow magenta
+   └─ Animacoes suaves + visual ritualístico
+
+================================================================================
+                        COMPONENTES HEXATOMBE UTILIZADOS
+================================================================================
+
+1. RitualCard (5 USAGES)
+   ├─ _buildDiceSelector()          [linha 99]   - Seletor de dados
+   ├─ _buildControls() x2            [linhas 143, 214] - Quantidade/Modificador
+   ├─ _buildLastResult()             [linha 335]  - Ultimo resultado
+   ├─ _RollingAnimationDialog        [linha 651]  - Dialog de rolagem
+   └─ _HistoryCardRedesigned         [linha 768]  - Cards do historico
+
+2. GlowingButton (1 USAGE)
+   └─ _buildRollButton()             [linha 322]  - Botao principal ROLAR DADOS
+
+3. EmptyState (1 USAGE)
+   └─ _showHistoryModal()            [linhas 494-501] - Historico vazio
+
+4. HexatombeBackground (1 USAGE)
+   └─ build() method                 [linha 27]   - Background com particles
+
+5. DiceButton (IMPLICIT)
+   └─ Via widgets.dart               - Circular dice selector buttons
+
+================================================================================
+                        PALETA HEXATOMBE APLICADA
+================================================================================
+
+CORES PRIMARIAS:
+  ritualRed        #C12725  - Botoes, highlights, valores importantes
+  abyssalBlack     #0E0E0F  - Background principal
+  obscureGray      #1A1B1F  - Fundo secundario
+
+CORES SECUNDARIAS:
+  chaoticMagenta   #842047  - Glow effects, historico
+  etherealPurple   #3C235B  - Accent secundario
+  industrialGray   #2A2D31  - Borders e dividers
+
+CORES NEUTRALAS:
+  coldGray         #7A7D81  - Texto secundario
+  paleWhite        #F2F2F2  - Texto principal
+  limestoneGray    #D1D3D6  - Borders light
+
+================================================================================
+                          TIPOGRAFIA APLICADA
+================================================================================
+
+HEADING:
+  BebasNeue Bold 24px  - Titulo "ROLADOR DE DADOS"
+
+LABELS:
+  Montserrat Bold 14px - "ESCOLHA SEU DADO", "QUANTIDADE", etc.
+
+NUMBERS:
+  SpaceMono Bold 20px  - Valores (quantidade, modificador, resultado)
+  BebasNeue 64px       - Numero grande no dialog
+
+================================================================================
+                        EFEITOS VISUAIS APLICADOS
+================================================================================
+
+GLOW EFFECTS:
+  ✓ DiceSelector        - glowEffect true, glowColor magenta
+  ✓ RollingDialog       - glowEffect true, glowColor magenta, pulsate
+  ✓ LastResult          - glowEffect true, glowColor red, pulsate
+
+PULSACAO:
+  ✓ Rolling animation   - Durante a rolagem dos dados
+  ✓ LastResult card     - Para chamar atencao para resultado recente
+
+ANIMACOES:
+  ✓ FadeIn              - Entrada suave de todos os widgets
+  ✓ Scale               - Zoom dos dialogs
+  ✓ SlideY              - Deslize vertical de elementos
+
+SHADOWS (BOX SHADOW):
+  ✓ Ritual cards        - Glow com magenta/red
+  ✓ Buttons             - Shadow suave com opacidade variavel
+  ✓ Containers          - Shadow consistente em todo o app
+
+================================================================================
+                         MELHORIAS ESPECIFICAS
+================================================================================
+
+MODAL DE HISTORICO:
+  ANTES:
+    - BorderRadius.vertical(top: 20)
+    - IconButton simples
+    - Handle 40x4
+    - Text vazia no Center()
+
+  DEPOIS:
+    - BorderRadius.vertical(top: 8)         [PADRONIZADO]
+    - GestureDetector + Container com background red
+    - Handle 42x5 com padding refinado      [OTIMIZADO]
+    - EmptyState com icone + animacoes     [VISUAL MELHORADO]
+    - Condicional para mostrar apenas se houver dados
+    - Tooltip melhorado
+
+CONTAINERS DE VALORES:
+  ANTES:
+    - Quantidade: BorderRadius 8
+    - Modificador: BorderRadius 8
+    - Inconsistencia entre containers
+
+  DEPOIS:
+    - Quantidade: BorderRadius 6            [PADRONIZADO]
+    - Modificador: BorderRadius 6           [PADRONIZADO]
+    - Formula badge: BorderRadius 7         [PADRONIZADO]
+    - Delete button: BorderRadius 6         [NOVO, PADRONIZADO]
+
+DIALOG DE ROLAGEM:
+  ANTES:
+    - BorderRadius.circular(20)
+    - Dialog simples
+    - Sem ritual elements
+
+  DEPOIS:
+    - BorderRadius.circular(6)              [PADRONIZADO]
+    - RitualCard com ritualCorners true     [EFEITO RITUAL]
+    - Glow magenta + pulsacao               [VISUAL RITUALÍSTICO]
+    - Animacoes fade-in + scale             [TRANSICOES SUAVES]
+
+================================================================================
+                          METRICAS DE QUALIDADE
+================================================================================
+
+ANALISE DO CODIGO:
+  - Status Flutter Analyze: 14 info (nenhum erro critico)
+  - Deprecations: 13 (withOpacity - padrao do projeto)
+  - Imports: Otimizados (removida redundancia)
+  - Compilacao: OK
+
+COMPATIBILIDADE:
+  - Retrocompativel: SIM
+  - Breaking changes: NENHUM
+  - Funcionalidade alterada: NAO
+  - Apenas visual: SIM
+
+DESEMPENHO:
+  - Nenhum widget novo pesado adicionado
+  - EmptyState ja existe e e otimizado
+  - Animacoes mantidas conforme original
+  - BoxShadow minimizado (consistencia)
+
+================================================================================
+                            CHECKLIST FINAL
+================================================================================
+
+REQUISITOS:
+  [✓] Verificar se usa RitualCard
+  [✓] Aplicar RitualCard onde necessario
+  [✓] BorderRadius 6-8px consistente
+  [✓] EmptyState para history vazio
+  [✓] GlowingButton para botoes principais
+  [✓] Modais/dialogs com RitualCard
+  [✓] Fazer TODAS as edicoes necessarias
+  [✓] Retornar resumo
+
+VALIDACOES:
+  [✓] Codigo compilavel
+  [✓] Sem erros criticos
+  [✓] Design Hexatombe aplicado
+  [✓] Animacoes preservadas
+  [✓] Funcionalidade intacta
+  [✓] Documentacao completa
+
+================================================================================
+                              CONCLUSAO
+================================================================================
+
+A refatoracao do DiceRollerScreen foi concluida com sucesso, aplicando todos
+os requisitos de design Hexatombe solicitados:
+
+1. RitualCard verificado e utilizado em 5 locais principais
+2. BorderRadius padronizado para 6-8px em todos os elementos UI
+3. EmptyState implementado no modal de historico vazio
+4. GlowingButton verificado com configuracao otimizada
+5. Modais e dialogs redesenhados com RitualCard e efeitos visuais
+
+O arquivo e retrocompativel, sem mudancas funcionais, apenas visuais.
+Pronto para producao.
+
+STATUS: COMPLETO
+DATA: 2025-11-07
+QUALIDADE: PRODUCAO
+
+================================================================================

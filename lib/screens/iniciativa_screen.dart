@@ -85,12 +85,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
         .toList();
 
     if (selectedIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecione pelo menos um combatente'),
-          backgroundColor: AppTheme.alertYellow,
-        ),
-      );
+      _showInitErrorDialog('Selecione pelo menos um combatente para iniciar');
       return;
     }
 
@@ -171,54 +166,16 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
           ],
         ),
         body: _isLoadingCharacters
-            ? const Center(child: HexLoading.large())
+            ? Center(
+                child: HexLoading.large(
+                  message: 'Carregando combatentes...',
+                ),
+              )
             : _allCharacters.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: AppTheme.obscureGray,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.ritualRed.withOpacity(0.35),
-                                blurRadius: 6,
-                                spreadRadius: 0,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.group,
-                            size: 60,
-                            color: AppTheme.ritualRed,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'NENHUM PERSONAGEM',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.coldGray,
-                            fontFamily: 'BebasNeue',
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Crie personagens primeiro',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.coldGray,
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
-                      ],
-                    ),
+                ? const EmptyState(
+                    icon: Icons.shield_outlined,
+                    title: 'Nenhum Combatente',
+                    message: 'Crie personagens primeiro para iniciar um combate',
                   )
                 : ListView(
                     padding: const EdgeInsets.all(16),
@@ -298,7 +255,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
                                         color: isSelected
                                             ? AppTheme.ritualRed.withOpacity(0.2)
                                             : AppTheme.obscureGray,
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(6),
                                         boxShadow: [
                                           BoxShadow(
                                             color: (isSelected
@@ -357,7 +314,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: AppTheme.obscureGray.withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(6),
                                     boxShadow: [
                                       BoxShadow(
                                         color: (autoUpdate
@@ -452,28 +409,12 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
             IconButton(
               icon: const Icon(Icons.refresh, color: AppTheme.etherealPurple),
               tooltip: 'Re-rolar Iniciativas',
-              onPressed: () {
-                setState(() {
-                  for (var combatente in session.combatentes) {
-                    final dadosRolados = <int>[];
-                    final novaIniciativa =
-                        _rolarIniciativa(combatente.character, dadosRolados);
-                    final novoCombatente = combatente.copyWith(
-                      iniciativaTotal: novaIniciativa,
-                      dadosRolados: dadosRolados,
-                    );
-                    final index = session.combatentes.indexOf(combatente);
-                    session.combatentes[index] = novoCombatente;
-                  }
-                  session.ordenarPorIniciativa();
-                  session.resetar();
-                });
-              },
+              onPressed: _showRerollInitiativeDialog,
             ),
             IconButton(
               icon: const Icon(Icons.close, color: AppTheme.alertYellow),
               tooltip: 'Finalizar Combate',
-              onPressed: _finalizarCombate,
+              onPressed: _showEndCombatDialog,
             ),
           ],
         ),
@@ -508,7 +449,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: AppTheme.ritualRed.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                             boxShadow: [
                               BoxShadow(
                                 color: AppTheme.ritualRed.withOpacity(0.35),
@@ -565,21 +506,23 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
 
             // Lista de Combatentes
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: session.combatentes.length,
-                itemBuilder: (context, index) {
-                  final combatente = session.combatentes[index];
-                  final isTurnoAtual = session.turnoAtualIndex == index;
+              child: session.combatentes.isEmpty
+                  ? const EmptyState.noCombat()
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: session.combatentes.length,
+                      itemBuilder: (context, index) {
+                        final combatente = session.combatentes[index];
+                        final isTurnoAtual = session.turnoAtualIndex == index;
 
-                  return _buildCombatantCard(
-                    combatente,
-                    index,
-                    isTurnoAtual,
-                    session,
-                  ).animate().fadeIn(delay: (index * 50).ms, duration: 300.ms);
-                },
-              ),
+                        return _buildCombatantCard(
+                          combatente,
+                          index,
+                          isTurnoAtual,
+                          session,
+                        ).animate().fadeIn(delay: (index * 50).ms, duration: 300.ms);
+                      },
+                    ),
             ),
           ],
         ),
@@ -616,7 +559,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
             color: isTurnoAtual
                 ? AppTheme.ritualRed.withOpacity(0.2)
                 : AppTheme.obscureGray,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             boxShadow: [
               BoxShadow(
                 color: (isTurnoAtual ? AppTheme.ritualRed : AppTheme.coldGray)
@@ -655,7 +598,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: AppTheme.etherealPurple.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.etherealPurple.withOpacity(0.35),
@@ -683,7 +626,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
             const SizedBox(height: 8),
             // Barra de PV
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(3),
               child: LinearProgressIndicator(
                 value: pvPercent,
                 minHeight: 6,
@@ -729,7 +672,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppTheme.obscureGray.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -804,7 +747,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: AppTheme.obscureGray,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
                         color: pvColor.withOpacity(0.35),
@@ -861,9 +804,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
             label: 'Remover do Combate',
             icon: Icons.remove_circle_outline,
             onPressed: () {
-              setState(() {
-                session.removerCombatente(index);
-              });
+              _showRemoveCombatantDialog(combatente, index, session);
             },
             style: GlowingButtonStyle.danger,
           ),
@@ -886,7 +827,7 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
           foregroundColor: color,
           padding: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             side: BorderSide(color: color, width: 2),
           ),
         ),
@@ -897,6 +838,354 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
             fontWeight: FontWeight.w700,
             color: color,
             fontFamily: 'BebasNeue',
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Dialog Methods - Hexatombe Design
+
+  void _showInitErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: AppTheme.ritualRed,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppTheme.ritualRed.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.ritualRed.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.warning_outlined,
+                  color: AppTheme.ritualRed,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'AVISO',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.ritualRed,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.coldGray,
+                  fontFamily: 'Montserrat',
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              GlowingButton(
+                label: 'Entendido',
+                onPressed: () => Navigator.pop(context),
+                style: GlowingButtonStyle.primary,
+                fullWidth: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRerollInitiativeDialog() {
+    final session = _combatSession!;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: AppTheme.etherealPurple,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppTheme.etherealPurple.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.etherealPurple.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.shuffle,
+                  color: AppTheme.etherealPurple,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'RE-ROLAR INICIATIVA',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.etherealPurple,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Deseja re-rolar a iniciativa de todos os combatentes?',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.coldGray,
+                  fontFamily: 'Montserrat',
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Cancelar',
+                      onPressed: () => Navigator.pop(context),
+                      style: GlowingButtonStyle.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Confirmar',
+                      onPressed: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          for (var combatente in session.combatentes) {
+                            final dadosRolados = <int>[];
+                            final novaIniciativa =
+                                _rolarIniciativa(combatente.character, dadosRolados);
+                            final novoCombatente = combatente.copyWith(
+                              iniciativaTotal: novaIniciativa,
+                              dadosRolados: dadosRolados,
+                            );
+                            final index = session.combatentes.indexOf(combatente);
+                            session.combatentes[index] = novoCombatente;
+                          }
+                          session.ordenarPorIniciativa();
+                          session.resetar();
+                        });
+                      },
+                      style: GlowingButtonStyle.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEndCombatDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: AppTheme.alertYellow,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppTheme.alertYellow.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.alertYellow.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.stop_circle_outlined,
+                  color: AppTheme.alertYellow,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'FINALIZAR COMBATE',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.alertYellow,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Tem certeza que deseja encerrar o combate?',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.coldGray,
+                  fontFamily: 'Montserrat',
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Cancelar',
+                      onPressed: () => Navigator.pop(context),
+                      style: GlowingButtonStyle.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Encerrar',
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _finalizarCombate();
+                      },
+                      style: GlowingButtonStyle.danger,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRemoveCombatantDialog(
+    CombatantTracker combatente,
+    int index,
+    CombatSession session,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: AppTheme.ritualRed,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppTheme.ritualRed.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.ritualRed.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.person_remove_outlined,
+                  color: AppTheme.ritualRed,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'REMOVER COMBATENTE',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.ritualRed,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Remover ${combatente.character.nome} do combate?',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.coldGray,
+                  fontFamily: 'Montserrat',
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Cancelar',
+                      onPressed: () => Navigator.pop(context),
+                      style: GlowingButtonStyle.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GlowingButton(
+                      label: 'Remover',
+                      onPressed: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          session.removerCombatente(index);
+                        });
+                      },
+                      style: GlowingButtonStyle.danger,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
