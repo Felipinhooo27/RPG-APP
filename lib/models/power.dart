@@ -1,122 +1,134 @@
-class Ability {
-  final String id;
-  final String nome;
-  final String descricao;
-  final int custo; // Custo em PE
-  final String? formulaDano; // Fórmula de dano/cura (ex: "2d6+3")
-  final String tipo; // 'dano', 'cura', 'utilidade'
-  final String? efeitoAdicional; // Descrição de efeitos adicionais
+import 'dart:convert';
 
-  Ability({
-    required this.id,
-    required this.nome,
-    required this.descricao,
-    required this.custo,
-    this.formulaDano,
-    required this.tipo,
-    this.efeitoAdicional,
-  });
-
-  factory Ability.fromMap(Map<String, dynamic> map) {
-    return Ability(
-      id: map['id'] ?? '',
-      nome: map['nome'] ?? '',
-      descricao: map['descricao'] ?? '',
-      custo: map['custo'] ?? 0,
-      formulaDano: map['formulaDano'],
-      tipo: map['tipo'] ?? 'utilidade',
-      efeitoAdicional: map['efeitoAdicional'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'nome': nome,
-      'descricao': descricao,
-      'custo': custo,
-      'formulaDano': formulaDano,
-      'tipo': tipo,
-      'efeitoAdicional': efeitoAdicional,
-    };
-  }
-
-  Ability copyWith({
-    String? id,
-    String? nome,
-    String? descricao,
-    int? custo,
-    String? formulaDano,
-    String? tipo,
-    String? efeitoAdicional,
-  }) {
-    return Ability(
-      id: id ?? this.id,
-      nome: nome ?? this.nome,
-      descricao: descricao ?? this.descricao,
-      custo: custo ?? this.custo,
-      formulaDano: formulaDano ?? this.formulaDano,
-      tipo: tipo ?? this.tipo,
-      efeitoAdicional: efeitoAdicional ?? this.efeitoAdicional,
-    );
-  }
+/// Elementos do Outro Lado (Ordem Paranormal)
+enum ElementoOutroLado {
+  conhecimento,
+  energia,
+  morte,
+  sangue,
+  medo,
 }
 
+/// Model de Poder/Ritual
+///
+/// Representa poderes paranormais e rituais do sistema Ordem Paranormal
 class Power {
   final String id;
-  final String nome;
-  final String descricao;
-  final String elemento; // 'Conhecimento', 'Energia', 'Morte', 'Sangue', 'Medo'
-  final List<Ability> habilidades;
+  final String characterId;
+
+  String nome;
+  String descricao;
+  ElementoOutroLado elemento;
+
+  int custoPE; // Custo em Pontos de Esforço
+  int nivelMinimo; // NEX mínimo para usar
+
+  // Detalhes do poder
+  String? efeitos;
+  String? duracao;
+  String? alcance;
+  int? circulo; // Para rituais (1º, 2º, 3º, 4º círculo)
+
+  // Metadata
+  DateTime criadoEm;
+  DateTime atualizadoEm;
 
   Power({
     required this.id,
+    required this.characterId,
     required this.nome,
     required this.descricao,
     required this.elemento,
-    required this.habilidades,
-  });
+    required this.custoPE,
+    this.nivelMinimo = 5,
+    this.efeitos,
+    this.duracao,
+    this.alcance,
+    this.circulo,
+    DateTime? criadoEm,
+    DateTime? atualizadoEm,
+  })  : criadoEm = criadoEm ?? DateTime.now(),
+        atualizadoEm = atualizadoEm ?? DateTime.now();
 
-  factory Power.fromMap(Map<String, dynamic> map) {
-    final List<Ability> habilidades = [];
-    if (map['habilidades'] != null) {
-      for (var abilityMap in map['habilidades']) {
-        habilidades.add(Ability.fromMap(abilityMap));
-      }
-    }
+  // Getter para verificar se é ritual
+  bool get isRitual => circulo != null;
 
-    return Power(
-      id: map['id'] ?? '',
-      nome: map['nome'] ?? '',
-      descricao: map['descricao'] ?? '',
-      elemento: map['elemento'] ?? 'Conhecimento',
-      habilidades: habilidades,
-    );
-  }
-
-  Map<String, dynamic> toMap() {
+  // Serialização JSON
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'characterId': characterId,
       'nome': nome,
       'descricao': descricao,
-      'elemento': elemento,
-      'habilidades': habilidades.map((ability) => ability.toMap()).toList(),
+      'elemento': elemento.name,
+      'custoPE': custoPE,
+      'nivelMinimo': nivelMinimo,
+      'efeitos': efeitos,
+      'duracao': duracao,
+      'alcance': alcance,
+      'circulo': circulo,
+      'criadoEm': criadoEm.toIso8601String(),
+      'atualizadoEm': atualizadoEm.toIso8601String(),
     };
   }
 
+  factory Power.fromJson(Map<String, dynamic> json) {
+    return Power(
+      id: json['id'] as String,
+      characterId: json['characterId'] as String,
+      nome: json['nome'] as String,
+      descricao: json['descricao'] as String,
+      elemento: ElementoOutroLado.values.firstWhere(
+        (e) => e.name == json['elemento'],
+        orElse: () => ElementoOutroLado.conhecimento,
+      ),
+      custoPE: json['custoPE'] as int,
+      nivelMinimo: json['nivelMinimo'] as int? ?? 5,
+      efeitos: json['efeitos'] as String?,
+      duracao: json['duracao'] as String?,
+      alcance: json['alcance'] as String?,
+      circulo: json['circulo'] as int?,
+      criadoEm: DateTime.parse(json['criadoEm'] as String),
+      atualizadoEm: DateTime.parse(json['atualizadoEm'] as String),
+    );
+  }
+
+  String toJsonString() => jsonEncode(toJson());
+
+  factory Power.fromJsonString(String jsonString) {
+    return Power.fromJson(jsonDecode(jsonString));
+  }
+
+  // Copiar com modificações
   Power copyWith({
     String? id,
+    String? characterId,
     String? nome,
     String? descricao,
-    String? elemento,
-    List<Ability>? habilidades,
+    ElementoOutroLado? elemento,
+    int? custoPE,
+    int? nivelMinimo,
+    String? efeitos,
+    String? duracao,
+    String? alcance,
+    int? circulo,
+    DateTime? criadoEm,
+    DateTime? atualizadoEm,
   }) {
     return Power(
       id: id ?? this.id,
+      characterId: characterId ?? this.characterId,
       nome: nome ?? this.nome,
       descricao: descricao ?? this.descricao,
       elemento: elemento ?? this.elemento,
-      habilidades: habilidades ?? this.habilidades,
+      custoPE: custoPE ?? this.custoPE,
+      nivelMinimo: nivelMinimo ?? this.nivelMinimo,
+      efeitos: efeitos ?? this.efeitos,
+      duracao: duracao ?? this.duracao,
+      alcance: alcance ?? this.alcance,
+      circulo: circulo ?? this.circulo,
+      criadoEm: criadoEm ?? this.criadoEm,
+      atualizadoEm: atualizadoEm ?? DateTime.now(),
     );
   }
 }

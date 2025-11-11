@@ -1,312 +1,330 @@
-import 'item.dart';
-import 'skill.dart';
-import 'power.dart';
+import 'dart:convert';
 
+/// Enumeração de Classes (Ordem Paranormal)
+enum CharacterClass {
+  combatente,
+  especialista,
+  ocultista,
+}
+
+/// Enumeração de Origens (Ordem Paranormal)
+enum Origem {
+  academico,
+  agente,
+  artista,
+  atleta,
+  chef,
+  criminoso,
+  cultista,
+  desgarrado,
+  engenheiro,
+  executivo,
+  investigador,
+  lutador,
+  mercenario,
+  militar,
+  operario,
+  policial,
+  religioso,
+  servidor,
+  trambiqueiro,
+  universitario,
+  veterano,
+  vitima,
+}
+
+/// Model de Personagem seguindo as regras de Ordem Paranormal
+///
+/// REGRAS:
+/// - Atributos: 0-5 (max 3 inicial, 4 pontos para distribuir)
+/// - PV = base da classe + Vigor
+/// - PE = base da classe + Presença
+/// - SAN = base da classe
+/// - NEX: 5%, 10%, 20%, 35%, 40%, 50%, 65%, 70%, 80%, 95%, 99%
+/// - Deslocamento padrão: 9m
 class Character {
   final String id;
-  final String nome;
-  final String patente;
-  final int nex;
-  final String origem;
-  final String classe;
-  final String trilha;
-  final String createdBy; // ID do usuário que criou (para Modo Jogador)
+  final String userId; // 'player_001' ou 'master_001'
 
-  // Status
-  final int pvAtual;
-  final int pvMax;
-  final int peAtual;
-  final int peMax;
-  final int psAtual;
-  final int psMax;
-  final int creditos;
+  // Informações básicas
+  String nome;
+  CharacterClass classe;
+  Origem origem;
+  String? trilha;
+  String? patente;
+  int nex; // 5-99%
 
-  // Atributos
-  final int forca;
-  final int agilidade;
-  final int vigor;
-  final int inteligencia;
-  final int presenca;
+  // Atributos (0-5)
+  int forca;
+  int agilidade;
+  int vigor;
+  int intelecto;
+  int presenca;
+
+  // Recursos
+  int pvMax;
+  int pvAtual;
+  int peMax;
+  int peAtual;
+  int sanMax;
+  int sanAtual;
 
   // Combate
-  final int iniciativaBase;
+  int defesa;
+  int bloqueio;
+  int deslocamento; // metros
+  int iniciativaBase;
 
-  // Poderes Paranormais
-  final List<Power> poderes;
+  // Finanças
+  int creditos;
 
-  // Perícias (Skills)
-  final Map<String, Skill> pericias;
+  // Perícias (IDs)
+  List<String> periciasTreinadas;
 
-  // Inventário
-  final List<Item> inventario;
+  // Inventário (IDs de itens)
+  List<String> inventarioIds;
 
-  // Sistema de Lojas
-  final String? activeShopId;
-  final List<String> purchaseHistory;
+  // Poderes (IDs)
+  List<String> poderesIds;
+
+  // Notas pessoais
+  String? notas;
+  String? historia;
+
+  // Metadata
+  DateTime criadoEm;
+  DateTime atualizadoEm;
+  String? activeShopId;
 
   Character({
     required this.id,
+    required this.userId,
     required this.nome,
-    required this.patente,
-    required this.nex,
-    required this.origem,
     required this.classe,
-    required this.trilha,
-    required this.createdBy,
-    required this.pvAtual,
-    required this.pvMax,
-    required this.peAtual,
-    required this.peMax,
-    required this.psAtual,
-    required this.psMax,
-    required this.creditos,
+    required this.origem,
+    this.trilha,
+    this.patente,
+    required this.nex,
     required this.forca,
     required this.agilidade,
     required this.vigor,
-    required this.inteligencia,
+    required this.intelecto,
     required this.presenca,
+    required this.pvMax,
+    required this.pvAtual,
+    required this.peMax,
+    required this.peAtual,
+    required this.sanMax,
+    required this.sanAtual,
+    required this.defesa,
+    required this.bloqueio,
+    required this.deslocamento,
     required this.iniciativaBase,
-    required this.poderes,
-    required this.pericias,
-    required this.inventario,
+    this.creditos = 0,
+    List<String>? periciasTreinadas,
+    List<String>? inventarioIds,
+    List<String>? poderesIds,
+    this.notas,
+    this.historia,
+    DateTime? criadoEm,
+    DateTime? atualizadoEm,
     this.activeShopId,
-    this.purchaseHistory = const [],
-  });
+  })  : periciasTreinadas = periciasTreinadas ?? [],
+        inventarioIds = inventarioIds ?? [],
+        poderesIds = poderesIds ?? [],
+        criadoEm = criadoEm ?? DateTime.now(),
+        atualizadoEm = atualizadoEm ?? DateTime.now();
 
-  // Construtor para criar um personagem vazio
-  factory Character.empty(String userId) {
-    return Character(
-      id: '',
-      nome: '',
-      patente: '',
-      nex: 0,
-      origem: '',
-      classe: '',
-      trilha: '',
-      createdBy: userId,
-      pvAtual: 0,
-      pvMax: 0,
-      peAtual: 0,
-      peMax: 0,
-      psAtual: 0,
-      psMax: 0,
-      creditos: 0,
-      forca: 0,
-      agilidade: 0,
-      vigor: 0,
-      inteligencia: 0,
-      presenca: 0,
-      iniciativaBase: 0,
-      poderes: [],
-      pericias: {},
-      inventario: [],
-      activeShopId: null,
-      purchaseHistory: [],
-    );
+  // Getters calculados
+  int get modificadorForca => forca;
+  int get modificadorAgilidade => agilidade;
+  int get modificadorVigor => vigor;
+  int get modificadorIntelecto => intelecto;
+  int get modificadorPresenca => presenca;
+
+  double get pvPercentual => pvMax > 0 ? (pvAtual / pvMax) : 0;
+  double get pePercentual => peMax > 0 ? (peAtual / peMax) : 0;
+  double get sanPercentual => sanMax > 0 ? (sanAtual / sanMax) : 0;
+
+  bool get isLowHealth => pvPercentual <= 0.25;
+  bool get isLowSanity => sanPercentual <= 0.25;
+
+  int get iniciativa => iniciativaBase + agilidade;
+
+  // Validações (Ordem Paranormal)
+  static const int MIN_ATTRIBUTE = -1;
+  static const int MAX_ATTRIBUTE_INITIAL = 3;
+  static const int MAX_ATTRIBUTE_EVER = 5;
+  static const int DESLOCAMENTO_PADRAO = 9;
+
+  bool isAttributeValid(int value) {
+    return value >= MIN_ATTRIBUTE && value <= MAX_ATTRIBUTE_EVER;
   }
 
-  // Converter de Map (Firestore) para Character
-  factory Character.fromMap(Map<String, dynamic> map) {
-    final List<Item> items = [];
-    if (map['inventario'] != null) {
-      for (var itemMap in map['inventario']) {
-        items.add(Item.fromMap(itemMap));
-      }
-    }
-
-    final List<Power> poderes = [];
-    if (map['poderes'] != null) {
-      for (var poderMap in map['poderes']) {
-        // Compatibilidade com formato antigo (lista de strings)
-        if (poderMap is String) {
-          poderes.add(Power(
-            id: '',
-            nome: poderMap,
-            descricao: '',
-            elemento: 'Conhecimento',
-            habilidades: [],
-          ));
-        } else {
-          poderes.add(Power.fromMap(poderMap));
-        }
-      }
-    }
-
-    final Map<String, Skill> pericias = {};
-    if (map['pericias'] != null) {
-      (map['pericias'] as Map<String, dynamic>).forEach((key, value) {
-        pericias[key] = Skill.fromMap(value);
-      });
-    }
-
-    final List<String> purchaseHistory = [];
-    if (map['purchaseHistory'] != null) {
-      for (var item in map['purchaseHistory']) {
-        purchaseHistory.add(item.toString());
-      }
-    }
-
-    return Character(
-      id: map['id'] ?? '',
-      nome: map['nome'] ?? '',
-      patente: map['patente'] ?? '',
-      nex: map['nex'] ?? 0,
-      origem: map['origem'] ?? '',
-      classe: map['classe'] ?? '',
-      trilha: map['trilha'] ?? '',
-      createdBy: map['createdBy'] ?? '',
-      pvAtual: map['status']?['pv_atual'] ?? 0,
-      pvMax: map['status']?['pv_max'] ?? 0,
-      peAtual: map['status']?['pe_atual'] ?? 0,
-      peMax: map['status']?['pe_max'] ?? 0,
-      psAtual: map['status']?['ps_atual'] ?? 0,
-      psMax: map['status']?['ps_max'] ?? 0,
-      creditos: map['status']?['creditos'] ?? 0,
-      forca: map['atributos']?['for'] ?? 0,
-      agilidade: map['atributos']?['agi'] ?? 0,
-      vigor: map['atributos']?['vig'] ?? 0,
-      inteligencia: map['atributos']?['int'] ?? 0,
-      presenca: map['atributos']?['pre'] ?? 0,
-      iniciativaBase: map['combate']?['iniciativa_base'] ?? 0,
-      poderes: poderes,
-      pericias: pericias,
-      inventario: items,
-      activeShopId: map['activeShopId'],
-      purchaseHistory: purchaseHistory,
-    );
-  }
-
-  // Converter de Character para Map (Firestore)
-  Map<String, dynamic> toMap() {
+  // Serialização JSON
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'userId': userId,
       'nome': nome,
+      'classe': classe.name,
+      'origem': origem.name,
+      'trilha': trilha,
       'patente': patente,
       'nex': nex,
-      'origem': origem,
-      'classe': classe,
-      'trilha': trilha,
-      'createdBy': createdBy,
-      'status': {
-        'pv_atual': pvAtual,
-        'pv_max': pvMax,
-        'pe_atual': peAtual,
-        'pe_max': peMax,
-        'ps_atual': psAtual,
-        'ps_max': psMax,
-        'creditos': creditos,
-      },
-      'atributos': {
-        'for': forca,
-        'agi': agilidade,
-        'vig': vigor,
-        'int': inteligencia,
-        'pre': presenca,
-      },
-      'combate': {
-        'iniciativa_base': iniciativaBase,
-      },
-      'poderes': poderes.map((power) => power.toMap()).toList(),
-      'pericias': pericias.map((key, value) => MapEntry(key, value.toMap())),
-      'inventario': inventario.map((item) => item.toMap()).toList(),
+      'forca': forca,
+      'agilidade': agilidade,
+      'vigor': vigor,
+      'intelecto': intelecto,
+      'presenca': presenca,
+      'pvMax': pvMax,
+      'pvAtual': pvAtual,
+      'peMax': peMax,
+      'peAtual': peAtual,
+      'sanMax': sanMax,
+      'sanAtual': sanAtual,
+      'defesa': defesa,
+      'bloqueio': bloqueio,
+      'deslocamento': deslocamento,
+      'iniciativaBase': iniciativaBase,
+      'creditos': creditos,
+      'periciasTreinadas': periciasTreinadas,
+      'inventarioIds': inventarioIds,
+      'poderesIds': poderesIds,
+      'notas': notas,
+      'historia': historia,
+      'criadoEm': criadoEm.toIso8601String(),
+      'atualizadoEm': atualizadoEm.toIso8601String(),
       'activeShopId': activeShopId,
-      'purchaseHistory': purchaseHistory,
     };
   }
 
-  // JSON serialization methods for import/export
-  Map<String, dynamic> toJson() => toMap();
-  factory Character.fromJson(Map<String, dynamic> json) => Character.fromMap(json);
-
-  // Método copyWith para criar cópias com alterações
-  Character copyWith({
-    String? id,
-    String? nome,
-    String? patente,
-    int? nex,
-    String? origem,
-    String? classe,
-    String? trilha,
-    String? createdBy,
-    int? pvAtual,
-    int? pvMax,
-    int? peAtual,
-    int? peMax,
-    int? psAtual,
-    int? psMax,
-    int? creditos,
-    int? forca,
-    int? agilidade,
-    int? vigor,
-    int? inteligencia,
-    int? presenca,
-    int? iniciativaBase,
-    List<Power>? poderes,
-    Map<String, Skill>? pericias,
-    List<Item>? inventario,
-    String? activeShopId,
-    List<String>? purchaseHistory,
-  }) {
+  factory Character.fromJson(Map<String, dynamic> json) {
     return Character(
-      id: id ?? this.id,
-      nome: nome ?? this.nome,
-      patente: patente ?? this.patente,
-      nex: nex ?? this.nex,
-      origem: origem ?? this.origem,
-      classe: classe ?? this.classe,
-      trilha: trilha ?? this.trilha,
-      createdBy: createdBy ?? this.createdBy,
-      pvAtual: pvAtual ?? this.pvAtual,
-      pvMax: pvMax ?? this.pvMax,
-      peAtual: peAtual ?? this.peAtual,
-      peMax: peMax ?? this.peMax,
-      psAtual: psAtual ?? this.psAtual,
-      psMax: psMax ?? this.psMax,
-      creditos: creditos ?? this.creditos,
-      forca: forca ?? this.forca,
-      agilidade: agilidade ?? this.agilidade,
-      vigor: vigor ?? this.vigor,
-      inteligencia: inteligencia ?? this.inteligencia,
-      presenca: presenca ?? this.presenca,
-      iniciativaBase: iniciativaBase ?? this.iniciativaBase,
-      poderes: poderes ?? this.poderes,
-      pericias: pericias ?? this.pericias,
-      inventario: inventario ?? this.inventario,
-      activeShopId: activeShopId ?? this.activeShopId,
-      purchaseHistory: purchaseHistory ?? this.purchaseHistory,
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      nome: json['nome'] as String,
+      classe: CharacterClass.values.firstWhere(
+        (e) => e.name == json['classe'],
+        orElse: () => CharacterClass.combatente,
+      ),
+      origem: Origem.values.firstWhere(
+        (e) => e.name == json['origem'],
+        orElse: () => Origem.academico,
+      ),
+      trilha: json['trilha'] as String?,
+      patente: json['patente'] as String?,
+      nex: json['nex'] as int,
+      forca: json['forca'] as int,
+      agilidade: json['agilidade'] as int,
+      vigor: json['vigor'] as int,
+      intelecto: json['intelecto'] as int,
+      presenca: json['presenca'] as int,
+      pvMax: json['pvMax'] as int,
+      pvAtual: json['pvAtual'] as int,
+      peMax: json['peMax'] as int,
+      peAtual: json['peAtual'] as int,
+      sanMax: json['sanMax'] as int,
+      sanAtual: json['sanAtual'] as int,
+      defesa: json['defesa'] as int,
+      bloqueio: json['bloqueio'] as int,
+      deslocamento: json['deslocamento'] as int,
+      iniciativaBase: json['iniciativaBase'] as int,
+      creditos: json['creditos'] as int? ?? 0,
+      periciasTreinadas: (json['periciasTreinadas'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      inventarioIds: (json['inventarioIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      poderesIds: (json['poderesIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      notas: json['notas'] as String?,
+      historia: json['historia'] as String?,
+      criadoEm: DateTime.parse(json['criadoEm'] as String),
+      atualizadoEm: DateTime.parse(json['atualizadoEm'] as String),
+      activeShopId: json['activeShopId'] as String?,
     );
   }
 
-  /// Calcula o modificador de um atributo
-  int getModifier(String attribute) {
-    int value = 0;
-    switch (attribute.toUpperCase()) {
-      case 'FOR':
-        value = forca;
-        break;
-      case 'AGI':
-        value = agilidade;
-        break;
-      case 'VIG':
-        value = vigor;
-        break;
-      case 'INT':
-        value = inteligencia;
-        break;
-      case 'PRE':
-        value = presenca;
-        break;
-    }
-    return ((value - 10) / 2).floor();
+  String toJsonString() => jsonEncode(toJson());
+
+  factory Character.fromJsonString(String jsonString) {
+    return Character.fromJson(jsonDecode(jsonString));
   }
 
-  /// Calcula o bônus total de uma perícia
-  int getSkillBonus(String skillName) {
-    final skill = pericias[skillName];
-    if (skill == null) return 0;
-
-    final attributeMod = getModifier(skill.attribute ?? 'INT');
-    return skill.getBonus(attributeMod);
+  // Copiar com modificações
+  Character copyWith({
+    String? id,
+    String? userId,
+    String? nome,
+    CharacterClass? classe,
+    Origem? origem,
+    String? trilha,
+    String? patente,
+    int? nex,
+    int? forca,
+    int? agilidade,
+    int? vigor,
+    int? intelecto,
+    int? presenca,
+    int? pvMax,
+    int? pvAtual,
+    int? peMax,
+    int? peAtual,
+    int? sanMax,
+    int? sanAtual,
+    int? defesa,
+    int? bloqueio,
+    int? deslocamento,
+    int? iniciativaBase,
+    int? creditos,
+    List<String>? periciasTreinadas,
+    List<String>? inventarioIds,
+    List<String>? poderesIds,
+    String? notas,
+    String? historia,
+    DateTime? criadoEm,
+    DateTime? atualizadoEm,
+    String? activeShopId,
+  }) {
+    return Character(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      nome: nome ?? this.nome,
+      classe: classe ?? this.classe,
+      origem: origem ?? this.origem,
+      trilha: trilha ?? this.trilha,
+      patente: patente ?? this.patente,
+      nex: nex ?? this.nex,
+      forca: forca ?? this.forca,
+      agilidade: agilidade ?? this.agilidade,
+      vigor: vigor ?? this.vigor,
+      intelecto: intelecto ?? this.intelecto,
+      presenca: presenca ?? this.presenca,
+      pvMax: pvMax ?? this.pvMax,
+      pvAtual: pvAtual ?? this.pvAtual,
+      peMax: peMax ?? this.peMax,
+      peAtual: peAtual ?? this.peAtual,
+      sanMax: sanMax ?? this.sanMax,
+      sanAtual: sanAtual ?? this.sanAtual,
+      defesa: defesa ?? this.defesa,
+      bloqueio: bloqueio ?? this.bloqueio,
+      deslocamento: deslocamento ?? this.deslocamento,
+      iniciativaBase: iniciativaBase ?? this.iniciativaBase,
+      creditos: creditos ?? this.creditos,
+      periciasTreinadas: periciasTreinadas ?? this.periciasTreinadas,
+      inventarioIds: inventarioIds ?? this.inventarioIds,
+      poderesIds: poderesIds ?? this.poderesIds,
+      notas: notas ?? this.notas,
+      historia: historia ?? this.historia,
+      criadoEm: criadoEm ?? this.criadoEm,
+      atualizadoEm: atualizadoEm ?? DateTime.now(),
+      activeShopId: activeShopId ?? this.activeShopId,
+    );
   }
 }
-

@@ -1,0 +1,41 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- D12 - Dodecaedro - Medo (Purple) -->
+  <defs>
+    <linearGradient id="d12Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E040FB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D500F9;stop-opacity:1" />
+    </linearGradient>
+    <filter id="d12Glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Face frontal pentagonal -->
+  <path d="M 50 15 L 25 30 L 30 60 L 70 60 L 75 30 Z"
+        fill="url(#d12Gradient)"
+        stroke="#D500F9"
+        stroke-width="2.5"
+        filter="url(#d12Glow)"/>
+
+  <!-- Face inferior -->
+  <path d="M 30 60 L 70 60 L 65 85 L 35 85 Z"
+        fill="#AA00FF"
+        opacity="0.8"/>
+
+  <!-- Face lateral direita -->
+  <path d="M 50 15 L 75 30 L 70 45 Z"
+        fill="#9C27B0"
+        opacity="0.7"/>
+
+  <!-- Número 12 -->
+  <text x="50" y="52"
+        font-family="Arial, sans-serif"
+        font-size="20"
+        font-weight="bold"
+        fill="#FFFFFF"
+        text-anchor="middle">12</text>
+</svg>

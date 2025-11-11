@@ -1,0 +1,66 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hexatombe Logo - Hexágono com D20 -->
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF006E;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#B50D0D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D500F9;stop-opacity:1" />
+    </linearGradient>
+    <filter id="logoGlow">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Hexágono externo -->
+  <path d="M 150 20 L 240 75 L 240 185 L 150 240 L 60 185 L 60 75 Z"
+        fill="none"
+        stroke="url(#logoGradient)"
+        stroke-width="8"
+        filter="url(#logoGlow)"/>
+
+  <!-- Hexágono interno menor -->
+  <path d="M 150 60 L 210 95 L 210 165 L 150 200 L 90 165 L 90 95 Z"
+        fill="none"
+        stroke="#D500F9"
+        stroke-width="4"
+        opacity="0.6"/>
+
+  <!-- D20 central estilizado -->
+  <path d="M 150 100 L 125 125 L 150 150 L 175 125 Z"
+        fill="url(#logoGradient)"
+        stroke="#FF006E"
+        stroke-width="3"/>
+
+  <path d="M 125 125 L 115 145 L 150 150 Z"
+        fill="#B50D0D"
+        opacity="0.9"/>
+
+  <path d="M 175 125 L 185 145 L 150 150 Z"
+        fill="#C2185B"
+        opacity="0.9"/>
+
+  <path d="M 115 145 L 130 170 L 150 150 Z"
+        fill="#9C27B0"
+        opacity="0.8"/>
+
+  <path d="M 185 145 L 170 170 L 150 150 Z"
+        fill="#AA00FF"
+        opacity="0.8"/>
+
+  <path d="M 130 170 L 170 170 L 150 150 Z"
+        fill="#D500F9"
+        opacity="0.9"/>
+
+  <!-- Texto HEXATOMBE -->
+  <text x="150" y="235"
+        font-family="Arial, sans-serif"
+        font-size="32"
+        font-weight="bold"
+        fill="#B50D0D"
+        text-anchor="middle"
+        letter-spacing="4">HEXATOMBE</text>
+</svg>

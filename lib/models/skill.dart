@@ -1,184 +1,174 @@
-/// Modelo de Perícia (Skill) - Sistema Ordem Paranormal
+import 'dart:convert';
+
+/// Níveis de treinamento de perícia (Ordem Paranormal)
+enum SkillLevel {
+  untrained, // Destreinado
+  trained, // Treinado
+  expert, // Veterano
+  master, // Expert
+}
+
+/// Atributo associado à perícia
+enum SkillAttribute {
+  forca,
+  agilidade,
+  vigor,
+  intelecto,
+  presenca,
+}
+
+/// Categorias de perícias
+enum SkillCategory {
+  investigation, // Investigação
+  combat, // Combate
+  survival, // Sobrevivência
+  social, // Social
+  knowledge, // Conhecimento
+}
+
+/// Model de Perícia (Skill)
+///
+/// Cada perícia tem:
+/// - Nome
+/// - Atributo relacionado
+/// - Nível de treinamento
+/// - Categoria
+/// - Bônus calculado (atributo + nível)
 class Skill {
-  final String name;
-  final SkillCategory category;
-  final SkillLevel level;
-  final String? attribute; // FOR, AGI, INT, PRE, VIG
+  final String id;
+  final String characterId;
 
-  const Skill({
-    required this.name,
-    required this.category,
-    this.level = SkillLevel.untrained,
-    this.attribute,
-  });
+  String nome;
+  SkillAttribute atributo;
+  SkillLevel nivel;
+  SkillCategory categoria;
 
-  /// Calcula o bônus total da perícia (atributo + treinamento)
-  int getBonus(int attributeModifier) {
-    int bonus = attributeModifier;
+  // Metadata
+  DateTime criadoEm;
+  DateTime atualizadoEm;
 
-    switch (level) {
-      case SkillLevel.untrained:
-        bonus += 0;
-        break;
-      case SkillLevel.trained:
-        bonus += 5;
-        break;
-      case SkillLevel.veteran:
-        bonus += 10;
-        break;
-      case SkillLevel.expert:
-        bonus += 15;
-        break;
-    }
+  Skill({
+    required this.id,
+    required this.characterId,
+    required this.nome,
+    required this.atributo,
+    this.nivel = SkillLevel.untrained,
+    required this.categoria,
+    DateTime? criadoEm,
+    DateTime? atualizadoEm,
+  })  : criadoEm = criadoEm ?? DateTime.now(),
+        atualizadoEm = atualizadoEm ?? DateTime.now();
 
-    return bonus;
-  }
-
-  /// Retorna APENAS o bônus de treinamento (sem modificador de atributo)
-  /// Usado para exibição no grimório
-  int getTrainingBonusOnly() {
-    switch (level) {
+  // Bônus por nível
+  int get nivelBonus {
+    switch (nivel) {
       case SkillLevel.untrained:
         return 0;
       case SkillLevel.trained:
         return 5;
-      case SkillLevel.veteran:
-        return 10;
       case SkillLevel.expert:
+        return 10;
+      case SkillLevel.master:
         return 15;
     }
   }
 
-  /// Serialização
-  Map<String, dynamic> toMap() {
+  // Serialização JSON
+  Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'category': category.toString().split('.').last,
-      'level': level.toString().split('.').last,
-      'attribute': attribute,
+      'id': id,
+      'characterId': characterId,
+      'nome': nome,
+      'atributo': atributo.name,
+      'nivel': nivel.name,
+      'categoria': categoria.name,
+      'criadoEm': criadoEm.toIso8601String(),
+      'atualizadoEm': atualizadoEm.toIso8601String(),
     };
   }
 
-  /// Desserialização
-  factory Skill.fromMap(Map<String, dynamic> map) {
+  factory Skill.fromJson(Map<String, dynamic> json) {
     return Skill(
-      name: map['name'] ?? '',
-      category: SkillCategory.values.firstWhere(
-        (e) => e.toString().split('.').last == map['category'],
-        orElse: () => SkillCategory.combat,
+      id: json['id'] as String,
+      characterId: json['characterId'] as String,
+      nome: json['nome'] as String,
+      atributo: SkillAttribute.values.firstWhere(
+        (e) => e.name == json['atributo'],
+        orElse: () => SkillAttribute.intelecto,
       ),
-      level: SkillLevel.values.firstWhere(
-        (e) => e.toString().split('.').last == map['level'],
+      nivel: SkillLevel.values.firstWhere(
+        (e) => e.name == json['nivel'],
         orElse: () => SkillLevel.untrained,
       ),
-      attribute: map['attribute'],
+      categoria: SkillCategory.values.firstWhere(
+        (e) => e.name == json['categoria'],
+        orElse: () => SkillCategory.knowledge,
+      ),
+      criadoEm: DateTime.parse(json['criadoEm'] as String),
+      atualizadoEm: DateTime.parse(json['atualizadoEm'] as String),
     );
   }
 
+  String toJsonString() => jsonEncode(toJson());
+
+  factory Skill.fromJsonString(String jsonString) {
+    return Skill.fromJson(jsonDecode(jsonString));
+  }
+
+  // Copiar com modificações
   Skill copyWith({
-    String? name,
-    SkillCategory? category,
-    SkillLevel? level,
-    String? attribute,
+    String? id,
+    String? characterId,
+    String? nome,
+    SkillAttribute? atributo,
+    SkillLevel? nivel,
+    SkillCategory? categoria,
+    DateTime? criadoEm,
+    DateTime? atualizadoEm,
   }) {
     return Skill(
-      name: name ?? this.name,
-      category: category ?? this.category,
-      level: level ?? this.level,
-      attribute: attribute ?? this.attribute,
+      id: id ?? this.id,
+      characterId: characterId ?? this.characterId,
+      nome: nome ?? this.nome,
+      atributo: atributo ?? this.atributo,
+      nivel: nivel ?? this.nivel,
+      categoria: categoria ?? this.categoria,
+      criadoEm: criadoEm ?? this.criadoEm,
+      atualizadoEm: atualizadoEm ?? DateTime.now(),
     );
   }
-}
 
-/// Categorias de Perícias
-enum SkillCategory {
-  combat,       // Combate
-  investigation, // Investigação
-  social,       // Social
-  occult,       // Ocultismo
-  survival,     // Sobrevivência
-}
-
-/// Níveis de Treinamento
-enum SkillLevel {
-  untrained, // Destreinado
-  trained,   // Treinado (+5)
-  veteran,   // Veterano (+10)
-  expert,    // Expert (+15)
-}
-
-/// Perícias do Sistema Ordem Paranormal
-class OrdemSkills {
-  // Combate
-  static const String fighting = 'Luta';
-  static const String aim = 'Pontaria';
-  static const String reflexes = 'Reflexos';
-
-  // Investigação
-  static const String investigation = 'Investigação';
-  static const String perception = 'Percepção';
-  static const String medicine = 'Medicina';
-  static const String occultism = 'Ocultismo';
-  static const String professionalism = 'Profissão';
-  static const String technology = 'Tecnologia';
-
-  // Social
-  static const String diplomacy = 'Diplomacia';
-  static const String deception = 'Enganação';
-  static const String intimidation = 'Intimidação';
-  static const String initiative = 'Iniciativa';
-  static const String intuition = 'Intuição';
-  static const String performance = 'Atuação';
-
-  // Sobrevivência
-  static const String athletics = 'Atletismo';
-  static const String stealth = 'Furtividade';
-  static const String piloting = 'Pilotagem';
-  static const String survival = 'Sobrevivência';
-  static const String animalHandling = 'Adestramento';
-
-  /// Lista completa de perícias com suas categorias e atributos
-  static final Map<String, Map<String, String>> allSkills = {
-    // Combate
-    fighting: {'category': 'combat', 'attribute': 'FOR'},
-    aim: {'category': 'combat', 'attribute': 'AGI'},
-    reflexes: {'category': 'combat', 'attribute': 'AGI'},
-
-    // Investigação
-    investigation: {'category': 'investigation', 'attribute': 'INT'},
-    perception: {'category': 'investigation', 'attribute': 'PRE'},
-    medicine: {'category': 'investigation', 'attribute': 'INT'},
-    occultism: {'category': 'investigation', 'attribute': 'INT'},
-    professionalism: {'category': 'investigation', 'attribute': 'INT'},
-    technology: {'category': 'investigation', 'attribute': 'INT'},
-
-    // Social
-    diplomacy: {'category': 'social', 'attribute': 'PRE'},
-    deception: {'category': 'social', 'attribute': 'PRE'},
-    intimidation: {'category': 'social', 'attribute': 'PRE'},
-    initiative: {'category': 'social', 'attribute': 'PRE'},
-    intuition: {'category': 'social', 'attribute': 'PRE'},
-    performance: {'category': 'social', 'attribute': 'PRE'},
-
-    // Sobrevivência
-    athletics: {'category': 'survival', 'attribute': 'FOR'},
-    stealth: {'category': 'survival', 'attribute': 'AGI'},
-    piloting: {'category': 'survival', 'attribute': 'AGI'},
-    survival: {'category': 'survival', 'attribute': 'INT'},
-    animalHandling: {'category': 'survival', 'attribute': 'PRE'},
-  };
-
-  /// Retorna todas as perícias de uma categoria
-  static List<String> getSkillsByCategory(SkillCategory category) {
-    final categoryName = category.toString().split('.').last;
-    return allSkills.entries
-        .where((e) => e.value['category'] == categoryName)
-        .map((e) => e.key)
-        .toList();
-  }
-
-  /// Retorna o atributo principal de uma perícia
-  static String getSkillAttribute(String skillName) {
-    return allSkills[skillName]?['attribute'] ?? 'INT';
+  // Lista de perícias padrão de Ordem Paranormal
+  static List<String> getPadrao() {
+    return [
+      'Acrobacia',
+      'Adestramento',
+      'Artes',
+      'Atletismo',
+      'Atualidades',
+      'Ciências',
+      'Crime',
+      'Diplomacia',
+      'Enganação',
+      'Fortitude',
+      'Furtividade',
+      'Iniciativa',
+      'Intimidação',
+      'Intuição',
+      'Investigação',
+      'Luta',
+      'Medicina',
+      'Ocultismo',
+      'Percepção',
+      'Pilotagem',
+      'Pontaria',
+      'Profissão',
+      'Reflexos',
+      'Religião',
+      'Sobrevivência',
+      'Tática',
+      'Tecnologia',
+      'Vontade',
+    ];
   }
 }

@@ -1,0 +1,33 @@
+# Flutter Native Splash Configuration
+# Configura a splash screen nativa para todas as plataformas
+
+flutter_native_splash:
+  # Cor de fundo (Deep Black do tema Hexatombe)
+  color: "#0D0D0D"
+
+  # Cor de fundo para modo escuro (mesma cor)
+  color_dark: "#0D0D0D"
+
+  # Imagem do logo Hexatombe
+  image: assets/images/splash/hexatombe_logo.svg
+
+  # Configuração para Android 12+
+  android_12:
+    color: "#0D0D0D"
+    image: assets/images/splash/hexatombe_logo.svg
+
+  # Ativar para web
+  web: true
+
+  # Ativar para iOS
+  ios: true
+
+  # Ativar para Android
+  android: true
+
+  # Ativar fullscreen
+  fullscreen: true
+
+  # Informações adicionais
+  android_gravity: center
+  ios_content_mode: center

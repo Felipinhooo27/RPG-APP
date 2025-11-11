@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../theme/app_theme.dart';
+import '../core/theme/app_colors.dart';
 
 enum GlowingButtonStyle { primary, secondary, danger, occult }
 
 /// Botão com efeito de brilho elaborado
+/// Adaptado para tema Hexatombe
 class GlowingButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -84,13 +85,13 @@ class _GlowingButtonState extends State<GlowingButton>
   Color get backgroundColor {
     switch (widget.style) {
       case GlowingButtonStyle.primary:
-        return AppTheme.ritualRed;
+        return AppColors.neonRed;
       case GlowingButtonStyle.secondary:
-        return AppTheme.etherealPurple;
+        return AppColors.medoPurple;
       case GlowingButtonStyle.danger:
-        return AppTheme.alertYellow;
+        return AppColors.energiaYellow;
       case GlowingButtonStyle.occult:
-        return AppTheme.chaoticMagenta;
+        return AppColors.magenta;
     }
   }
 
@@ -133,7 +134,7 @@ class _GlowingButtonState extends State<GlowingButton>
 
                   return Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.zero,
                       boxShadow: [
                         BoxShadow(
                           color: glowColor.withOpacity(glowIntensity),
@@ -154,36 +155,19 @@ class _GlowingButtonState extends State<GlowingButton>
             // Botão principal
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDisabled
-                      ? [
-                          AppTheme.coldGray.withOpacity(0.3),
-                          AppTheme.industrialGray.withOpacity(0.3),
-                        ]
-                      : [
-                          backgroundColor,
-                          backgroundColor.withOpacity(0.8),
-                        ],
+                color: isDisabled
+                    ? AppColors.darkGray
+                    : backgroundColor,
+                borderRadius: BorderRadius.zero,
+                border: Border.all(
+                  color: isDisabled ? AppColors.silver.withOpacity(0.3) : backgroundColor,
+                  width: 2,
                 ),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDisabled
-                        ? AppTheme.coldGray.withOpacity(0.3)
-                        : backgroundColor.withOpacity(0.3),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                  ),
-                ],
               ),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: isDisabled || widget.isLoading ? null : widget.onPressed,
-                  borderRadius: BorderRadius.circular(8),
-                  splashColor: AppTheme.paleWhite.withOpacity(0.1),
                   child: Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: _getHorizontalPadding(),
@@ -243,7 +227,7 @@ class _GlowingButtonState extends State<GlowingButton>
           height: _getIconSize(),
           child: const CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation(AppTheme.paleWhite),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.lightGray),
           ),
         ),
       );
@@ -257,7 +241,7 @@ class _GlowingButtonState extends State<GlowingButton>
           Icon(
             widget.icon,
             size: _getIconSize(),
-            color: AppTheme.paleWhite,
+            color: AppColors.lightGray,
           ),
           SizedBox(width: _getIconSpacing()),
         ],
@@ -266,104 +250,11 @@ class _GlowingButtonState extends State<GlowingButton>
           style: TextStyle(
             fontSize: _getFontSize(),
             fontWeight: FontWeight.w700,
-            letterSpacing: 1.0,
-            color: AppTheme.paleWhite,
-            fontFamily: 'Montserrat',
+            letterSpacing: 1.5,
+            color: AppColors.lightGray,
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Botão circular grande para dados
-class DiceButton extends StatefulWidget {
-  final String diceType; // "d4", "d6", "d8", "d10", "d12", "d20"
-  final VoidCallback onPressed;
-  final bool selected;
-
-  const DiceButton({
-    super.key,
-    required this.diceType,
-    required this.onPressed,
-    this.selected = false,
-  });
-
-  @override
-  State<DiceButton> createState() => _DiceButtonState();
-}
-
-class _DiceButtonState extends State<DiceButton> {
-  bool _isPressed = false;
-
-  IconData get diceIcon {
-    // TODO: Substituir por SVG personalizado
-    return Icons.casino_outlined;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onPressed();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.9 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: widget.selected
-                  ? [AppTheme.ritualRed, AppTheme.chaoticMagenta]
-                  : [AppTheme.obscureGray, AppTheme.industrialGray],
-            ),
-            boxShadow: widget.selected
-                ? [
-                    BoxShadow(
-                      color: AppTheme.ritualRed.withOpacity(0.5),
-                      blurRadius: 20,
-                      spreadRadius: 4,
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: AppTheme.coldGray.withOpacity(0.4),
-                      blurRadius: 8,
-                      spreadRadius: 0,
-                    ),
-                  ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                diceIcon,
-                size: 40,
-                color: AppTheme.paleWhite,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                widget.diceType.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.paleWhite,
-                  fontFamily: 'BebasNeue',
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

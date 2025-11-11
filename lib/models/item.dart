@@ -1,137 +1,163 @@
+import 'dart:convert';
+
+/// Tipos de itens no inventário
+enum ItemType {
+  arma,
+  cura,
+  municao,
+  equipamento,
+  consumivel,
+}
+
+/// Model de Item para inventário
+///
+/// Suporta:
+/// - Armas com fórmula de dano (ex: "1d8+2") e crítico
+/// - Itens de cura com fórmula (ex: "2d4+2")
+/// - Municao, equipamentos e consumiveis
+/// - Sistema de espaço (peso)
+/// - Armas amaldicoadas
 class Item {
   final String id;
-  final String nome;
-  final String descricao;
-  final int quantidade;
-  final String tipo; // 'Arma', 'Equipamento', 'Consumível', 'Cura', 'Munição'
-  final String categoria; // Categoria para agrupamento (mesma coisa que tipo basicamente)
+  final String characterId; // Dono do item
 
-  // Propriedades de Dano (para Armas)
-  final String? formulaDano; // ex: "1d8+2", "2d6"
-  final int? multiplicadorCritico; // ex: 2 para x2, 3 para x3
-  final String? efeitoCritico;
+  String nome;
+  String descricao;
+  ItemType tipo;
 
-  // Propriedades de Cura
-  final String? formulaCura; // ex: "2d4+2"
+  int quantidade;
+  int espaco; // Espaço unitário (peso)
 
-  // Propriedades adicionais
-  final int espaco; // Espaço que ocupa no inventário
-  final int preco; // Preço em créditos
-  final String? iconCode; // Código do ícone customizável
-  final bool isAmaldicoado;
-  final String? efeitoEspecial;
+  // Campos específicos para ARMA
+  String? formulaDano; // ex: "1d8+2"
+  int? multiplicadorCritico; // ex: 2 (x2)
+  String? efeitoCritico; // Descrição do efeito crítico
+  bool isAmaldicoado;
+  String? efeitoMaldicao;
+
+  // Campos específicos para CURA
+  String? formulaCura; // ex: "2d4+2"
+  String? efeitoAdicional; // Efeito extra da cura
+
+  // Metadata
+  DateTime criadoEm;
+  DateTime atualizadoEm;
 
   Item({
     required this.id,
+    required this.characterId,
     required this.nome,
     required this.descricao,
-    required this.quantidade,
     required this.tipo,
-    String? categoria,
+    this.quantidade = 1,
+    this.espaco = 1,
     this.formulaDano,
     this.multiplicadorCritico,
     this.efeitoCritico,
-    this.formulaCura,
-    this.espaco = 1,
-    this.preco = 0,
-    this.iconCode,
     this.isAmaldicoado = false,
-    this.efeitoEspecial,
-  }) : categoria = categoria ?? tipo;
+    this.efeitoMaldicao,
+    this.formulaCura,
+    this.efeitoAdicional,
+    DateTime? criadoEm,
+    DateTime? atualizadoEm,
+  })  : criadoEm = criadoEm ?? DateTime.now(),
+        atualizadoEm = atualizadoEm ?? DateTime.now();
 
-  // Construtor para criar um item vazio
-  factory Item.empty() {
-    return Item(
-      id: '',
-      nome: '',
-      descricao: '',
-      quantidade: 1,
-      tipo: 'Equipamento',
-    );
-  }
+  // Getter para espaço total
+  int get espacoTotal => espaco * quantidade;
 
-  // Converter de Map (Firestore) para Item
-  factory Item.fromMap(Map<String, dynamic> map) {
-    return Item(
-      id: map['id'] ?? '',
-      nome: map['nome'] ?? '',
-      descricao: map['descricao'] ?? '',
-      quantidade: map['quantidade'] ?? 1,
-      tipo: map['tipo'] ?? 'Equipamento',
-      categoria: map['categoria'],
-      formulaDano: map['formulaDano'],
-      multiplicadorCritico: map['multiplicadorCritico'],
-      efeitoCritico: map['efeitoCritico'],
-      formulaCura: map['formulaCura'],
-      espaco: map['espaco'] ?? 1,
-      preco: map['preco'] ?? 0,
-      iconCode: map['iconCode'],
-      isAmaldicoado: map['isAmaldicoado'] ?? false,
-      efeitoEspecial: map['efeitoEspecial'],
-    );
-  }
+  // Validação de arma
+  bool get isArma => tipo == ItemType.arma;
+  bool get isCura => tipo == ItemType.cura;
 
-  // Converter de Item para Map (Firestore)
-  Map<String, dynamic> toMap() {
+  // Serialização JSON
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'characterId': characterId,
       'nome': nome,
       'descricao': descricao,
+      'tipo': tipo.name,
       'quantidade': quantidade,
-      'tipo': tipo,
-      'categoria': categoria,
+      'espaco': espaco,
       'formulaDano': formulaDano,
       'multiplicadorCritico': multiplicadorCritico,
       'efeitoCritico': efeitoCritico,
-      'formulaCura': formulaCura,
-      'espaco': espaco,
-      'preco': preco,
-      'iconCode': iconCode,
       'isAmaldicoado': isAmaldicoado,
-      'efeitoEspecial': efeitoEspecial,
+      'efeitoMaldicao': efeitoMaldicao,
+      'formulaCura': formulaCura,
+      'efeitoAdicional': efeitoAdicional,
+      'criadoEm': criadoEm.toIso8601String(),
+      'atualizadoEm': atualizadoEm.toIso8601String(),
     };
   }
 
-  // Método copyWith para criar cópias com alterações
-  Item copyWith({
-    String? id,
-    String? nome,
-    String? descricao,
-    int? quantidade,
-    String? tipo,
-    String? categoria,
-    String? formulaDano,
-    int? multiplicadorCritico,
-    String? efeitoCritico,
-    String? formulaCura,
-    int? espaco,
-    int? preco,
-    String? iconCode,
-    bool? isAmaldicoado,
-    String? efeitoEspecial,
-  }) {
+  factory Item.fromJson(Map<String, dynamic> json) {
     return Item(
-      id: id ?? this.id,
-      nome: nome ?? this.nome,
-      descricao: descricao ?? this.descricao,
-      quantidade: quantidade ?? this.quantidade,
-      tipo: tipo ?? this.tipo,
-      categoria: categoria ?? this.categoria,
-      formulaDano: formulaDano ?? this.formulaDano,
-      multiplicadorCritico: multiplicadorCritico ?? this.multiplicadorCritico,
-      efeitoCritico: efeitoCritico ?? this.efeitoCritico,
-      formulaCura: formulaCura ?? this.formulaCura,
-      espaco: espaco ?? this.espaco,
-      preco: preco ?? this.preco,
-      iconCode: iconCode ?? this.iconCode,
-      isAmaldicoado: isAmaldicoado ?? this.isAmaldicoado,
-      efeitoEspecial: efeitoEspecial ?? this.efeitoEspecial,
+      id: json['id'] as String,
+      characterId: json['characterId'] as String,
+      nome: json['nome'] as String,
+      descricao: json['descricao'] as String,
+      tipo: ItemType.values.firstWhere(
+        (e) => e.name == json['tipo'],
+        orElse: () => ItemType.equipamento,
+      ),
+      quantidade: json['quantidade'] as int? ?? 1,
+      espaco: json['espaco'] as int? ?? 1,
+      formulaDano: json['formulaDano'] as String?,
+      multiplicadorCritico: json['multiplicadorCritico'] as int?,
+      efeitoCritico: json['efeitoCritico'] as String?,
+      isAmaldicoado: json['isAmaldicoado'] as bool? ?? false,
+      efeitoMaldicao: json['efeitoMaldicao'] as String?,
+      formulaCura: json['formulaCura'] as String?,
+      efeitoAdicional: json['efeitoAdicional'] as String?,
+      criadoEm: DateTime.parse(json['criadoEm'] as String),
+      atualizadoEm: DateTime.parse(json['atualizadoEm'] as String),
     );
   }
 
-  // Verifica se o item é uma arma (tem fórmula de dano)
-  bool get isWeapon => formulaDano != null && formulaDano!.isNotEmpty;
+  String toJsonString() => jsonEncode(toJson());
 
-  // Verifica se o item é uma cura (tem fórmula de cura)
-  bool get isHeal => formulaCura != null && formulaCura!.isNotEmpty;
+  factory Item.fromJsonString(String jsonString) {
+    return Item.fromJson(jsonDecode(jsonString));
+  }
+
+  // Copiar com modificações
+  Item copyWith({
+    String? id,
+    String? characterId,
+    String? nome,
+    String? descricao,
+    ItemType? tipo,
+    int? quantidade,
+    int? espaco,
+    String? formulaDano,
+    int? multiplicadorCritico,
+    String? efeitoCritico,
+    bool? isAmaldicoado,
+    String? efeitoMaldicao,
+    String? formulaCura,
+    String? efeitoAdicional,
+    DateTime? criadoEm,
+    DateTime? atualizadoEm,
+  }) {
+    return Item(
+      id: id ?? this.id,
+      characterId: characterId ?? this.characterId,
+      nome: nome ?? this.nome,
+      descricao: descricao ?? this.descricao,
+      tipo: tipo ?? this.tipo,
+      quantidade: quantidade ?? this.quantidade,
+      espaco: espaco ?? this.espaco,
+      formulaDano: formulaDano ?? this.formulaDano,
+      multiplicadorCritico: multiplicadorCritico ?? this.multiplicadorCritico,
+      efeitoCritico: efeitoCritico ?? this.efeitoCritico,
+      isAmaldicoado: isAmaldicoado ?? this.isAmaldicoado,
+      efeitoMaldicao: efeitoMaldicao ?? this.efeitoMaldicao,
+      formulaCura: formulaCura ?? this.formulaCura,
+      efeitoAdicional: efeitoAdicional ?? this.efeitoAdicional,
+      criadoEm: criadoEm ?? this.criadoEm,
+      atualizadoEm: atualizadoEm ?? DateTime.now(),
+    );
+  }
 }

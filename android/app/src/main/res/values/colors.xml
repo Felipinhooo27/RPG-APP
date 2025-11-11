@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Hexatombe Color Palette -->
-    <color name="splash_background">#0E0E0F</color>
-    <color name="ritual_red">#C12725</color>
-    <color name="abyssal_black">#0E0E0F</color>
-    <color name="pale_white">#F2F2F2</color>
-</resources>

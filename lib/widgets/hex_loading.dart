@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../theme/app_theme.dart';
+import '../core/theme/app_colors.dart';
 
 /// Hexatombe-themed loading spinner with ritual circle animation
 class HexLoading extends StatelessWidget {
@@ -29,7 +29,7 @@ class HexLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = color ?? AppTheme.ritualRed;
+    final effectiveColor = color ?? AppColors.neonRed;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -103,7 +103,7 @@ class HexLoading extends StatelessWidget {
             message!,
             style: const TextStyle(
               fontSize: 14,
-              color: AppTheme.coldGray,
+              color: AppColors.silver,
             ),
           ),
         ],
@@ -124,7 +124,7 @@ class HexLoadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppTheme.abyssalBlack.withOpacity(0.8),
+      color: AppColors.deepBlack.withOpacity(0.8),
       child: Center(
         child: HexLoading.large(
           message: message,

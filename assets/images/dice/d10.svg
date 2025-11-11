@@ -1,0 +1,41 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- D10 - Pentagonal Trapezohedron - Sangue (Red) -->
+  <defs>
+    <linearGradient id="d10Gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF5252;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF1744;stop-opacity:1" />
+    </linearGradient>
+    <filter id="d10Glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Face frontal -->
+  <path d="M 50 10 L 30 40 L 40 75 L 60 75 L 70 40 Z"
+        fill="url(#d10Gradient)"
+        stroke="#FF1744"
+        stroke-width="2.5"
+        filter="url(#d10Glow)"/>
+
+  <!-- Face lateral direita -->
+  <path d="M 50 10 L 70 40 L 75 60 L 60 45 Z"
+        fill="#D50000"
+        opacity="0.8"/>
+
+  <!-- Face lateral esquerda (mais escura) -->
+  <path d="M 50 10 L 30 40 L 25 60 L 40 45 Z"
+        fill="#B71C1C"
+        opacity="0.6"/>
+
+  <!-- Número 10 -->
+  <text x="50" y="58"
+        font-family="Arial, sans-serif"
+        font-size="20"
+        font-weight="bold"
+        fill="#FFFFFF"
+        text-anchor="middle">10</text>
+</svg>

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../theme/app_theme.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_text_styles.dart';
 
 /// Card elaborado com tema ritual/ocultista
-/// Muito mais visual que o HexCard básico
+/// Adaptado para tema Hexatombe
 class RitualCard extends StatefulWidget {
   final Widget child;
   final bool glowEffect;
@@ -39,7 +40,7 @@ class _RitualCardState extends State<RitualCard> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveGlowColor = widget.glowColor ?? AppTheme.ritualRed;
+    final effectiveGlowColor = widget.glowColor ?? AppColors.neonRed;
 
     Widget cardContent = Container(
       width: widget.width,
@@ -47,15 +48,14 @@ class _RitualCardState extends State<RitualCard> {
       margin: widget.margin ?? const EdgeInsets.all(8),
       padding: widget.padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.obscureGray,
-            AppTheme.industrialGray,
-          ],
+        color: AppColors.darkGray,
+        borderRadius: BorderRadius.zero,
+        border: Border.all(
+          color: widget.glowEffect
+              ? effectiveGlowColor
+              : AppColors.silver.withOpacity(0.3),
+          width: widget.glowEffect ? 2 : 1,
         ),
-        borderRadius: BorderRadius.circular(8),
         boxShadow: widget.glowEffect
             ? [
                 BoxShadow(
@@ -71,14 +71,9 @@ class _RitualCardState extends State<RitualCard> {
               ]
             : [
                 BoxShadow(
-                  color: AppTheme.coldGray.withOpacity(0.3),
+                  color: AppColors.silver.withOpacity(0.1),
                   blurRadius: 8,
                   spreadRadius: 0,
-                ),
-                BoxShadow(
-                  color: AppTheme.abyssalBlack.withOpacity(0.6),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
                 ),
               ],
       ),
@@ -144,7 +139,7 @@ class _RitualCardState extends State<RitualCard> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: (widget.glowColor ?? AppTheme.ritualRed).withOpacity(0.5),
+              color: (widget.glowColor ?? AppColors.neonRed).withOpacity(0.5),
               blurRadius: 4,
               spreadRadius: 0,
             ),
@@ -156,7 +151,7 @@ class _RitualCardState extends State<RitualCard> {
             height: 6,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: (widget.glowColor ?? AppTheme.ritualRed).withOpacity(0.3),
+              color: (widget.glowColor ?? AppColors.neonRed).withOpacity(0.3),
             ),
           ),
         ),
@@ -165,7 +160,7 @@ class _RitualCardState extends State<RitualCard> {
   }
 }
 
-/// Card grande para destaque (usarinício de seção, etc.)
+/// Card grande para destaque (usar início de seção, etc.)
 class RitualCardLarge extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -184,7 +179,7 @@ class RitualCardLarge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = accentColor ?? AppTheme.ritualRed;
+    final color = accentColor ?? AppColors.neonRed;
 
     return RitualCard(
       glowEffect: true,
@@ -198,14 +193,7 @@ class RitualCardLarge extends StatelessWidget {
               height: 64,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.4),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                  ),
-                ],
+                border: Border.all(color: color),
               ),
               child: icon,
             ),
@@ -218,10 +206,8 @@ class RitualCardLarge extends StatelessWidget {
               children: [
                 Text(
                   title.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'BebasNeue',
+                  style: AppTextStyles.uppercase.copyWith(
+                    fontSize: 20,
                     color: color,
                     letterSpacing: 2,
                   ),
@@ -229,15 +215,14 @@ class RitualCardLarge extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.coldGray,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.silver,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.arrow_forward_rounded, color: color),
+          Icon(Icons.arrow_forward, color: color),
         ],
       ),
     );
