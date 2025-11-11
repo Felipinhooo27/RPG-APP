@@ -123,12 +123,41 @@ class _NotesScreenState extends State<NotesScreen> {
             }
 
             if (snapshot.hasError) {
-              return EmptyState(
-                icon: Icons.error_outline,
-                title: 'Erro ao Carregar',
-                message: 'Não foi possível carregar suas notas',
-                actionLabel: 'Tentar Novamente',
-                onAction: () => setState(() {}),
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppTheme.scarletRed.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Erro ao Carregar',
+                      style: TextStyle(
+                        color: AppTheme.lightGray,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Não foi possível carregar suas notas',
+                      style: TextStyle(
+                        color: AppTheme.iron,
+                        fontSize: 13,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => setState(() {}),
+                      child: const Text('Tentar Novamente'),
+                    ),
+                  ],
+                ),
               );
             }
 
@@ -143,8 +172,42 @@ class _NotesScreenState extends State<NotesScreen> {
             notes.sort((a, b) => b.dataModificacao.compareTo(a.dataModificacao));
 
             if (notes.isEmpty) {
-              return EmptyState.noNotes(
-                onAction: () => _showNoteDialog(),
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.note_outlined,
+                      size: 64,
+                      color: AppTheme.iron.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Nenhuma Nota',
+                      style: TextStyle(
+                        color: AppTheme.lightGray,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Crie anotações para sua campanha',
+                      style: TextStyle(
+                        color: AppTheme.iron,
+                        fontSize: 13,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _showNoteDialog(),
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text('CRIAR NOTA'),
+                    ),
+                  ],
+                ),
               );
             }
 

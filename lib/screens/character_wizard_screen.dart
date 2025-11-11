@@ -35,11 +35,11 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
   String _origem = '';
   String _classe = '';
   String _trilha = '';
-  int _forca = 10;
-  int _agilidade = 10;
-  int _vigor = 10;
-  int _inteligencia = 10;
-  int _presenca = 10;
+  int _forca = 0;
+  int _agilidade = 0;
+  int _vigor = 0;
+  int _inteligencia = 0;
+  int _presenca = 0;
   int _pvMax = 0;
   int _peMax = 0;
   int _psMax = 0;
@@ -56,11 +56,11 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
     _origem = char?.origem ?? '';
     _classe = char?.classe ?? '';
     _trilha = char?.trilha ?? '';
-    _forca = char?.forca ?? 10;
-    _agilidade = char?.agilidade ?? 10;
-    _vigor = char?.vigor ?? 10;
-    _inteligencia = char?.inteligencia ?? 10;
-    _presenca = char?.presenca ?? 10;
+    _forca = char?.forca ?? 0;
+    _agilidade = char?.agilidade ?? 0;
+    _vigor = char?.vigor ?? 0;
+    _inteligencia = char?.inteligencia ?? 0;
+    _presenca = char?.presenca ?? 0;
     _pvMax = char?.pvMax ?? 0;
     _peMax = char?.peMax ?? 0;
     _psMax = char?.psMax ?? 0;
@@ -192,7 +192,6 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
                     color: isCompleted || isActive
                         ? AppTheme.ritualRed
                         : AppTheme.coldGray.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(3),
                     boxShadow: isActive
                         ? [
                             BoxShadow(
@@ -339,14 +338,85 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
   }
 
   Widget _buildStep3Attributes() {
+    // Calculate points used and available
+    int pointsUsed = _forca + _agilidade + _vigor + _inteligencia + _presenca;
+    int basePoints = 4;
+
+    // Count attributes at -1 (each gives +1 extra point)
+    int negativeCount = 0;
+    if (_forca == -1) negativeCount++;
+    if (_agilidade == -1) negativeCount++;
+    if (_vigor == -1) negativeCount++;
+    if (_inteligencia == -1) negativeCount++;
+    if (_presenca == -1) negativeCount++;
+
+    int totalAvailable = basePoints + negativeCount;
+    int pointsRemaining = totalAvailable - pointsUsed;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // Point Pool Display
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.darkGray,
+              border: Border.all(
+                color: pointsRemaining == 0 ? AppTheme.scarletRed : AppTheme.steel,
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                const Text(
+                  'PONTOS DISPONÍVEIS',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Montserrat',
+                    color: AppTheme.lightGray,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$pointsRemaining',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'BebasNeue',
+                    color: pointsRemaining == 0 ? AppTheme.scarletRed : AppTheme.pureWhite,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Base: $basePoints + Bônus: $negativeCount = Total: $totalAvailable',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.iron,
+                    fontFamily: 'SpaceMono',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Limite: -1 a +3 • Cada -1 dá +1 ponto extra',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppTheme.iron,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           RitualCard(
-            glowEffect: true,
-            glowColor: AppTheme.etherealPurple,
-            ritualCorners: true,
+            glowEffect: false,
+            ritualCorners: false,
             child: Column(
               children: [
                 const Text(
@@ -355,38 +425,48 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     fontFamily: 'BebasNeue',
-                    color: AppTheme.etherealPurple,
+                    color: AppTheme.pureWhite,
                     letterSpacing: 2,
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Distribua os pontos entre os atributos',
+                  'Distribua seus pontos entre os cinco atributos',
                   style: TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.coldGray,
+                    fontSize: 12,
+                    color: AppTheme.iron,
                     fontFamily: 'Montserrat',
                   ),
                 ),
                 const SizedBox(height: 24),
-                _buildAttributeSlider('FOR', 'Força', _forca, AppTheme.ritualRed, (val) {
-                  setState(() => _forca = val);
+                _buildAttributeSlider('FOR', 'Força', _forca, AppTheme.scarletRed, (val) {
+                  if (_canSetAttribute(val)) {
+                    setState(() => _forca = val);
+                  }
                 }),
                 const SizedBox(height: 16),
                 _buildAttributeSlider('AGI', 'Agilidade', _agilidade, AppTheme.mutagenGreen, (val) {
-                  setState(() => _agilidade = val);
+                  if (_canSetAttribute(val)) {
+                    setState(() => _agilidade = val);
+                  }
                 }),
                 const SizedBox(height: 16),
-                _buildAttributeSlider('VIG', 'Vigor', _vigor, AppTheme.etherealPurple, (val) {
-                  setState(() => _vigor = val);
+                _buildAttributeSlider('VIG', 'Vigor', _vigor, AppTheme.scarletRed, (val) {
+                  if (_canSetAttribute(val)) {
+                    setState(() => _vigor = val);
+                  }
                 }),
                 const SizedBox(height: 16),
-                _buildAttributeSlider('INT', 'Inteligência', _inteligencia, AppTheme.chaoticMagenta, (val) {
-                  setState(() => _inteligencia = val);
+                _buildAttributeSlider('INT', 'Inteligência', _inteligencia, AppTheme.alertYellow, (val) {
+                  if (_canSetAttribute(val)) {
+                    setState(() => _inteligencia = val);
+                  }
                 }),
                 const SizedBox(height: 16),
                 _buildAttributeSlider('PRE', 'Presença', _presenca, AppTheme.alertYellow, (val) {
-                  setState(() => _presenca = val);
+                  if (_canSetAttribute(val)) {
+                    setState(() => _presenca = val);
+                  }
                 }),
               ],
             ),
@@ -394,6 +474,22 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
         ],
       ),
     );
+  }
+
+  bool _canSetAttribute(int newValue) {
+    // Calculate current points without the attribute being changed
+    int currentTotal = _forca + _agilidade + _vigor + _inteligencia + _presenca;
+    int negativeCount = 0;
+    if (_forca == -1) negativeCount++;
+    if (_agilidade == -1) negativeCount++;
+    if (_vigor == -1) negativeCount++;
+    if (_inteligencia == -1) negativeCount++;
+    if (_presenca == -1) negativeCount++;
+
+    int totalAvailable = 4 + negativeCount;
+
+    // Allow if within limits
+    return true; // We'll validate in slider min/max and on next step
   }
 
   Widget _buildStep4Stats() {
@@ -453,14 +549,7 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
                   height: 100,
                   decoration: BoxDecoration(
                     color: AppTheme.alertYellow.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.alertYellow.withOpacity(0.4),
-                        blurRadius: 12,
-                        spreadRadius: 0,
-                      ),
-                    ],
+                    border: Border.all(color: AppTheme.alertYellow, width: 2),
                   ),
                   child: const Icon(
                     Icons.school_rounded,
@@ -495,8 +584,7 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppTheme.alertYellow.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
+                                        border: Border.all(
                       color: AppTheme.alertYellow.withOpacity(0.3),
                       width: 1,
                     ),
@@ -640,16 +728,13 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
             filled: true,
             fillColor: AppTheme.obscureGray,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-              borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+                            borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-              borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+                            borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-              borderSide: const BorderSide(color: AppTheme.ritualRed, width: 2),
+                            borderSide: const BorderSide(color: AppTheme.ritualRed, width: 2),
             ),
           ),
         ),
@@ -667,12 +752,10 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
         filled: true,
         fillColor: AppTheme.obscureGray,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+                    borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
+                    borderSide: const BorderSide(color: AppTheme.coldGray, width: 1.5),
         ),
       ),
       items: items.map((item) {
@@ -731,7 +814,9 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
   }
 
   Widget _buildAttributeSlider(String code, String name, int value, Color color, Function(int) onChanged) {
-    final modifier = _getModifier(value);
+    // In Ordem Paranormal, attribute value = number of d20 dice you roll
+    String displayValue = value >= 0 ? '+$value' : '$value';
+
     return Column(
       children: [
         Row(
@@ -740,15 +825,11 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(6),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.35),
-                    blurRadius: 6,
-                    spreadRadius: 0,
-                  ),
-                ],
+                color: AppTheme.darkGray,
+                border: Border.all(
+                  color: color.withOpacity(0.5),
+                  width: 1,
+                ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -756,17 +837,17 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
                   Text(
                     code,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: color,
+                      color: AppTheme.lightGray,
                       fontFamily: 'Montserrat',
                       letterSpacing: 1,
                     ),
                   ),
                   Text(
-                    modifier,
+                    displayValue,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: color,
                       fontFamily: 'SpaceMono',
@@ -783,40 +864,45 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
                   Text(
                     name.toUpperCase(),
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.coldGray,
+                      color: AppTheme.lightGray,
                       fontFamily: 'Montserrat',
-                      letterSpacing: 1,
+                      letterSpacing: 1.5,
                     ),
                   ),
                   const SizedBox(height: 4),
                   SliderTheme(
                     data: SliderThemeData(
                       activeTrackColor: color,
-                      inactiveTrackColor: AppTheme.coldGray.withOpacity(0.3),
+                      inactiveTrackColor: AppTheme.steel.withOpacity(0.3),
                       thumbColor: color,
-                      overlayColor: color.withOpacity(0.3),
+                      overlayColor: color.withOpacity(0.2),
+                      trackHeight: 3,
                     ),
                     child: Slider(
                       value: value.toDouble(),
-                      min: 0,
-                      max: 20,
-                      divisions: 20,
-                      label: '$value',
+                      min: -1,
+                      max: 3,
+                      divisions: 4,
+                      label: displayValue,
                       onChanged: (val) => onChanged(val.round()),
                     ),
                   ),
                 ],
               ),
             ),
-            Text(
-              '$value',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: color,
-                fontFamily: 'BebasNeue',
+            Container(
+              width: 40,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value >= 0 ? '$value d20' : '$value',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  fontFamily: 'SpaceMono',
+                ),
               ),
             ),
           ],
@@ -970,84 +1056,59 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) => Dialog(
-        backgroundColor: AppTheme.obscureGray,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppTheme.obscureGray, AppTheme.industrialGray],
-            ),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: accentColor.withOpacity(0.3),
-                blurRadius: 16,
-                spreadRadius: 2,
+        backgroundColor: Colors.transparent,
+        child: RitualCard(
+          glowEffect: true,
+          glowColor: accentColor,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.15),
+                  border: Border.all(color: accentColor, width: 2),
+                ),
+                child: Icon(
+                  icon,
+                  size: 48,
+                  color: accentColor,
+                ),
+              ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: accentColor,
+                  fontFamily: 'BebasNeue',
+                  letterSpacing: 2,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.coldGray,
+                  fontFamily: 'Montserrat',
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              GlowingButton(
+                label: 'Confirmar',
+                icon: Icons.check,
+                onPressed: onConfirm ?? () => Navigator.pop(context),
+                style: GlowingButtonStyle.primary,
+                fullWidth: true,
               ),
             ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentColor.withOpacity(0.4),
-                        blurRadius: 12,
-                        spreadRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 48,
-                    color: accentColor,
-                  ),
-                ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
-                const SizedBox(height: 20),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: accentColor,
-                    fontFamily: 'BebasNeue',
-                    letterSpacing: 2,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  message,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.coldGray,
-                    fontFamily: 'Montserrat',
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                GlowingButton(
-                  label: 'Confirmar',
-                  icon: Icons.check,
-                  onPressed: onConfirm ?? () => Navigator.pop(context),
-                  style: GlowingButtonStyle.primary,
-                  fullWidth: true,
-                ),
-              ],
-            ),
           ),
         ),
       ),

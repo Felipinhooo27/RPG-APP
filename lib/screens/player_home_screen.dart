@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'character_list_screen.dart';
 import 'dice_roller_screen.dart';
-import 'player_options_screen.dart';
 import 'shop_screen.dart';
 import '../models/character.dart';
 import '../services/local_database_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/widgets.dart';
 
 class PlayerHomeScreen extends StatefulWidget {
   const PlayerHomeScreen({super.key});
@@ -51,8 +51,43 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
           style: TextStyle(color: AppTheme.coldGray),
         ),
       ),
-    const PlayerOptionsScreen(),
+    _buildOptionsPlaceholder(),
   ];
+
+  Widget _buildOptionsPlaceholder() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.settings,
+            size: 64,
+            color: AppTheme.silver.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Opções do Jogador',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.silver,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Configurações em desenvolvimento',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.coldGray,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

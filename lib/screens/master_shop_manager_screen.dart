@@ -99,12 +99,44 @@ class _MasterShopManagerScreenState extends State<MasterShopManagerScreen> {
   }
 
   Widget _buildEmptyState() {
-    return EmptyState(
-      icon: Icons.store,
-      title: 'NENHUMA LOJA',
-      message: 'Crie ou gere uma loja para começar',
-      actionLabel: 'Gerar Loja',
-      onAction: _showGenerateShopDialog,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.store,
+            size: 64,
+            color: AppTheme.silver.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'NENHUMA LOJA',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.silver,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Crie ou gere uma loja para começar',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.coldGray,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 24),
+          GlowingButton(
+            label: 'Gerar Loja',
+            icon: Icons.auto_awesome,
+            onPressed: _showGenerateShopDialog,
+            style: GlowingButtonStyle.primary,
+          ),
+        ],
+      ),
     );
   }
 
@@ -773,10 +805,37 @@ class _ShopEditorScreenState extends State<ShopEditorScreen> {
           ],
         ),
         body: _items.isEmpty
-            ? EmptyState(
-                icon: Icons.inventory_2,
-                title: 'NENHUM ITEM',
-                message: 'Adicione itens para começar',
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.inventory_2,
+                      size: 64,
+                      color: AppTheme.silver.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'NENHUM ITEM',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.silver,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Adicione itens para começar',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.coldGray,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                  ],
+                ),
               )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),

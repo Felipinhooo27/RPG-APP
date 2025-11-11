@@ -172,10 +172,37 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
                 ),
               )
             : _allCharacters.isEmpty
-                ? const EmptyState(
-                    icon: Icons.shield_outlined,
-                    title: 'Nenhum Combatente',
-                    message: 'Crie personagens primeiro para iniciar um combate',
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 64,
+                          color: AppTheme.iron.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Nenhum Combatente',
+                          style: TextStyle(
+                            color: AppTheme.lightGray,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Crie personagens primeiro para iniciar um combate',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.iron,
+                            fontSize: 13,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
                   )
                 : ListView(
                     padding: const EdgeInsets.all(16),
@@ -507,7 +534,38 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
             // Lista de Combatentes
             Expanded(
               child: session.combatentes.isEmpty
-                  ? const EmptyState.noCombat()
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: AppTheme.iron.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Nenhum Combatente',
+                            style: TextStyle(
+                              color: AppTheme.lightGray,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Adicione personagens ao combate',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppTheme.iron,
+                              fontSize: 13,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: session.combatentes.length,
@@ -826,9 +884,9 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
           backgroundColor: color.withOpacity(0.2),
           foregroundColor: color,
           padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(6),
-            side: BorderSide(color: color, width: 2),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
+            side: BorderSide(color: AppTheme.ritualRed, width: 2),
           ),
         ),
         child: Text(

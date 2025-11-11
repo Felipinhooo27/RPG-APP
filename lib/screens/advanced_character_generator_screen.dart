@@ -1,15 +1,16 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:uuid/uuid.dart';
 import '../models/character.dart';
 import '../models/skill.dart';
 import '../services/local_database_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/name_generator.dart';
 import '../utils/power_generator.dart';
 import '../utils/item_generator.dart';
 import '../utils/skill_generator.dart';
-import '../widgets/ritual_card.dart';
-import '../widgets/glowing_button.dart';
+import '../widgets/widgets.dart';
 
 class AdvancedCharacterGeneratorScreen extends StatefulWidget {
   const AdvancedCharacterGeneratorScreen({super.key});
@@ -24,19 +25,21 @@ class _AdvancedCharacterGeneratorScreenState
   final LocalDatabaseService _databaseService = LocalDatabaseService();
   final Random _random = Random();
 
-  String _categoria = 'Civil';
-  String _genero = 'random'; // 'male', 'female', 'nonbinary', 'mixed', 'random'
+  String _categoria = 'Civil Iniciante';
+  String _genero = 'random';
   int _quantidade = 1;
   bool _isGenerating = false;
 
   final List<String> _categorias = [
-    'Civil',
-    'Mercenário',
-    'Soldado',
-    'Chefe',
-    'Líder',
-    'Profissional',
-    'Deus',
+    'Civil Iniciante',
+    'Mercenário/Civil Treinado',
+    'Soldado/Agente',
+    'Profissional Especializado',
+    'Líder de Operação',
+    'Chefe (Boss)',
+    'Elite Paranormal',
+    'Entidade Menor/Semideus',
+    'Deus/Entidade Maior',
   ];
 
   final Map<String, Map<String, dynamic>> _generos = {
@@ -47,125 +50,168 @@ class _AdvancedCharacterGeneratorScreenState
     'random': {'label': 'Aleatório', 'icon': Icons.shuffle},
   };
 
-  // Gerar atributos baseado na categoria
   Map<String, int> _gerarAtributos(String categoria) {
+    int pontosTotal;
+    int maxAtributo;
+
     switch (categoria) {
-      case 'Civil':
-        // 2 pontos totais distribuídos
-        return _distribuirPontos(2);
-
-      case 'Mercenário':
-        // 6 pontos totais
-        return _distribuirPontos(6);
-
-      case 'Soldado':
-        // 8 pontos totais
-        return _distribuirPontos(8);
-
-      case 'Chefe':
-        // 12 pontos totais
-        return _distribuirPontos(12);
-
-      case 'Líder':
-        // 15 pontos totais
-        return _distribuirPontos(15);
-
-      case 'Profissional':
-        // 20 pontos totais
-        return _distribuirPontos(20);
-
-      case 'Deus':
-        // 40 pontos totais
-        return _distribuirPontos(40);
-
+      case 'Civil Iniciante':
+        pontosTotal = 2;
+        maxAtributo = 3;
+        break;
+      case 'Mercenário/Civil Treinado':
+        pontosTotal = 3;
+        maxAtributo = 3;
+        break;
+      case 'Soldado/Agente':
+        pontosTotal = 4;
+        maxAtributo = 3;
+        break;
+      case 'Profissional Especializado':
+        pontosTotal = 5;
+        maxAtributo = 4;
+        break;
+      case 'Líder de Operação':
+        pontosTotal = 6;
+        maxAtributo = 4;
+        break;
+      case 'Chefe (Boss)':
+        pontosTotal = 7;
+        maxAtributo = 5;
+        break;
+      case 'Elite Paranormal':
+        pontosTotal = 8;
+        maxAtributo = 5;
+        break;
+      case 'Entidade Menor/Semideus':
+        pontosTotal = 9;
+        maxAtributo = 5;
+        break;
+      case 'Deus/Entidade Maior':
+        pontosTotal = 10;
+        maxAtributo = 6;
+        break;
       default:
-        return {'for': 0, 'agi': 0, 'vig': 0, 'int': 0, 'pre': 0};
+        pontosTotal = 4;
+        maxAtributo = 3;
     }
+
+    return _distribuirPontos(pontosTotal, maxAtributo);
   }
 
-  Map<String, int> _distribuirPontos(int total) {
+  Map<String, int> _distribuirPontos(int total, int maxPorAtributo) {
     final atributos = {'for': 0, 'agi': 0, 'vig': 0, 'int': 0, 'pre': 0};
     final keys = atributos.keys.toList();
 
     for (int i = 0; i < total; i++) {
-      final key = keys[_random.nextInt(keys.length)];
-      atributos[key] = atributos[key]! + 1;
+      bool distribuido = false;
+      int tentativas = 0;
+
+      while (!distribuido && tentativas < 50) {
+        final key = keys[_random.nextInt(keys.length)];
+        if (atributos[key]! < maxPorAtributo) {
+          atributos[key] = atributos[key]! + 1;
+          distribuido = true;
+        }
+        tentativas++;
+      }
+
+      if (!distribuido) break;
     }
 
     return atributos;
   }
 
-  // Gerar status baseado na categoria
   Map<String, int> _gerarStatus(String categoria, int vigor) {
     switch (categoria) {
-      case 'Civil':
+      case 'Civil Iniciante':
         return {
           'nex': 5,
-          'pvMax': 8 + vigor * 2,
-          'peMax': 1,
-          'psMax': 10,
+          'pvMax': _random.nextInt(5) + 8,
+          'peMax': _random.nextInt(2),
+          'psMax': _random.nextInt(5) + 10,
           'creditos': _random.nextInt(300) + 50,
           'iniciativaBase': _random.nextInt(3),
         };
 
-      case 'Mercenário':
+      case 'Mercenário/Civil Treinado':
         return {
           'nex': 10,
-          'pvMax': 12 + vigor * 3,
-          'peMax': 2 + _random.nextInt(2),
-          'psMax': 12,
+          'pvMax': _random.nextInt(5) + 12,
+          'peMax': _random.nextInt(3),
+          'psMax': _random.nextInt(5) + 12,
           'creditos': _random.nextInt(1000) + 200,
+          'iniciativaBase': _random.nextInt(4) + 1,
+        };
+
+      case 'Soldado/Agente':
+        return {
+          'nex': 15,
+          'pvMax': _random.nextInt(5) + 14,
+          'peMax': _random.nextInt(3) + 1,
+          'psMax': _random.nextInt(5) + 14,
+          'creditos': _random.nextInt(1500) + 500,
           'iniciativaBase': _random.nextInt(5) + 2,
         };
 
-      case 'Soldado':
+      case 'Profissional Especializado':
         return {
-          'nex': 15,
-          'pvMax': 15 + vigor * 3,
-          'peMax': 3 + _random.nextInt(3),
-          'psMax': 15,
-          'creditos': _random.nextInt(1500) + 300,
+          'nex': 25,
+          'pvMax': _random.nextInt(5) + 16,
+          'peMax': _random.nextInt(3) + 2,
+          'psMax': _random.nextInt(5) + 16,
+          'creditos': _random.nextInt(3000) + 1000,
           'iniciativaBase': _random.nextInt(6) + 3,
         };
 
-      case 'Chefe':
-        return {
-          'nex': 25,
-          'pvMax': 20 + vigor * 4,
-          'peMax': 5 + _random.nextInt(4),
-          'psMax': 18,
-          'creditos': _random.nextInt(5000) + 1000,
-          'iniciativaBase': _random.nextInt(8) + 5,
-        };
-
-      case 'Líder':
+      case 'Líder de Operação':
         return {
           'nex': 40,
-          'pvMax': 30 + vigor * 5,
-          'peMax': 8 + _random.nextInt(5),
-          'psMax': 25,
-          'creditos': _random.nextInt(15000) + 3000,
-          'iniciativaBase': _random.nextInt(10) + 8,
+          'pvMax': _random.nextInt(7) + 20,
+          'peMax': _random.nextInt(3) + 3,
+          'psMax': _random.nextInt(5) + 18,
+          'creditos': _random.nextInt(5000) + 2000,
+          'iniciativaBase': _random.nextInt(7) + 5,
         };
 
-      case 'Profissional':
+      case 'Chefe (Boss)':
         return {
           'nex': 55,
-          'pvMax': 40 + vigor * 6,
-          'peMax': 12 + _random.nextInt(6),
-          'psMax': 30,
-          'creditos': _random.nextInt(30000) + 8000,
-          'iniciativaBase': _random.nextInt(12) + 10,
+          'pvMax': _random.nextInt(7) + 26,
+          'peMax': _random.nextInt(4) + 4,
+          'psMax': _random.nextInt(7) + 20,
+          'creditos': _random.nextInt(10000) + 5000,
+          'iniciativaBase': _random.nextInt(8) + 7,
         };
 
-      case 'Deus':
+      case 'Elite Paranormal':
+        return {
+          'nex': 70,
+          'pvMax': _random.nextInt(9) + 30,
+          'peMax': _random.nextInt(5) + 6,
+          'psMax': _random.nextInt(7) + 24,
+          'creditos': _random.nextInt(20000) + 10000,
+          'iniciativaBase': _random.nextInt(10) + 10,
+        };
+
+      case 'Entidade Menor/Semideus':
+        return {
+          'nex': 85,
+          'pvMax': _random.nextInt(13) + 36,
+          'peMax': _random.nextInt(7) + 8,
+          'psMax': _random.nextInt(11) + 30,
+          'creditos': _random.nextInt(50000) + 25000,
+          'iniciativaBase': _random.nextInt(12) + 15,
+        };
+
+      case 'Deus/Entidade Maior':
         return {
           'nex': 99,
-          'pvMax': 100 + vigor * 10,
-          'peMax': 50 + _random.nextInt(20),
-          'psMax': 100,
+          'pvMax': _random.nextInt(31) + 50,
+          'peMax': _random.nextInt(9) + 12,
+          'psMax': _random.nextInt(21) + 40,
           'creditos': _random.nextInt(100000) + 50000,
-          'iniciativaBase': _random.nextInt(20) + 15,
+          'iniciativaBase': _random.nextInt(15) + 20,
         };
 
       default:
@@ -189,26 +235,18 @@ class _AdvancedCharacterGeneratorScreenState
       for (int i = 0; i < _quantidade; i++) {
         final uuid = const Uuid();
 
-        // Nome completo com gênero
         final nome = NameGenerator.generateFullName(
           category: _categoria,
           gender: _genero,
         );
 
-        // Atributos
         final atributos = _gerarAtributos(_categoria);
-
-        // Status
         final status = _gerarStatus(_categoria, atributos['vig']!);
-
-        // Poderes
         final poderes = PowerGenerator.generatePowers(_categoria);
 
-        // Perícias baseadas no nível
         final skillsMap = SkillGenerator.generateSkills(_categoria);
         final pericias = <String, Skill>{};
         skillsMap.forEach((skillName, levelString) {
-          // Converter string de nível para SkillLevel enum
           SkillLevel skillLevel;
           switch (levelString) {
             case 'expert':
@@ -224,12 +262,10 @@ class _AdvancedCharacterGeneratorScreenState
               skillLevel = SkillLevel.untrained;
           }
 
-          // Obter categoria e atributo da skill
           final skillInfo = OrdemSkills.allSkills[skillName];
           final categoryString = skillInfo?['category'] ?? 'combat';
           final attribute = skillInfo?['attribute'] ?? 'INT';
 
-          // Converter string de categoria para enum
           SkillCategory category;
           switch (categoryString) {
             case 'investigation':
@@ -256,14 +292,11 @@ class _AdvancedCharacterGeneratorScreenState
           );
         });
 
-        // Itens baseados na categoria
         final inventario = ItemGenerator.generateItems(_categoria);
 
-        // Classe aleatória
         final classes = ['Combatente', 'Especialista', 'Ocultista'];
         final classe = classes[_random.nextInt(classes.length)];
 
-        // Criar personagem
         final character = Character(
           id: uuid.v4(),
           nome: nome,
@@ -298,7 +331,7 @@ class _AdvancedCharacterGeneratorScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('$_quantidade personagem(s) gerado(s) com sucesso!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.mutagenGreen,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -308,7 +341,7 @@ class _AdvancedCharacterGeneratorScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erro: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.ritualRed,
           ),
         );
       }
@@ -321,225 +354,302 @@ class _AdvancedCharacterGeneratorScreenState
     }
   }
 
+  Color _getCategoryColor(String categoria) {
+    switch (categoria) {
+      case 'Civil Iniciante':
+        return AppTheme.coldGray;
+      case 'Mercenário/Civil Treinado':
+        return AppTheme.iron;
+      case 'Soldado/Agente':
+        return AppTheme.mutagenGreen;
+      case 'Profissional Especializado':
+        return AppTheme.alertYellow;
+      case 'Líder de Operação':
+        return AppTheme.etherealPurple;
+      case 'Chefe (Boss)':
+        return AppTheme.chaoticMagenta;
+      case 'Elite Paranormal':
+        return AppTheme.ritualRed;
+      case 'Entidade Menor/Semideus':
+        return AppTheme.bloodRed;
+      case 'Deus/Entidade Maior':
+        return AppTheme.scarletRed;
+      default:
+        return AppTheme.silver;
+    }
+  }
+
+  IconData _getCategoryIcon(String categoria) {
+    switch (categoria) {
+      case 'Civil Iniciante':
+        return Icons.person;
+      case 'Mercenário/Civil Treinado':
+        return Icons.shield;
+      case 'Soldado/Agente':
+        return Icons.military_tech;
+      case 'Profissional Especializado':
+        return Icons.workspace_premium;
+      case 'Líder de Operação':
+        return Icons.stars;
+      case 'Chefe (Boss)':
+        return Icons.star;
+      case 'Elite Paranormal':
+        return Icons.flash_on;
+      case 'Entidade Menor/Semideus':
+        return Icons.auto_awesome;
+      case 'Deus/Entidade Maior':
+        return Icons.flare;
+      default:
+        return Icons.help;
+    }
+  }
+
+  String _getCategoryDescription(String categoria) {
+    switch (categoria) {
+      case 'Civil Iniciante':
+        return '2 pts • NEX 5% • Fraco';
+      case 'Mercenário/Civil Treinado':
+        return '3 pts • NEX 10% • Básico';
+      case 'Soldado/Agente':
+        return '4 pts • NEX 15% • Padrão';
+      case 'Profissional Especializado':
+        return '5 pts • NEX 25% • Forte';
+      case 'Líder de Operação':
+        return '6 pts • NEX 40% • Líder';
+      case 'Chefe (Boss)':
+        return '7 pts • NEX 55% • Boss';
+      case 'Elite Paranormal':
+        return '8 pts • NEX 70% • Elite';
+      case 'Entidade Menor/Semideus':
+        return '9 pts • NEX 85% • Semideus';
+      case 'Deus/Entidade Maior':
+        return '10 pts • NEX 99% • Deus';
+      default:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gerador Avançado'),
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surface,
-            ],
+    return HexatombeBackground(
+      showParticles: true,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: AppTheme.abyssalBlack.withOpacity(0.9),
+          elevation: 0,
+          title: const Text(
+            'GERADOR AVANÇADO',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'BebasNeue',
+              letterSpacing: 2,
+              color: AppTheme.alertYellow,
+            ),
           ),
         ),
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            // Header com RitualCard
-            RitualCardLarge(
-              title: 'GERADOR AVANÇADO',
-              subtitle: 'Crie personagens completos instantaneamente',
-              icon: const Icon(
-                Icons.auto_awesome,
-                size: 48,
-                color: Colors.white,
+            // Header Card
+            RitualCard(
+              glowEffect: true,
+              glowColor: AppTheme.alertYellow,
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: AppTheme.alertYellow.withOpacity(0.2),
+                      border: Border.all(color: AppTheme.alertYellow, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.auto_awesome,
+                      size: 32,
+                      color: AppTheme.alertYellow,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'GERADOR AVANÇADO',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.alertYellow,
+                            fontFamily: 'BebasNeue',
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Crie personagens completos instantaneamente',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.coldGray,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              accentColor: Theme.of(context).colorScheme.primary,
+            ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.2, end: 0),
+
+            const SizedBox(height: 24),
+
+            // Categoria
+            Text(
+              'CATEGORIA',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.silver,
+                fontFamily: 'BebasNeue',
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            ..._categorias.asMap().entries.map((entry) {
+              final index = entry.key;
+              final cat = entry.value;
+              final isSelected = _categoria == cat;
+              final color = _getCategoryColor(cat);
+              final icon = _getCategoryIcon(cat);
+              final desc = _getCategoryDescription(cat);
+
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _categoria = cat;
+                  });
+                },
+                child: RitualCard(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  glowEffect: isSelected,
+                  glowColor: color,
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.2),
+                          border: Border.all(color: color, width: 1.5),
+                        ),
+                        child: Icon(icon, color: color, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              cat.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isSelected ? color : AppTheme.paleWhite,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              desc,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.coldGray,
+                                fontFamily: 'SpaceMono',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(Icons.check_circle, color: color, size: 24),
+                    ],
+                  ),
+                ),
+              ).animate(delay: (index * 50).ms).fadeIn(duration: 300.ms).slideX(begin: -0.1, end: 0);
+            }),
+
+            const SizedBox(height: 24),
+
+            // Gênero
+            Text(
+              'GÊNERO',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.silver,
+                fontFamily: 'BebasNeue',
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _generos.entries.map((entry) {
+                final isSelected = _genero == entry.key;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _genero = entry.key;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.etherealPurple.withOpacity(0.2)
+                          : AppTheme.obscureGray,
+                      border: Border.all(
+                        color: isSelected ? AppTheme.etherealPurple : AppTheme.industrialGray,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          entry.value['icon'] as IconData,
+                          size: 18,
+                          color: isSelected ? AppTheme.etherealPurple : AppTheme.coldGray,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          entry.value['label'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? AppTheme.etherealPurple : AppTheme.paleWhite,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
 
             const SizedBox(height: 24),
 
-            // Categoria com RitualCards
+            // Quantidade
             RitualCard(
               glowEffect: true,
-              glowColor: Theme.of(context).colorScheme.primary,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.category,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'CATEGORIA',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ..._categorias.map((cat) {
-                    final IconData icon;
-                    final String desc;
-                    final Color color;
-
-                    switch (cat) {
-                      case 'Civil':
-                        icon = Icons.person;
-                        desc = '2 pts • Fraco, sem poderes';
-                        color = Colors.grey;
-                        break;
-                      case 'Mercenário':
-                        icon = Icons.shield_outlined;
-                        desc = '6 pts • Combate básico';
-                        color = Colors.blue;
-                        break;
-                      case 'Soldado':
-                        icon = Icons.military_tech;
-                        desc = '8 pts • Treinamento militar';
-                        color = Colors.green;
-                        break;
-                      case 'Chefe':
-                        icon = Icons.star;
-                        desc = '12 pts • Líder de grupo';
-                        color = Colors.orange;
-                        break;
-                      case 'Líder':
-                        icon = Icons.stars;
-                        desc = '15 pts • 20% chance de poder';
-                        color = Colors.purple;
-                        break;
-                      case 'Profissional':
-                        icon = Icons.workspace_premium;
-                        desc = '20 pts • Sempre tem poder';
-                        color = Colors.amber;
-                        break;
-                      case 'Deus':
-                        icon = Icons.flash_on;
-                        desc = '40 pts • Extremamente poderoso, 5-8 poderes';
-                        color = Colors.red;
-                        break;
-                      default:
-                        icon = Icons.help;
-                        desc = '';
-                        color = Colors.grey;
-                    }
-
-                    return RitualCard(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      glowEffect: _categoria == cat,
-                      glowColor: color,
-                      onTap: () {
-                        setState(() {
-                          _categoria = cat;
-                        });
-                      },
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Row(
-                        children: [
-                          Icon(icon, color: color, size: 28),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  cat,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: _categoria == cat ? color : null,
-                                  ),
-                                ),
-                                Text(
-                                  desc,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (_categoria == cat)
-                            Icon(Icons.check_circle, color: color, size: 24),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Gênero com RitualCard
-            RitualCard(
-              glowEffect: true,
-              glowColor: Theme.of(context).colorScheme.secondary,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.person_outline,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'GÊNERO',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _generos.entries.map((entry) {
-                      final isSelected = _genero == entry.key;
-                      return RitualCard(
-                        margin: EdgeInsets.zero,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        glowEffect: isSelected,
-                        glowColor: Theme.of(context).colorScheme.secondary,
-                        onTap: () {
-                          setState(() {
-                            _genero = entry.key;
-                          });
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              entry.value['icon'] as IconData,
-                              size: 18,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(entry.value['label'] as String),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Quantidade com RitualCard
-            RitualCard(
-              glowEffect: true,
-              glowColor: Theme.of(context).colorScheme.primary,
+              glowColor: AppTheme.mutagenGreen,
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,16 +658,19 @@ class _AdvancedCharacterGeneratorScreenState
                     children: [
                       Icon(
                         Icons.format_list_numbered,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: AppTheme.mutagenGreen,
+                        size: 20,
                       ),
-                      const SizedBox(width: 12),
-                      Text(
+                      const SizedBox(width: 8),
+                      const Text(
                         'QUANTIDADE',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                            ),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.mutagenGreen,
+                          fontFamily: 'BebasNeue',
+                          letterSpacing: 2,
+                        ),
                       ),
                     ],
                   ),
@@ -573,8 +686,8 @@ class _AdvancedCharacterGeneratorScreenState
                           }
                         },
                         icon: const Icon(Icons.remove_circle),
-                        iconSize: 36,
-                        color: Theme.of(context).colorScheme.primary,
+                        iconSize: 32,
+                        color: AppTheme.ritualRed,
                       ),
                       Expanded(
                         child: Center(
@@ -582,7 +695,9 @@ class _AdvancedCharacterGeneratorScreenState
                             '$_quantidade',
                             style: const TextStyle(
                               fontSize: 48,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.mutagenGreen,
+                              fontFamily: 'SpaceMono',
                             ),
                           ),
                         ),
@@ -596,8 +711,8 @@ class _AdvancedCharacterGeneratorScreenState
                           }
                         },
                         icon: const Icon(Icons.add_circle),
-                        iconSize: 36,
-                        color: Theme.of(context).colorScheme.primary,
+                        iconSize: 32,
+                        color: AppTheme.mutagenGreen,
                       ),
                     ],
                   ),
@@ -606,7 +721,8 @@ class _AdvancedCharacterGeneratorScreenState
                     min: 1,
                     max: 50,
                     divisions: 49,
-                    label: '$_quantidade',
+                    activeColor: AppTheme.mutagenGreen,
+                    inactiveColor: AppTheme.obscureGray,
                     onChanged: (value) {
                       setState(() {
                         _quantidade = value.toInt();
@@ -619,59 +735,58 @@ class _AdvancedCharacterGeneratorScreenState
 
             const SizedBox(height: 24),
 
-            // Botão Gerar com GlowingButton
-            GlowingButton.occult(
+            // Botão Gerar
+            GlowingButton(
               label: _isGenerating
                   ? 'GERANDO...'
-                  : 'GERAR ${_quantidade} PERSONAGEM${_quantidade > 1 ? "S" : ""}',
+                  : 'GERAR $_quantidade PERSONAGEM${_quantidade > 1 ? "S" : ""}',
               onPressed: _isGenerating ? null : _gerarPersonagens,
               isLoading: _isGenerating,
               icon: Icons.auto_awesome,
+              style: GlowingButtonStyle.primary,
               fullWidth: true,
-              height: 56,
+              pulsateGlow: !_isGenerating,
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // Info com RitualCard e diálogo moderno
+            // Info
             RitualCard(
               glowEffect: true,
-              glowColor: Colors.blue,
+              glowColor: AppTheme.etherealPurple,
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.auto_awesome, color: Colors.blue[300]),
-                      const SizedBox(width: 12),
-                      Text(
-                        'SISTEMA INTELIGENTE DE GERAÇÃO',
+                      Icon(Icons.info_outline, color: AppTheme.etherealPurple, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'SISTEMA PROMPT SUPREMO',
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue[100],
-                          letterSpacing: 1.2,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.etherealPurple,
+                          fontFamily: 'BebasNeue',
+                          letterSpacing: 1.5,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _buildInfoRow(Icons.face, '450+ nomes (incluindo 50 deuses e títulos)'),
-                  _buildInfoRow(Icons.flash_on, '110 poderes paranormais únicos'),
-                  _buildInfoRow(Icons.inventory, '165 itens (mundanos a divinos)'),
-                  _buildInfoRow(Icons.school, 'Perícias distribuídas por nível'),
-                  _buildInfoRow(Icons.trending_up, 'Atributos e status balanceados'),
+                  _buildInfoRow('450+ nomes completos'),
+                  _buildInfoRow('110 poderes paranormais'),
+                  _buildInfoRow('165 itens equipáveis'),
+                  _buildInfoRow('Perícias distribuídas por nível'),
+                  _buildInfoRow('9 categorias de poder'),
                   const SizedBox(height: 8),
-                  Text(
-                    'Cada categoria gera personagens com poder proporcional:\n'
-                    '• Civil: 1-2 perícias, itens básicos, sem poderes\n'
-                    '• Soldado: 3-4 perícias, armas, 30% chance de poder\n'
-                    '• Profissional: 6-8 perícias, equipamento avançado, 2-3 poderes\n'
-                    '• Deus: 12-15 perícias, itens divinos, 5-8 poderes!',
+                  const Text(
+                    'Cada categoria gera personagens balanceados com poder proporcional ao NEX.',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.blue[100]?.withValues(alpha: 0.9),
+                      color: AppTheme.coldGray,
+                      fontFamily: 'Montserrat',
                       height: 1.4,
                     ),
                   ),
@@ -684,81 +799,25 @@ class _AdvancedCharacterGeneratorScreenState
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  Widget _buildInfoRow(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.blue[200]),
+          const Icon(Icons.check, size: 14, color: AppTheme.mutagenGreen),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.blue[100],
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppTheme.silver,
+                fontFamily: 'Montserrat',
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  void showModernDialog({
-    required String title,
-    required String message,
-    required IconData icon,
-    Color? accentColor,
-  }) {
-    final color = accentColor ?? Colors.blue;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(16),
-          child: RitualCard(
-            glowEffect: true,
-            glowColor: color,
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 48, color: color),
-                const SizedBox(height: 16),
-                Text(
-                  title.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                    letterSpacing: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  message,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                GlowingButton(
-                  label: 'Fechar',
-                  onPressed: () => Navigator.pop(context),
-                  fullWidth: true,
-                  height: 44,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

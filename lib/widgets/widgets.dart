@@ -2,18 +2,12 @@
 /// Export all custom widgets for easy importing
 library hexatombe_widgets;
 
-// Basic components (legacy)
-export 'hex_button.dart';
-export 'hex_card.dart';
-export 'hex_badge.dart';
-export 'stat_bar.dart';
-export 'empty_state.dart';
-export 'hex_loading.dart';
-
-// Elaborate Hexatombe components
+// Hexatombe Modern Components
 export 'ritual_card.dart';
 export 'glowing_button.dart';
 export 'hexagonal_stat.dart';
 export 'skill_badge.dart';
 export 'particle_background.dart';
 export 'loading.dart';
+export 'hex_loading.dart';
+export 'dice_svg.dart';

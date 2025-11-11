@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../models/character.dart';
 import '../models/skill.dart';
 import '../services/local_database_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
-import 'skills_selection_screen.dart';
-import 'inventory_screen.dart';
-import 'powers_screen.dart';
+// NOTE: Skills, inventory, and powers screens were removed - will be integrated inline
 
 /// Ficha de personagem redesenhada como grimório
 class CharacterGrimoireScreen extends StatefulWidget {
@@ -484,10 +481,13 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
   }
 
   Widget _buildDefenseSection() {
-    // Calcular defesa e bloqueio
-    final agilidadeMod = ((widget.character.agilidade - 10) / 2).floor();
-    final defesa = 10 + agilidadeMod;
-    final bloqueio = defesa; // Simplificado, ajustar conforme regras
+    // Sistema Ordem Paranormal
+    // Defesa = 10 + Agilidade
+    final defesa = 10 + widget.character.agilidade;
+    // Bloqueio = 10 + maior entre Força e Vigor
+    final bloqueio = 10 + (widget.character.forca > widget.character.vigor
+        ? widget.character.forca
+        : widget.character.vigor);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -615,16 +615,11 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
             ),
             const SizedBox(height: 12),
             TextButton.icon(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SkillsSelectionScreen(
-                      character: _currentCharacter,
-                    ),
-                  ),
+              onPressed: () {
+                // TODO: Implement inline skill editor
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Editor de perícias em desenvolvimento')),
                 );
-                await _reloadCharacter();
               },
               icon: const Icon(Icons.add, size: 16),
               label: const Text('Configurar Perícias'),
@@ -678,15 +673,10 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
               ),
               TextButton(
                 onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SkillsSelectionScreen(
-                        character: _currentCharacter,
-                      ),
-                    ),
+                  // TODO: Implement inline skill editor
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Editor de perícias em desenvolvimento')),
                   );
-                  await _reloadCharacter();
                 },
                 child: const Text(
                   'Editar',
@@ -810,17 +800,7 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
             subtitle: '${widget.character.inventario.length} itens',
             icon: Icons.backpack,
             color: AppTheme.mutagenGreen,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => InventoryScreen(
-                    character: widget.character,
-                    isMasterMode: widget.isMasterMode,
-                  ),
-                ),
-              );
-            },
+            onTap: () => _showInventoryDialog(),
           ),
           const SizedBox(height: 12),
           Container(
@@ -833,17 +813,7 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
             subtitle: '${widget.character.poderes.length} poderes',
             icon: Icons.auto_fix_high,
             color: AppTheme.etherealPurple,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PowersScreen(
-                    character: widget.character,
-                    isMasterMode: widget.isMasterMode,
-                  ),
-                ),
-              );
-            },
+            onTap: () => _showPowersDialog(),
           ),
         ],
       ),
@@ -944,5 +914,620 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
         );
       }
     }
+  }
+
+  void _showInventoryDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppTheme.abyssalBlack,
+              border: Border(top: BorderSide(color: AppTheme.mutagenGreen, width: 2)),
+            ),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.obscureGray.withOpacity(0.8),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppTheme.mutagenGreen.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.mutagenGreen.withOpacity(0.2),
+                          border: Border.all(color: AppTheme.mutagenGreen, width: 1.5),
+                        ),
+                        child: const Icon(Icons.backpack, color: AppTheme.mutagenGreen, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'ARSENAL DO COMBATENTE',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.mutagenGreen,
+                                fontFamily: 'BebasNeue',
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            Text(
+                              '${widget.character.inventario.length} itens equipados',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.coldGray,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: AppTheme.coldGray),
+                      ),
+                    ],
+                  ),
+                ),
+                // Lista de itens
+                Expanded(
+                  child: widget.character.inventario.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inventory_2_outlined,
+                                size: 64,
+                                color: AppTheme.silver.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Inventário Vazio',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.silver,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Nenhum item equipado',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.coldGray,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: widget.character.inventario.length,
+                          itemBuilder: (context, index) {
+                            final item = widget.character.inventario[index];
+                            final isWeapon = item.formulaDano != null;
+                            final color = isWeapon ? AppTheme.ritualRed : AppTheme.mutagenGreen;
+
+                            return RitualCard(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              glowEffect: isWeapon,
+                              glowColor: color,
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: color.withOpacity(0.2),
+                                          border: Border.all(color: color, width: 1.5),
+                                        ),
+                                        child: Icon(
+                                          isWeapon ? Icons.gavel : Icons.inventory_2,
+                                          color: color,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.nome.toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                                color: color,
+                                                fontFamily: 'Montserrat',
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              item.tipo,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.coldGray,
+                                                fontFamily: 'SpaceMono',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (item.quantidade > 1)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.obscureGray,
+                                            border: Border.all(color: AppTheme.silver, width: 1),
+                                          ),
+                                          child: Text(
+                                            'x${item.quantidade}',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.silver,
+                                              fontFamily: 'SpaceMono',
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  if (item.descricao.isNotEmpty) ...[
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      item.descricao,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.paleWhite,
+                                        fontFamily: 'Montserrat',
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                  if (item.formulaDano != null) ...[
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.ritualRed.withOpacity(0.1),
+                                        border: Border.all(color: AppTheme.ritualRed, width: 1),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.whatshot, color: AppTheme.ritualRed, size: 16),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Dano: ${item.formulaDano}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.ritualRed,
+                                              fontFamily: 'SpaceMono',
+                                            ),
+                                          ),
+                                          if (item.multiplicadorCritico != null && item.multiplicadorCritico! > 1) ...[
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              'Crit x${item.multiplicadorCritico}',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.alertYellow,
+                                                fontFamily: 'SpaceMono',
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                  if (item.preco > 0) ...[
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.monetization_on, color: AppTheme.alertYellow, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${item.preco}¢',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppTheme.alertYellow,
+                                            fontFamily: 'SpaceMono',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        const Icon(Icons.inventory, color: AppTheme.coldGray, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${item.espaco} espaço${item.espaco > 1 ? "s" : ""}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppTheme.coldGray,
+                                            fontFamily: 'SpaceMono',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showPowersDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppTheme.abyssalBlack,
+              border: Border(top: BorderSide(color: AppTheme.etherealPurple, width: 2)),
+            ),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.obscureGray.withOpacity(0.8),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppTheme.etherealPurple.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.etherealPurple.withOpacity(0.2),
+                          border: Border.all(color: AppTheme.etherealPurple, width: 1.5),
+                        ),
+                        child: const Icon(Icons.auto_fix_high, color: AppTheme.etherealPurple, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'PODERES PARANORMAIS',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.etherealPurple,
+                                fontFamily: 'BebasNeue',
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            Text(
+                              '${widget.character.poderes.length} poderes manifestados',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.coldGray,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: AppTheme.coldGray),
+                      ),
+                    ],
+                  ),
+                ),
+                // Lista de poderes
+                Expanded(
+                  child: widget.character.poderes.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.psychology_outlined,
+                                size: 64,
+                                color: AppTheme.silver.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Sem Poderes',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.silver,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Nenhum poder paranormal manifestado',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.coldGray,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: widget.character.poderes.length,
+                          itemBuilder: (context, index) {
+                            final poder = widget.character.poderes[index];
+                            final Color elementColor;
+                            switch (poder.elemento.toLowerCase()) {
+                              case 'conhecimento':
+                                elementColor = AppTheme.alertYellow;
+                                break;
+                              case 'energia':
+                                elementColor = AppTheme.mutagenGreen;
+                                break;
+                              case 'morte':
+                                elementColor = AppTheme.coldGray;
+                                break;
+                              case 'sangue':
+                                elementColor = AppTheme.ritualRed;
+                                break;
+                              case 'medo':
+                                elementColor = AppTheme.etherealPurple;
+                                break;
+                              default:
+                                elementColor = AppTheme.silver;
+                            }
+
+                            return RitualCard(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              glowEffect: true,
+                              glowColor: elementColor,
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: elementColor.withOpacity(0.2),
+                                          border: Border.all(color: elementColor, width: 1.5),
+                                        ),
+                                        child: Icon(
+                                          Icons.bolt,
+                                          color: elementColor,
+                                          size: 28,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              poder.nome.toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w700,
+                                                color: elementColor,
+                                                fontFamily: 'BebasNeue',
+                                                letterSpacing: 1,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: elementColor.withOpacity(0.2),
+                                                border: Border.all(color: elementColor, width: 1),
+                                              ),
+                                              child: Text(
+                                                poder.elemento.toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: elementColor,
+                                                  fontFamily: 'SpaceMono',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (poder.descricao.isNotEmpty) ...[
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      poder.descricao,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.paleWhite,
+                                        fontFamily: 'Montserrat',
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                  if (poder.habilidades.isNotEmpty) ...[
+                                    const SizedBox(height: 16),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.obscureGray.withOpacity(0.5),
+                                        border: Border.all(color: elementColor.withOpacity(0.3), width: 1),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(Icons.flash_on, size: 14, color: elementColor),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                'HABILIDADES (${poder.habilidades.length})',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: elementColor,
+                                                  fontFamily: 'BebasNeue',
+                                                  letterSpacing: 1,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          ...poder.habilidades.map((habilidade) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(bottom: 8),
+                                              child: Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Container(
+                                                    margin: const EdgeInsets.only(top: 4),
+                                                    width: 4,
+                                                    height: 4,
+                                                    decoration: BoxDecoration(
+                                                      color: elementColor,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                habilidade.nome,
+                                                                style: const TextStyle(
+                                                                  fontSize: 12,
+                                                                  fontWeight: FontWeight.w700,
+                                                                  color: AppTheme.paleWhite,
+                                                                  fontFamily: 'Montserrat',
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            if (habilidade.custo > 0)
+                                                              Container(
+                                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                                decoration: BoxDecoration(
+                                                                  color: AppTheme.etherealPurple.withOpacity(0.2),
+                                                                  border: Border.all(color: AppTheme.etherealPurple, width: 1),
+                                                                ),
+                                                                child: Text(
+                                                                  '${habilidade.custo} PE',
+                                                                  style: const TextStyle(
+                                                                    fontSize: 10,
+                                                                    fontWeight: FontWeight.w700,
+                                                                    color: AppTheme.etherealPurple,
+                                                                    fontFamily: 'SpaceMono',
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                          ],
+                                                        ),
+                                                        if (habilidade.descricao.isNotEmpty) ...[
+                                                          const SizedBox(height: 4),
+                                                          Text(
+                                                            habilidade.descricao,
+                                                            style: const TextStyle(
+                                                              fontSize: 11,
+                                                              color: AppTheme.coldGray,
+                                                              fontFamily: 'Montserrat',
+                                                              height: 1.3,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                        if (habilidade.formulaDano != null) ...[
+                                                          const SizedBox(height: 4),
+                                                          Row(
+                                                            children: [
+                                                              Icon(Icons.whatshot, size: 12, color: AppTheme.ritualRed),
+                                                              const SizedBox(width: 4),
+                                                              Text(
+                                                                habilidade.formulaDano!,
+                                                                style: const TextStyle(
+                                                                  fontSize: 11,
+                                                                  fontWeight: FontWeight.w700,
+                                                                  color: AppTheme.ritualRed,
+                                                                  fontFamily: 'SpaceMono',
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

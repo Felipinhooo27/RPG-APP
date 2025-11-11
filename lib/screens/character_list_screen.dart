@@ -27,6 +27,29 @@ class CharacterListScreen extends StatefulWidget {
 class _CharacterListScreenState extends State<CharacterListScreen> {
   final LocalDatabaseService _databaseService = LocalDatabaseService();
   final String _userId = 'player_001';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Character> _filterCharacters(List<Character> characters) {
+    if (_searchQuery.isEmpty) {
+      return characters;
+    }
+    return characters.where((char) {
+      final nameLower = char.nome.toLowerCase();
+      final classeLower = char.classe.toLowerCase();
+      final origemLower = char.origem.toLowerCase();
+      final searchLower = _searchQuery.toLowerCase();
+      return nameLower.contains(searchLower) ||
+          classeLower.contains(searchLower) ||
+          origemLower.contains(searchLower);
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,42 +98,165 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
             return _buildErrorState(snapshot.error.toString());
           }
 
-          final characters = snapshot.data ?? [];
+          final allCharacters = snapshot.data ?? [];
 
-          // Empty state
-          if (characters.isEmpty) {
+          // Empty state (before filtering)
+          if (allCharacters.isEmpty) {
             return _buildEmptyState();
           }
 
-          // Grid de personagens
-          return GridView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.80,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: characters.length,
-            itemBuilder: (context, index) {
-              final character = characters[index];
-              final delay = min(index * 50, 400);
-              return _ModernCharacterCard(
-                character: character,
-                isMasterMode: widget.isMasterMode,
-                onTap: () => _navigateToDetail(character),
-                onDelete: () => _deleteCharacter(character.id),
-                onExport: widget.isMasterMode ? () => _exportCharacter(character) : null,
-              )
-                  .animate()
-                  .fadeIn(delay: delay.ms, duration: 400.ms)
-                  .scale(
-                    begin: const Offset(0.8, 0.8),
-                    delay: delay.ms,
+          // Filter characters based on search
+          final characters = _filterCharacters(allCharacters);
+
+          // Column with search bar and grid
+          return Column(
+            children: [
+              // Search bar
+              Container(
+                margin: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkGray,
+                  border: Border.all(
+                    color: AppTheme.steel.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  style: const TextStyle(
+                    color: AppTheme.pureWhite,
+                    fontSize: 14,
+                    fontFamily: 'Montserrat',
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por nome, classe ou origem...',
+                    hintStyle: TextStyle(
+                      color: AppTheme.iron,
+                      fontSize: 13,
+                      fontFamily: 'Montserrat',
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: AppTheme.silver,
+                      size: 20,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.clear,
+                              color: AppTheme.scarletRed,
+                              size: 18,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Results counter
+              if (_searchQuery.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${characters.length} ${characters.length == 1 ? 'resultado' : 'resultados'}',
+                        style: const TextStyle(
+                          color: AppTheme.iron,
+                          fontSize: 12,
+                          fontFamily: 'SpaceMono',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Empty search result
+              if (characters.isEmpty && _searchQuery.isNotEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: AppTheme.iron.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Nenhum personagem encontrado',
+                          style: TextStyle(
+                            color: AppTheme.lightGray,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tente buscar por outro termo',
+                          style: TextStyle(
+                            color: AppTheme.iron,
+                            fontSize: 13,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Grid de personagens
+              if (characters.isNotEmpty)
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.80,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: characters.length,
+                    itemBuilder: (context, index) {
+                      final character = characters[index];
+                      final delay = min(index * 50, 400);
+                      return _ModernCharacterCard(
+                        character: character,
+                        isMasterMode: widget.isMasterMode,
+                        onTap: () => _navigateToDetail(character),
+                        onDelete: () => _deleteCharacter(character.id),
+                        onExport: widget.isMasterMode ? () => _exportCharacter(character) : null,
+                      )
+                          .animate()
+                          .fadeIn(delay: delay.ms, duration: 400.ms)
+                          .scale(
+                            begin: const Offset(0.8, 0.8),
+                            delay: delay.ms,
                     duration: 400.ms,
                     curve: Curves.easeOutCubic,
                   );
             },
+          ),
+                ),
+            ],
           );
         },
       ),
@@ -128,19 +274,85 @@ class _CharacterListScreenState extends State<CharacterListScreen> {
     );
   }
 
-  // Error state usando EmptyState
+  // Error state
   Widget _buildErrorState(String error) {
-    return EmptyState(
-      icon: Icons.error_outline,
-      title: 'Erro ao carregar',
-      message: error,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: AppTheme.scarletRed.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Erro ao carregar',
+            style: TextStyle(
+              color: AppTheme.lightGray,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppTheme.iron,
+              fontSize: 14,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // Empty state melhorado
+  // Empty state
   Widget _buildEmptyState() {
-    return EmptyState.noCharacters(
-      onAction: _navigateToCreateCharacter,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.group_outlined,
+            size: 80,
+            color: AppTheme.iron.withOpacity(0.5),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Nenhum personagem',
+            style: TextStyle(
+              color: AppTheme.lightGray,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Crie seu primeiro personagem',
+            style: TextStyle(
+              color: AppTheme.iron,
+              fontSize: 14,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _navigateToCreateCharacter,
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text('CRIAR PERSONAGEM'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.scarletRed,
+              foregroundColor: AppTheme.pureWhite,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -389,20 +389,79 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildNoShopState() {
-    return EmptyState(
-      icon: Icons.store_outlined,
-      title: 'Nenhuma loja ativa',
-      message: 'Aguarde o mestre configurar uma loja para realizar compras',
-      actionLabel: 'Importar Loja',
-      onAction: _importShop,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.store_outlined,
+            size: 64,
+            color: AppTheme.silver.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Nenhuma loja ativa',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.silver,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Aguarde o mestre configurar uma loja para realizar compras',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.coldGray,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 24),
+          GlowingButton(
+            label: 'Importar Loja',
+            icon: Icons.upload,
+            onPressed: _importShop,
+            style: GlowingButtonStyle.primary,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildEmptyState() {
-    return const EmptyState(
-      icon: Icons.search_off,
-      title: 'Nenhum item encontrado',
-      message: 'Tente ajustar os filtros de busca ou categoria',
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: AppTheme.silver.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Nenhum item encontrado',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.silver,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Tente ajustar os filtros de busca ou categoria',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.coldGray,
+              fontFamily: 'Montserrat',
+            ),
+          ),
+        ],
+      ),
     );
   }
 

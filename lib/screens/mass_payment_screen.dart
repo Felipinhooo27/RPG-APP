@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/character.dart';
 import '../services/local_database_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/hex_loading.dart';
-import '../widgets/empty_state.dart';
 import '../widgets/ritual_card.dart';
 import '../widgets/glowing_button.dart';
 
@@ -200,7 +200,38 @@ class _MassPaymentScreenState extends State<MassPaymentScreen> {
       body: _isLoading
           ? const Center(child: HexLoading.large(message: 'Carregando personagens...'))
           : _allCharacters.isEmpty
-              ? const EmptyState.noCharacters()
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.person_off,
+                        size: 64,
+                        color: AppTheme.silver.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Nenhum personagem',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.silver,
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Crie personagens para gerenciar pagamentos',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.coldGray,
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               : Column(
                   children: [
                     // Card de Controles - RitualCard

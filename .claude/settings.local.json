@@ -4,7 +4,10 @@
       "Bash(flutter:*)",
       "Bash(where flutter)",
       "Bash(C:flutterflutterbinflutter doctor --android-licenses)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(tree:*)",
+      "Bash(dir:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

@@ -100,60 +100,62 @@ class _QuickCharacterGeneratorScreenState
     super.dispose();
   }
 
-  // Gerar atributos baseados no nível de poder
+  // Gerar atributos baseados no nível de poder (seguindo regras Ordem Paranormal)
   Map<String, int> _gerarAtributos(String nivel) {
     final random = Random();
+    int pontosTotal;
 
+    // Define total de pontos baseado no nível (seguindo prompt supremo)
     switch (nivel) {
       case 'Recruta (NEX 5%)':
-        // Soma total: ~4 a 6
-        return {
-          'for': random.nextInt(3), // 0-2
-          'agi': random.nextInt(3), // 0-2
-          'vig': random.nextInt(3), // 0-2
-          'int': random.nextInt(3), // 0-2
-          'pre': random.nextInt(3), // 0-2
-        };
-
+        pontosTotal = 2; // Civil iniciante
+        break;
       case 'Operador (NEX 10-25%)':
-        // Soma total: ~7 a 12
-        return {
-          'for': random.nextInt(3) + 1, // 1-3
-          'agi': random.nextInt(3) + 1, // 1-3
-          'vig': random.nextInt(3) + 1, // 1-3
-          'int': random.nextInt(3) + 1, // 1-3
-          'pre': random.nextInt(3) + 1, // 1-3
-        };
-
+        pontosTotal = 3; // Mercenário/Civil treinado
+        break;
       case 'Agente Especial (NEX 30-55%)':
-        // Soma total: ~15 a 20
-        return {
-          'for': random.nextInt(3) + 2, // 2-4
-          'agi': random.nextInt(3) + 2, // 2-4
-          'vig': random.nextInt(3) + 2, // 2-4
-          'int': random.nextInt(3) + 2, // 2-4
-          'pre': random.nextInt(3) + 2, // 2-4
-        };
-
+        pontosTotal = 4; // Soldado/Agente (padrão do sistema)
+        break;
       case 'Elite (NEX 60-99%)':
-        // Soma total: ~25 a 30
-        return {
-          'for': random.nextInt(3) + 4, // 4-6
-          'agi': random.nextInt(3) + 4, // 4-6
-          'vig': random.nextInt(3) + 4, // 4-6
-          'int': random.nextInt(3) + 4, // 4-6
-          'pre': random.nextInt(3) + 4, // 4-6
-        };
-
+        pontosTotal = random.nextInt(2) + 5; // 5-6 pontos (Profissional Especializado)
+        break;
       default:
-        return {
-          'for': 0,
-          'agi': 0,
-          'vig': 0,
-          'int': 0,
-          'pre': 0,
-        };
+        pontosTotal = 4;
     }
+
+    // Distribui pontos aleatoriamente entre os 5 atributos
+    List<int> atributos = [0, 0, 0, 0, 0];
+
+    for (int i = 0; i < pontosTotal; i++) {
+      int index = random.nextInt(5);
+      // Garante que nenhum atributo ultrapasse 3 (máximo inicial)
+      if (atributos[index] < 3) {
+        atributos[index]++;
+      } else {
+        // Tenta colocar em outro atributo que não está no máximo
+        bool distribuido = false;
+        for (int j = 0; j < 5; j++) {
+          if (atributos[j] < 3) {
+            atributos[j]++;
+            distribuido = true;
+            break;
+          }
+        }
+        // Se todos estão no máximo, para de distribuir
+        if (!distribuido) break;
+      }
+    }
+
+    // Aleatoriza a ordem para variar a distribuição
+    atributos.shuffle();
+
+    return {
+      'for': atributos[0],
+      'agi': atributos[1],
+      'vig': atributos[2],
+      'int': atributos[3],
+      'pre': atributos[4],
+    };
   }
 
   // Gerar status baseado no nível
@@ -412,16 +414,16 @@ class _QuickCharacterGeneratorScreenState
                     const SizedBox(height: 16),
                     TextField(
                       controller: _nomeController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Nome Personalizado',
                         hintText: 'Ex: Capanga 3, Cultista Alpha',
                         helperText: 'Deixe vazio para gerar automaticamente',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.zero,
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
+                          borderRadius: BorderRadius.zero,
+                          borderSide: BorderSide(
                             color: AppTheme.ritualRed,
                             width: 2,
                           ),
@@ -431,16 +433,16 @@ class _QuickCharacterGeneratorScreenState
                     const SizedBox(height: 16),
                     TextField(
                       controller: _iniciativaBaseController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Iniciativa Base',
                         hintText: 'Ex: 15',
                         helperText: 'Deixe vazio para gerar automaticamente',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.zero,
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
+                          borderRadius: BorderRadius.zero,
+                          borderSide: BorderSide(
                             color: AppTheme.ritualRed,
                             width: 2,
                           ),
@@ -477,7 +479,7 @@ class _QuickCharacterGeneratorScreenState
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: AppTheme.etherealPurple.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppTheme.etherealPurple, width: 1),
                           ),
                           child: const Icon(
                             Icons.info_outline,
@@ -543,7 +545,6 @@ class _QuickCharacterGeneratorScreenState
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? accentColor : AppTheme.industrialGray,
             width: isSelected ? 2 : 1,

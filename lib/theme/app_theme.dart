@@ -8,43 +8,59 @@ class AppTheme {
   // HEXATOMBE COLOR PALETTE
   // ============================================================================
 
-  /// Primary Colors - Core brand identity
-  static const Color ritualRed = Color(0xFFC12725);        // Vermelho Ritualístico
-  static const Color abyssalBlack = Color(0xFF0E0E0F);     // Preto Abissal
-  static const Color obscureGray = Color(0xFF1A1B1F);      // Cinza Obscuro
+  /// Primary Colors - Hexatombe Minimalist Palette
+  static const Color scarletRed = Color(0xFFB50D0D);       // Vermelho Escarlate (primary)
+  static const Color deepBlack = Color(0xFF0D0D0D);        // Preto Profundo (background)
+  static const Color darkGray = Color(0xFF1A1A1A);         // Cinza Escuro (surface)
 
-  /// Secondary Colors - Occult accents
-  static const Color chaoticMagenta = Color(0xFF842047);   // Magenta Caótico
-  static const Color etherealPurple = Color(0xFF3C235B);   // Roxo Etéreo
-  static const Color industrialGray = Color(0xFF2A2D31);   // Cinza Industrial
+  /// Secondary Colors - Metallic accents
+  static const Color silver = Color(0xFFC0C0C0);           // Prata (borders, icons)
+  static const Color iron = Color(0xFF7A7A7A);             // Ferro (secondary text)
+  static const Color steel = Color(0xFF404040);            // Aço (dividers)
 
-  /// Neutral Colors - Text and UI elements
-  static const Color coldGray = Color(0xFF7A7D81);         // Cinza Frio (secondary text)
-  static const Color limestoneGray = Color(0xFFD1D3D6);    // Cinza Calcário (borders)
-  static const Color paleWhite = Color(0xFFF2F2F2);        // Branco Pálido (main text)
+  /// Text Colors
+  static const Color pureWhite = Color(0xFFFAFAFA);        // Branco Puro (main text)
+  static const Color lightGray = Color(0xFFE0E0E0);        // Cinza Claro (secondary text)
 
-  /// Accent Colors - Special states and effects
+  /// Accent Colors - Status and effects
+  static const Color bloodRed = Color(0xFF8B0000);         // Vermelho Sangue (dark variant)
   static const Color alertYellow = Color(0xFFD1A040);      // Amarelo Alerta (damage, warning)
   static const Color mutagenGreen = Color(0xFF468B45);     // Verde Mutagênico (heal, buffs)
 
+  /// Legacy colors (for backward compatibility - to be removed)
+  static const Color ritualRed = scarletRed;
+  static const Color abyssalBlack = deepBlack;
+  static const Color obscureGray = darkGray;
+  static const Color paleWhite = pureWhite;
+  static const Color coldGray = iron;
+  static const Color limestoneGray = silver;
+  static const Color industrialGray = steel;
+  static const Color chaoticMagenta = Color(0xFF842047);
+  static const Color etherealPurple = Color(0xFF3C235B);
+
   /// Gradient Definitions
-  static const LinearGradient ritualGradient = LinearGradient(
-    colors: [ritualRed, chaoticMagenta],
+  static const LinearGradient scarletGradient = LinearGradient(
+    colors: [scarletRed, bloodRed],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient abyssGradient = LinearGradient(
-    colors: [abyssalBlack, obscureGray],
+  static const LinearGradient darkGradient = LinearGradient(
+    colors: [deepBlack, darkGray],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
-  static const LinearGradient occultGradient = LinearGradient(
-    colors: [etherealPurple, chaoticMagenta],
+  static const LinearGradient metalGradient = LinearGradient(
+    colors: [steel, darkGray],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  /// Legacy gradients (backward compatibility)
+  static const LinearGradient ritualGradient = scarletGradient;
+  static const LinearGradient abyssGradient = darkGradient;
+  static const LinearGradient occultGradient = metalGradient;
 
   // ============================================================================
   // TYPOGRAPHY CONFIGURATION
@@ -248,37 +264,37 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
       ),
 
-      // Card Theme
+      // Card Theme - Minimalist, no rounded borders
       cardTheme: CardThemeData(
-        color: obscureGray,
+        color: darkGray,
         surfaceTintColor: Colors.transparent,
-        elevation: 4,
-        shadowColor: abyssalBlack.withOpacity(0.5),
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-          side: const BorderSide(
-            color: industrialGray,
-            width: 1.6,
+          borderRadius: BorderRadius.circular(0), // No rounded borders
+          side: BorderSide(
+            color: steel.withOpacity(0.3),
+            width: 1,
           ),
         ),
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
       ),
 
-      // Elevated Button Theme
+      // Elevated Button Theme - Minimalist, rectangular
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: ritualRed,
-          foregroundColor: paleWhite,
-          elevation: 2,
-          shadowColor: ritualRed.withOpacity(0.4),
+          backgroundColor: scarletRed,
+          foregroundColor: pureWhite,
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(0), // Rectangular
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           textStyle: GoogleFonts.montserrat(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.0,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
           ),
         ),
       ),
@@ -295,58 +311,64 @@ class AppTheme {
         ),
       ),
 
-      // Outlined Button Theme
+      // Outlined Button Theme - Minimalist, rectangular
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: ritualRed,
+          foregroundColor: scarletRed,
           side: const BorderSide(
-            color: ritualRed,
-            width: 1.6,
+            color: scarletRed,
+            width: 1,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(0), // Rectangular
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           textStyle: GoogleFonts.montserrat(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
-            letterSpacing: 1.0,
+            letterSpacing: 1.5,
           ),
         ),
       ),
 
-      // Input Decoration Theme
+      // Input Decoration Theme - Minimalist, rectangular
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: industrialGray,
+        fillColor: darkGray,
 
-        // Border styles - using subtle shadows instead of hard borders
+        // Border styles - clean lines, no rounded corners
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(0),
+          borderSide: BorderSide(
+            color: steel.withOpacity(0.3),
+            width: 1,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(0),
+          borderSide: BorderSide(
+            color: steel.withOpacity(0.3),
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: BorderSide(
-            color: ritualRed.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(0),
+          borderSide: const BorderSide(
+            color: scarletRed,
             width: 1,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: BorderSide(
-            color: alertYellow.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(0),
+          borderSide: const BorderSide(
+            color: alertYellow,
             width: 1,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: BorderSide(
-            color: alertYellow.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(0),
+          borderSide: const BorderSide(
+            color: alertYellow,
             width: 1,
           ),
         ),
@@ -407,41 +429,42 @@ class AppTheme {
         size: 24,
       ),
 
-      // Dialog Theme
+      // Dialog Theme - Minimalist, rectangular
       dialogTheme: DialogThemeData(
-        backgroundColor: obscureGray,
+        backgroundColor: darkGray,
         surfaceTintColor: Colors.transparent,
-        elevation: 8,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-          side: const BorderSide(
-            color: industrialGray,
-            width: 1.6,
+          borderRadius: BorderRadius.circular(0),
+          side: BorderSide(
+            color: steel.withOpacity(0.5),
+            width: 1,
           ),
         ),
         titleTextStyle: GoogleFonts.montserrat(
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: paleWhite,
+          color: pureWhite,
+          letterSpacing: 1.0,
         ),
         contentTextStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: paleWhite,
+          color: lightGray,
         ),
       ),
 
-      // Snackbar Theme
+      // Snackbar Theme - Minimalist, rectangular
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: industrialGray,
+        backgroundColor: steel,
         contentTextStyle: GoogleFonts.inter(
-          fontSize: 14,
-          color: paleWhite,
+          fontSize: 13,
+          color: pureWhite,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(0),
         ),
         behavior: SnackBarBehavior.floating,
-        elevation: 6,
+        elevation: 0,
       ),
 
       // Divider Theme
@@ -451,27 +474,29 @@ class AppTheme {
         space: 1.6,
       ),
 
-      // Chip Theme
+      // Chip Theme - Minimalist, rectangular
       chipTheme: ChipThemeData(
-        backgroundColor: industrialGray,
-        deleteIconColor: paleWhite,
-        disabledColor: obscureGray,
-        selectedColor: ritualRed,
-        secondarySelectedColor: chaoticMagenta,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        backgroundColor: steel,
+        deleteIconColor: pureWhite,
+        disabledColor: darkGray,
+        selectedColor: scarletRed,
+        secondarySelectedColor: bloodRed,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         labelStyle: GoogleFonts.montserrat(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
         ),
         secondaryLabelStyle: GoogleFonts.montserrat(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: paleWhite,
+          color: pureWhite,
+          letterSpacing: 0.5,
         ),
         brightness: Brightness.dark,
-        elevation: 2,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(0), // Rectangular
         ),
       ),
 

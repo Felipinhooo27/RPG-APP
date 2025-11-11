@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:math' as math;
 import '../utils/dice_roller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
 
-/// Rolador de dados completamente redesenhado com tema Hexatombe
+/// Minimalist dice roller screen with SVG dice - Hexatombe Design
 class DiceRollerScreen extends StatefulWidget {
   const DiceRollerScreen({super.key});
 
@@ -15,888 +14,637 @@ class DiceRollerScreen extends StatefulWidget {
 
 class _DiceRollerScreenState extends State<DiceRollerScreen> {
   final DiceRoller _diceRoller = DiceRoller();
-  final List<DiceRollHistory> _history = [];
-  String? _selectedDiceType;
+  final List<DiceRollResult> _history = [];
+
+  DiceType _selectedDiceType = DiceType.d20;
   int _quantity = 1;
   int _modifier = 0;
+  bool _isRolling = false;
+  int? _lastResult;
+  String? _lastFormula;
 
-  final List<String> _diceTypes = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
+  final Map<DiceType, int> _diceSides = {
+    DiceType.d4: 4,
+    DiceType.d6: 6,
+    DiceType.d8: 8,
+    DiceType.d10: 10,
+    DiceType.d12: 12,
+    DiceType.d20: 20,
+    DiceType.d100: 100,
+  };
+
+  void _rollDice() async {
+    if (_isRolling) return;
+
+    setState(() {
+      _isRolling = true;
+      _lastResult = null;
+    });
+
+    // Simulate rolling animation
+    await Future.delayed(const Duration(milliseconds: 1000));
+
+    final sides = _diceSides[_selectedDiceType]!;
+    String formula = '$_quantity' + 'd$sides';
+    if (_modifier > 0) {
+      formula += '+$_modifier';
+    } else if (_modifier < 0) {
+      formula += '$_modifier'; // negative sign already included
+    }
+
+    final result = _diceRoller.roll(formula);
+
+    setState(() {
+      _isRolling = false;
+      _lastResult = result.total;
+      _lastFormula = formula;
+      _history.insert(0, result);
+
+      // Keep only last 50 rolls
+      if (_history.length > 50) {
+        _history.removeLast();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return HexatombeBackground(
-      showParticles: true,
+      showParticles: false,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor: AppTheme.abyssalBlack.withOpacity(0.9),
+          backgroundColor: AppTheme.deepBlack.withOpacity(0.95),
           elevation: 0,
-          title: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ROLADOR DE DADOS',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'BebasNeue',
-                  letterSpacing: 2,
-                  color: AppTheme.ritualRed,
-                ),
-              ),
-              Text(
-                'Selecione o dado e role',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.coldGray,
-                  fontFamily: 'Montserrat',
-                ),
-              ),
-            ],
+          title: const Text(
+            'ROLADOR DE DADOS',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'BebasNeue',
+              letterSpacing: 2,
+              color: AppTheme.pureWhite,
+            ),
           ),
           actions: [
             if (_history.isNotEmpty)
               IconButton(
-                icon: const Icon(Icons.history, color: AppTheme.chaoticMagenta),
+                icon: const Icon(Icons.history, color: AppTheme.scarletRed, size: 22),
                 onPressed: _showHistoryModal,
-                tooltip: 'Ver histórico',
+                tooltip: 'Histórico',
+              ),
+            if (_history.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppTheme.iron, size: 22),
+                onPressed: () {
+                  setState(() {
+                    _history.clear();
+                    _lastResult = null;
+                  });
+                },
+                tooltip: 'Limpar',
               ),
           ],
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 12),
-                // Seletor de dados (circular buttons)
-                _buildDiceSelector(),
+        body: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Main dice display
+                    _buildMainDiceDisplay(),
 
-                const SizedBox(height: 16),
+                    const SizedBox(height: 32),
 
-                // Controles de quantidade e modificador
-                _buildControls(),
+                    // Dice type selector
+                    _buildDiceTypeSelector(),
 
-                const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                // Botão de rolar
-                _buildRollButton(),
+                    // Quantity and modifier controls
+                    _buildControlsRow(),
 
-                const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                // Último resultado (se houver)
-                if (_history.isNotEmpty) _buildLastResult(),
-              ],
+                    // Roll button
+                    _buildRollButton(),
+
+                    const SizedBox(height: 24),
+
+                    // Last result
+                    if (_lastResult != null) _buildResultDisplay(),
+
+                    const SizedBox(height: 16),
+
+                    // Quick history
+                    if (_history.isNotEmpty) _buildQuickHistory(),
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDiceSelector() {
-    return RitualCard(
-      glowEffect: true,
-      glowColor: AppTheme.chaoticMagenta,
-      ritualCorners: true,
+  Widget _buildMainDiceDisplay() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppTheme.deepBlack,
+        border: Border.all(
+          color: AppTheme.scarletRed.withOpacity(_isRolling ? 1.0 : 0.3),
+          width: 1,
+        ),
+      ),
       child: Column(
         children: [
-          const Text(
-            'ESCOLHA SEU DADO',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.coldGray,
-              fontFamily: 'Montserrat',
-              letterSpacing: 1.5,
-            ),
+          // Dice SVG
+          AnimatedDice(
+            type: _selectedDiceType,
+            result: _lastResult,
+            isRolling: _isRolling,
+            size: 140,
+            color: AppTheme.scarletRed,
           ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            alignment: WrapAlignment.center,
-            children: _diceTypes.map((diceType) {
-              final isSelected = _selectedDiceType == diceType;
-              return DiceButton(
-                diceType: diceType,
-                selected: isSelected,
-                onPressed: () {
-                  setState(() {
-                    _selectedDiceType = diceType;
-                  });
-                },
-              );
-            }).toList(),
+
+          const SizedBox(height: 16),
+
+          // Current formula
+          Text(
+            _buildFormulaString(),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'SpaceMono',
+              color: AppTheme.silver,
+              letterSpacing: 1,
+            ),
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2, end: 0);
+    );
   }
 
-  Widget _buildControls() {
-    return Row(
+  String _buildFormulaString() {
+    final sides = _diceSides[_selectedDiceType]!;
+    String formula = '$_quantity' + 'd$sides';
+    if (_modifier > 0) {
+      formula += ' + $_modifier';
+    } else if (_modifier < 0) {
+      formula += ' - ${_modifier.abs()}';
+    }
+    return formula;
+  }
+
+  Widget _buildDiceTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Quantidade
-        Expanded(
-          child: RitualCard(
-            padding: const EdgeInsets.all(12),
-            ritualCorners: false,
-            child: Column(
-              children: [
-                const Text(
-                  'QUANTIDADE',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.coldGray,
-                    fontFamily: 'Montserrat',
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildCircularButton(
-                      icon: Icons.remove,
-                      onPressed: _quantity > 1
-                          ? () => setState(() => _quantity--)
-                          : null,
-                      size: 32,
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.ritualRed.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(6),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.ritualRed.withOpacity(0.4),
-                            blurRadius: 8,
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$_quantity',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.ritualRed,
-                            fontFamily: 'BebasNeue',
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildCircularButton(
-                      icon: Icons.add,
-                      onPressed: _quantity < 20
-                          ? () => setState(() => _quantity++)
-                          : null,
-                      size: 32,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+        const Text(
+          'TIPO DE DADO',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Montserrat',
+            color: AppTheme.lightGray,
+            letterSpacing: 1.5,
           ),
         ),
-        const SizedBox(width: 8),
-
-        // Modificador
-        Expanded(
-          child: RitualCard(
-            padding: const EdgeInsets.all(12),
-            ritualCorners: false,
-            child: Column(
-              children: [
-                const Text(
-                  'MODIFICADOR',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.coldGray,
-                    fontFamily: 'Montserrat',
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildCircularButton(
-                      icon: Icons.remove,
-                      onPressed: _modifier > -10
-                          ? () => setState(() => _modifier--)
-                          : null,
-                      size: 32,
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.mutagenGreen.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(6),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.mutagenGreen.withOpacity(0.4),
-                            blurRadius: 8,
-                            spreadRadius: 0,
-                          ),
-                        ],
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: DiceType.values.map((type) {
+              final isSelected = type == _selectedDiceType;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedDiceType = type;
+                    });
+                  },
+                  child: Container(
+                    width: 70,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.scarletRed.withOpacity(0.1) : AppTheme.darkGray,
+                      border: Border.all(
+                        color: isSelected ? AppTheme.scarletRed : AppTheme.steel.withOpacity(0.3),
+                        width: 1,
                       ),
-                      child: Center(
-                        child: Text(
-                          _modifier >= 0 ? '+$_modifier' : '$_modifier',
-                          style: const TextStyle(
-                            fontSize: 18,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        DiceSvg(
+                          type: type,
+                          size: 40,
+                          color: isSelected ? AppTheme.scarletRed : AppTheme.silver,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'd${_diceSides[type]}'.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.mutagenGreen,
                             fontFamily: 'SpaceMono',
+                            color: isSelected ? AppTheme.scarletRed : AppTheme.silver,
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    _buildCircularButton(
-                      icon: Icons.add,
-                      onPressed: _modifier < 20
-                          ? () => setState(() => _modifier++)
-                          : null,
-                      size: 32,
-                    ),
-                  ],
+                  ),
                 ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
         ),
       ],
-    ).animate().fadeIn(duration: 400.ms, delay: 100.ms);
+    );
   }
 
-  Widget _buildCircularButton({
-    required IconData icon,
-    required VoidCallback? onPressed,
-    double size = 36,
+  Widget _buildControlsRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildCounter(
+            label: 'QUANTIDADE',
+            value: _quantity,
+            onDecrease: () {
+              if (_quantity > 1) {
+                setState(() => _quantity--);
+              }
+            },
+            onIncrease: () {
+              if (_quantity < 10) {
+                setState(() => _quantity++);
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildCounter(
+            label: 'MODIFICADOR',
+            value: _modifier,
+            onDecrease: () {
+              if (_modifier > -20) {
+                setState(() => _modifier--);
+              }
+            },
+            onIncrease: () {
+              if (_modifier < 20) {
+                setState(() => _modifier++);
+              }
+            },
+            showSign: true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCounter({
+    required String label,
+    required int value,
+    required VoidCallback onDecrease,
+    required VoidCallback onIncrease,
+    bool showSign = false,
   }) {
-    return GestureDetector(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Montserrat',
+            color: AppTheme.lightGray,
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.darkGray,
+            border: Border.all(
+              color: AppTheme.steel.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              _buildCounterButton(
+                icon: Icons.remove,
+                onPressed: onDecrease,
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    showSign && value >= 0 ? '+$value' : value.toString(),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'BebasNeue',
+                      color: AppTheme.pureWhite,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+              _buildCounterButton(
+                icon: Icons.add,
+                onPressed: onIncrease,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCounterButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return InkWell(
       onTap: onPressed,
       child: Container(
-        width: size,
-        height: size,
+        width: 40,
+        height: 50,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: onPressed != null
-              ? AppTheme.obscureGray
-              : AppTheme.obscureGray.withOpacity(0.3),
-          boxShadow: [
-            BoxShadow(
-              color: onPressed != null
-                  ? AppTheme.coldGray.withOpacity(0.4)
-                  : AppTheme.coldGray.withOpacity(0.2),
-              blurRadius: 6,
-              spreadRadius: 0,
+          color: AppTheme.steel.withOpacity(0.2),
+          border: Border(
+            right: BorderSide(
+              color: AppTheme.steel.withOpacity(0.3),
+              width: 1,
             ),
-          ],
+          ),
         ),
         child: Icon(
           icon,
-          color: onPressed != null ? AppTheme.paleWhite : AppTheme.coldGray,
-          size: size * 0.5,
+          color: AppTheme.silver,
+          size: 20,
         ),
       ),
     );
   }
 
   Widget _buildRollButton() {
-    final canRoll = _selectedDiceType != null;
-
-    return GlowingButton(
-      label: 'ROLAR DADOS',
-      icon: Icons.casino,
-      onPressed: canRoll ? _rollDice : null,
-      fullWidth: true,
-      pulsateGlow: canRoll,
-      style: GlowingButtonStyle.primary,
+    return SizedBox(
+      width: double.infinity,
       height: 56,
-    ).animate().fadeIn(duration: 400.ms, delay: 200.ms);
+      child: ElevatedButton(
+        onPressed: _isRolling ? null : _rollDice,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.scarletRed,
+          foregroundColor: AppTheme.pureWhite,
+          disabledBackgroundColor: AppTheme.steel,
+          disabledForegroundColor: AppTheme.iron,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.zero,
+          ),
+        ),
+        child: Text(
+          _isRolling ? 'ROLANDO...' : 'ROLAR DADOS',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Montserrat',
+            letterSpacing: 2,
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _buildLastResult() {
-    final lastRoll = _history.last;
-    return RitualCard(
-      glowEffect: true,
-      glowColor: AppTheme.ritualRed,
-      pulsate: true,
-      ritualCorners: true,
+  Widget _buildResultDisplay() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.darkGray,
+        border: Border.all(
+          color: AppTheme.scarletRed,
+          width: 1,
+        ),
+      ),
       child: Column(
         children: [
           const Text(
-            'ÚLTIMO RESULTADO',
+            'RESULTADO',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: AppTheme.coldGray,
               fontFamily: 'Montserrat',
+              color: AppTheme.lightGray,
               letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
-            lastRoll.formula,
+            _lastResult.toString(),
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 64,
               fontWeight: FontWeight.w700,
-              color: AppTheme.ritualRed,
-              fontFamily: 'SpaceMono',
+              fontFamily: 'BebasNeue',
+              color: AppTheme.scarletRed,
+              letterSpacing: 2,
             ),
           ),
-          const SizedBox(height: 12),
-          const Divider(color: AppTheme.coldGray, height: 1),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'TOTAL: ',
+          if (_lastFormula != null)
+            Text(
+              _lastFormula!,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'SpaceMono',
+                color: AppTheme.iron,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickHistory() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'HISTÓRICO RECENTE',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Montserrat',
+                color: AppTheme.lightGray,
+                letterSpacing: 1.5,
+              ),
+            ),
+            TextButton(
+              onPressed: _showHistoryModal,
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.scarletRed,
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'VER TUDO',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.coldGray,
                   fontFamily: 'Montserrat',
                   letterSpacing: 1,
                 ),
               ),
-              Text(
-                '${lastRoll.result.total}',
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.ritualRed,
-                  fontFamily: 'BebasNeue',
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ..._history.take(5).map((roll) => Container(
+              margin: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.darkGray,
+                border: Border.all(
+                  color: AppTheme.steel.withOpacity(0.2),
+                  width: 1,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          TextButton.icon(
-            onPressed: _showHistoryModal,
-            icon: const Icon(Icons.history, color: AppTheme.chaoticMagenta),
-            label: const Text(
-              'VER HISTÓRICO COMPLETO',
-              style: TextStyle(
-                color: AppTheme.chaoticMagenta,
-                fontFamily: 'Montserrat',
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-                letterSpacing: 1,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      roll.detailedResult,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'SpaceMono',
+                        color: AppTheme.silver,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    roll.total.toString(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'BebasNeue',
+                      color: AppTheme.pureWhite,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95));
+            )),
+      ],
+    );
   }
 
   void _showHistoryModal() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppTheme.obscureGray,
-                AppTheme.abyssalBlack,
-              ],
-            ),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.chaoticMagenta.withOpacity(0.5),
-                blurRadius: 20,
-                spreadRadius: 0,
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Handle com melhor design
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 14),
-                width: 42,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: AppTheme.coldGray,
-                  borderRadius: BorderRadius.circular(2.5),
-                ),
-              ),
-              // Header com layout melhorado
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'HISTÓRICO DE ROLAGENS',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'BebasNeue',
-                        color: AppTheme.chaoticMagenta,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    if (_history.isNotEmpty)
-                      Tooltip(
-                        message: 'Limpar histórico',
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() => _history.clear());
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.ritualRed.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Icon(
-                              Icons.delete_sweep,
-                              color: AppTheme.ritualRed,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const Divider(color: AppTheme.coldGray, height: 1),
-              // List
-              Expanded(
-                child: _history.isEmpty
-                    ? EmptyState(
-                        icon: Icons.history,
-                        title: 'Nenhuma Rolagem',
-                        message: 'Role alguns dados para ver o histórico aqui',
-                        actionLabel: null,
-                        onAction: null,
-                      )
-                    : ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _history.length,
-                        reverse: true,
-                        itemBuilder: (context, index) {
-                          final history = _history[_history.length - 1 - index];
-                          return _HistoryCardRedesigned(history: history)
-                              .animate()
-                              .fadeIn(duration: 200.ms);
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _rollDice() async {
-    if (_selectedDiceType == null) return;
-
-    final sides = int.parse(_selectedDiceType!.substring(1));
-    final formula = '${_quantity}d$sides${_modifier >= 0 ? '+' : ''}${_modifier != 0 ? _modifier : ''}';
-
-    try {
-      // Mostrar modal de animação
-      final result = await _showRollingAnimation(formula, sides);
-
-      if (result != null && mounted) {
-        setState(() {
-          _history.add(DiceRollHistory(
-            formula: formula,
-            result: result,
-            timestamp: DateTime.now(),
-          ));
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao rolar dados: $e'),
-            backgroundColor: AppTheme.ritualRed,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<DiceRollResult?> _showRollingAnimation(String formula, int sides) async {
-    return showDialog<DiceRollResult>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => _RollingAnimationDialog(
-        formula: formula,
-        sides: sides,
-        diceRoller: _diceRoller,
-      ),
-    );
-  }
-}
-
-/// Modal animado que simula dados rolando (estilo Baldur's Gate)
-class _RollingAnimationDialog extends StatefulWidget {
-  final String formula;
-  final int sides;
-  final DiceRoller diceRoller;
-
-  const _RollingAnimationDialog({
-    required this.formula,
-    required this.sides,
-    required this.diceRoller,
-  });
-
-  @override
-  State<_RollingAnimationDialog> createState() => _RollingAnimationDialogState();
-}
-
-class _RollingAnimationDialogState extends State<_RollingAnimationDialog>
-    with TickerProviderStateMixin {
-  late AnimationController _rotationController;
-  late AnimationController _scaleController;
-  DiceRollResult? _result;
-  bool _isRolling = true;
-  final math.Random _random = math.Random();
-  int _currentValue = 1;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    _startRolling();
-  }
-
-  @override
-  void dispose() {
-    _rotationController.dispose();
-    _scaleController.dispose();
-    super.dispose();
-  }
-
-  void _startRolling() async {
-    // Simular valores aleatórios durante a rolagem
-    for (int i = 0; i < 10; i++) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (mounted) {
-        setState(() {
-          _currentValue = _random.nextInt(widget.sides) + 1;
-        });
-      }
-    }
-
-    // Rolar dados de verdade
-    await Future.delayed(const Duration(milliseconds: 500));
-    final result = widget.diceRoller.roll(widget.formula);
-
-    if (mounted) {
-      _rotationController.stop();
-      _scaleController.forward();
-
-      setState(() {
-        _result = result;
-        _isRolling = false;
-      });
-
-      // Fechar automaticamente após 2 segundos
-      await Future.delayed(const Duration(milliseconds: 2000));
-      if (mounted) {
-        Navigator.of(context).pop(result);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: RitualCard(
-        glowEffect: true,
-        glowColor: AppTheme.chaoticMagenta,
-        pulsate: _isRolling,
-        ritualCorners: true,
-        padding: const EdgeInsets.all(32),
+      backgroundColor: AppTheme.deepBlack,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Animação do dado girando
-            RotationTransition(
-              turns: _rotationController,
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.ritualRed,
-                      AppTheme.chaoticMagenta,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.paleWhite.withOpacity(0.3),
-                      blurRadius: 12,
-                      spreadRadius: 0,
-                    ),
-                    BoxShadow(
-                      color: AppTheme.chaoticMagenta.withOpacity(0.5),
-                      blurRadius: 30,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    _isRolling ? '$_currentValue' : '${_result?.total ?? 0}',
-                    style: const TextStyle(
-                      fontSize: 64,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.paleWhite,
-                      fontFamily: 'BebasNeue',
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            if (_isRolling) ...[
-              const Text(
-                'ROLANDO...',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.chaoticMagenta,
-                  fontFamily: 'BebasNeue',
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const SizedBox(
-                width: 40,
-                height: 40,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation(AppTheme.chaoticMagenta),
-                ),
-              ),
-            ] else if (_result != null) ...[
-              const Text(
-                'RESULTADO',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.coldGray,
-                  fontFamily: 'Montserrat',
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.formula,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.ritualRed,
-                  fontFamily: 'BebasNeue',
-                  letterSpacing: 2,
-                ),
-              ),
-            ],
-          ],
-        ),
-      )
-          .animate()
-          .fadeIn(duration: 200.ms)
-          .scale(begin: const Offset(0.8, 0.8)),
-    );
-  }
-}
-
-/// Card de histórico redesenhado
-class _HistoryCardRedesigned extends StatelessWidget {
-  final DiceRollHistory history;
-
-  const _HistoryCardRedesigned({required this.history});
-
-  @override
-  Widget build(BuildContext context) {
-    final timeStr = '${history.timestamp.hour.toString().padLeft(2, '0')}:'
-        '${history.timestamp.minute.toString().padLeft(2, '0')}';
-
-    return RitualCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      glowEffect: false,
-      ritualCorners: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.ritualRed.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(7),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.ritualRed.withOpacity(0.4),
-                      blurRadius: 8,
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
-                child: Text(
-                  history.formula,
-                  style: const TextStyle(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'HISTÓRICO COMPLETO',
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.ritualRed,
-                    fontFamily: 'SpaceMono',
+                    fontFamily: 'Montserrat',
+                    color: AppTheme.pureWhite,
+                    letterSpacing: 1.5,
                   ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                timeStr,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.coldGray,
-                  fontFamily: 'SpaceMono',
+                IconButton(
+                  icon: const Icon(Icons.close, color: AppTheme.iron),
+                  onPressed: () => Navigator.pop(context),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Detalhes dos dados
-          ...history.result.rolls.map((roll) {
-            if (roll.numberOfDice > 0) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Text(
-                      '${roll.numberOfDice}d${roll.sides}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.coldGray,
-                        fontFamily: 'Montserrat',
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _history.length,
+                itemBuilder: (context, index) {
+                  final roll = _history[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkGray,
+                      border: Border.all(
+                        color: AppTheme.steel.withOpacity(0.3),
+                        width: 1,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '[${roll.results.join(', ')}]',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.paleWhite,
-                          fontFamily: 'SpaceMono',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                roll.detailedResult,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'SpaceMono',
+                                  color: AppTheme.silver,
+                                ),
+                              ),
+                              if (roll.rolls.isNotEmpty && roll.rolls.first.results.length > 1)
+                                Text(
+                                  'Resultados: ${roll.rolls.first.results.join(', ')}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontFamily: 'SpaceMono',
+                                    color: AppTheme.iron,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
+                        Text(
+                          roll.total.toString(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'BebasNeue',
+                            color: AppTheme.scarletRed,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      '= ${roll.total}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.mutagenGreen,
-                        fontFamily: 'SpaceMono',
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          }).toList(),
-
-          const SizedBox(height: 8),
-          const Divider(color: AppTheme.coldGray, height: 1),
-          const SizedBox(height: 12),
-
-          // Total
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'TOTAL: ',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.coldGray,
-                  fontFamily: 'Montserrat',
-                  letterSpacing: 1,
-                ),
+                  );
+                },
               ),
-              Text(
-                '${history.result.total}',
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.ritualRed,
-                  fontFamily: 'BebasNeue',
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
-}
-
-class DiceRollHistory {
-  final String formula;
-  final DiceRollResult result;
-  final DateTime timestamp;
-
-  DiceRollHistory({
-    required this.formula,
-    required this.result,
-    required this.timestamp,
-  });
 }
