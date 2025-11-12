@@ -358,8 +358,11 @@ class ItemGenerator {
     List<ItemTemplate> availableTemplates,
     bool useRandom,
   ) {
+    // Utilities podem ser consumíveis ou equipamentos
     final utilities = availableTemplates
-        .where((t) => t.tipo == ItemType.utilidade && !t.isAmaldicoado)
+        .where((t) =>
+            (t.tipo == ItemType.consumivel || t.tipo == ItemType.equipamento) &&
+            !t.isAmaldicoado)
         .toList();
 
     if (utilities.isEmpty) return null;
@@ -448,10 +451,7 @@ class ItemGenerator {
       descricao: template.descricao,
       tipo: template.tipo,
       raridade: template.raridade,
-      preco: template.precoBase,
-      espacoUnitario: template.espacoUnitario,
-      patenteMinima: template.patenteMinima,
-      nexMinimo: template.nexMinimo,
+      espaco: template.espacoUnitario,
       formulaDano: template.formulaDano,
       multiplicadorCritico: template.multiplicadorCritico,
       efeitoCritico: template.efeitoCritico,

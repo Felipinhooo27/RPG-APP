@@ -4,6 +4,8 @@ import '../../core/theme/app_text_styles.dart';
 import '../../models/character.dart';
 import '../../core/utils/unified_character_generator.dart';
 import '../../core/database/character_repository.dart';
+import '../../core/database/item_repository.dart';
+import '../../core/database/power_repository.dart';
 
 /// Tela Unificada de Geração de Personagens
 /// Combina Gerador Rápido + Avançado em uma interface
@@ -23,6 +25,8 @@ class UnifiedCharacterGeneratorScreen extends StatefulWidget {
 class _UnifiedCharacterGeneratorScreenState
     extends State<UnifiedCharacterGeneratorScreen> {
   final CharacterRepository _repository = CharacterRepository();
+  final ItemRepository _itemRepository = ItemRepository();
+  final PowerRepository _powerRepository = PowerRepository();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _iniciativaController = TextEditingController();
 
@@ -462,8 +466,8 @@ class _UnifiedCharacterGeneratorScreenState
     try {
       final iniciativa = int.tryParse(_iniciativaController.text);
 
-      // Gera personagem
-      final character = UnifiedCharacterGenerator.generate(
+      // Gera personagem com itens e poderes
+      final result = UnifiedCharacterGenerator.generate(
         userId: widget.userId,
         tier: _selectedTier,
         customName: _nameController.text.isEmpty ? null : _nameController.text,
@@ -477,10 +481,23 @@ class _UnifiedCharacterGeneratorScreenState
         presencaCustom: _isAdvancedMode ? _presencaSlider.toInt() : null,
         classeCustom: _customClasse,
         origemCustom: _customOrigem,
+        // Auto-gera itens e poderes
+        generateItems: true,
+        generatePowers: true,
       );
 
-      // Salva no banco
-      await _repository.create(character);
+      // Salva personagem no banco
+      await _repository.create(result.character);
+
+      // Salva itens gerados
+      for (final item in result.items) {
+        await _itemRepository.create(item);
+      }
+
+      // Salva poderes gerados
+      for (final power in result.powers) {
+        await _powerRepository.create(power);
+      }
 
       if (mounted) {
         setState(() => _isGenerating = false);
@@ -488,11 +505,13 @@ class _UnifiedCharacterGeneratorScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${character.nome} criado com sucesso!',
+              '${result.character.nome} criado com sucesso!\n'
+              '${result.itemCount} itens e ${result.powerCount} poderes gerados.',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             backgroundColor: AppColors.conhecimentoGreen,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
           ),
         );
 

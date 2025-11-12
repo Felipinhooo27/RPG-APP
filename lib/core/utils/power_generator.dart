@@ -312,7 +312,7 @@ class PowerGenerator {
   /// Retorna o elemento menos usado
   ElementoOutroLado _getLeastUsedElemento(
       Map<ElementoOutroLado, int> counts) {
-    var minCount = double.infinity.toInt();
+    var minCount = 999999; // Valor máximo seguro
     var leastUsed = ElementoOutroLado.conhecimento;
 
     counts.forEach((elemento, count) {
