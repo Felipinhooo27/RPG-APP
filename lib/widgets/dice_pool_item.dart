@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../models/dice_pool.dart';
 import '../core/theme/app_colors.dart';
+import 'dice_widget.dart';
 
 /// Widget que representa um dado na mesa (antes de ser rolado)
 class DicePoolItemWidget extends StatelessWidget {
@@ -31,12 +31,9 @@ class DicePoolItemWidget extends StatelessWidget {
         return AppColors.neonRed;
       case DiceType.d20:
         return Colors.orange;
+      case DiceType.d100:
+        return Colors.yellow;
     }
-  }
-
-  /// Retorna o caminho do asset SVG do dado
-  String _getDiceAssetPath(DiceType type) {
-    return 'assets/images/dice/${type.name}.svg';
   }
 
   @override
@@ -60,13 +57,10 @@ class DicePoolItemWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Ícone do dado
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: SvgPicture.asset(
-                    _getDiceAssetPath(diceItem.type),
-                    colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-                  ),
+                DiceWidget(
+                  diceType: diceItem.type,
+                  size: 32,
+                  color: color,
                 ),
                 const SizedBox(height: 4),
                 // Tipo do dado

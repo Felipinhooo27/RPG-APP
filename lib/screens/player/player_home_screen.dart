@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../models/character.dart';
-import 'character_grimoire_screen.dart';
+import '../../core/database/character_repository.dart';
+import '../../core/utils/clipboard_helper.dart';
+import '../../widgets/character_sheet_tab_view.dart';
 import 'google_dice_roller_screen.dart';
 import 'shop_screen.dart';
 import 'stats_dashboard_screen.dart';
@@ -27,11 +29,44 @@ class PlayerHomeScreen extends StatefulWidget {
 class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
   int _currentIndex = 0;
   late Character _currentCharacter;
+  final CharacterRepository _repo = CharacterRepository();
 
   @override
   void initState() {
     super.initState();
     _currentCharacter = widget.selectedCharacter;
+  }
+
+  Future<void> _saveCharacter() async {
+    try {
+      await _repo.update(_currentCharacter);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Personagem salvo!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $e')),
+        );
+      }
+    }
+  }
+
+  /// Recarrega o personagem do banco de dados para obter dados atualizados
+  Future<void> _reloadCharacter() async {
+    try {
+      final updated = await _repo.getById(_currentCharacter.id);
+      if (updated != null && mounted) {
+        setState(() {
+          _currentCharacter = updated;
+        });
+      }
+    } catch (e) {
+      // Falha silenciosa - não mostra erro ao usuário
+      debugPrint('Erro ao recarregar personagem: $e');
+    }
   }
 
   @override
@@ -74,6 +109,13 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
         ],
       ),
       actions: [
+        // Botão de salvar (apenas na aba PERSONAGENS)
+        if (_currentIndex == 0)
+          IconButton(
+            icon: const Icon(Icons.save, color: AppColors.conhecimentoGreen),
+            onPressed: _saveCharacter,
+            tooltip: 'Salvar alterações',
+          ),
         // Quick stats indicator
         Padding(
           padding: const EdgeInsets.only(right: 16),
@@ -150,44 +192,13 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
   // TAB 1: PERSONAGENS
   // ============================================================================
   Widget _buildPersonagensTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.person, size: 64, color: AppColors.silver),
-          const SizedBox(height: 16),
-          Text(
-            'GRIMÓRIO DO PERSONAGEM',
-            style: AppTextStyles.title.copyWith(color: AppColors.silver),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Visualize e edite sua ficha completa',
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CharacterGrimoireScreen(
-                    character: _currentCharacter,
-                  ),
-                ),
-              ).then((value) {
-                // Atualiza estado se necessário após voltar
-                setState(() {});
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.scarletRed,
-              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-            ),
-            child: const Text('ABRIR FICHA COMPLETA'),
-          ),
-        ],
-      ),
+    return CharacterSheetTabView(
+      character: _currentCharacter,
+      onCharacterChanged: () {
+        setState(() {
+          // Atualiza o AppBar quando o personagem muda
+        });
+      },
     );
   }
 
@@ -202,7 +213,10 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
   // TAB 3: LOJA
   // ============================================================================
   Widget _buildLojaTab() {
-    return ShopScreen(character: _currentCharacter);
+    return ShopScreen(
+      character: _currentCharacter,
+      onCharacterChanged: _reloadCharacter,
+    );
   }
 
   // ============================================================================
@@ -298,7 +312,7 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Desenvolvido por estudantes de ADS',
+                  'Desenvolvido por estudantes de Ciências da Computação',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.silver,
                     fontSize: 10,
@@ -354,11 +368,120 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
     );
   }
 
-  void _exportCharacter() async {
-    // TODO: Implement export using ClipboardHelper
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Exportação será implementada')),
-    );
+  Future<void> _exportCharacter() async {
+    try {
+      // Exporta em JSON para fácil importação (versão 2.0 com itens e poderes)
+      final json = await ClipboardHelper.exportCharacterJson(_currentCharacter);
+      final jsonController = TextEditingController(text: json);
+
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.darkGray,
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            title: Row(
+              children: [
+                const Icon(Icons.share, color: AppColors.magenta, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'EXPORTAR PERSONAGEM',
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 14,
+                      color: AppColors.magenta,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Personagem: ${_currentCharacter.nome}',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.lightGray,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Copie o JSON abaixo e compartilhe com o mestre:',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.silver,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 250,
+                    decoration: BoxDecoration(
+                      color: AppColors.deepBlack,
+                      border: Border.all(color: AppColors.silver.withValues(alpha: 0.3)),
+                    ),
+                    child: TextField(
+                      controller: jsonController,
+                      maxLines: null,
+                      readOnly: true,
+                      style: TextStyle(
+                        color: AppColors.lightGray,
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('FECHAR'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await ClipboardHelper.copyToClipboard(json);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${_currentCharacter.nome} copiado para área de transferência!'),
+                        backgroundColor: AppColors.conhecimentoGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    Navigator.pop(context);
+                  }
+                },
+                icon: const Icon(Icons.copy),
+                label: const Text('COPIAR'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.magenta,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      jsonController.dispose();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao exportar: $e'),
+            backgroundColor: AppColors.neonRed,
+          ),
+        );
+      }
+    }
   }
 
   void _showAbout() {
@@ -425,7 +548,10 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
       ),
       child: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+          _reloadCharacter(); // Recarrega personagem ao trocar de aba
+        },
         backgroundColor: Colors.transparent,
         selectedItemColor: AppColors.scarletRed,
         unselectedItemColor: AppColors.silver.withOpacity(0.5),

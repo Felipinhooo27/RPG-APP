@@ -1,6 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../../models/character.dart';
+import '../../models/item.dart';
+import '../../models/power.dart';
+import '../../models/shop.dart';
+import '../database/item_repository.dart';
+import '../database/power_repository.dart';
 
 /// Helper para operações de clipboard (copiar/colar)
 /// Usado para compartilhar personagens via WhatsApp
@@ -140,6 +145,37 @@ class ClipboardHelper {
     return nomes[origem] ?? origem.name;
   }
 
+  /// Exporta um único personagem para JSON (formato de compartilhamento)
+  /// VERSÃO 2.0: Inclui itens e poderes completos
+  static Future<String> exportCharacterJson(Character character) async {
+    // Busca itens e poderes reais do banco
+    final itemRepository = ItemRepository();
+    final powerRepository = PowerRepository();
+
+    final items = await itemRepository.getByCharacterId(character.id);
+    final powers = await powerRepository.getByCharacterId(character.id);
+
+    final export = {
+      'version': '2.0',  // Nova versão com itens e poderes
+      'type': 'character',
+      'exportDate': DateTime.now().toIso8601String(),
+      'data': {
+        'character': character.toJson(),
+        'items': items.map((item) => item.toJson()).toList(),
+        'powers': powers.map((power) => power.toJson()).toList(),
+      },
+    };
+
+    return const JsonEncoder.withIndent('  ').convert(export);
+  }
+
+  /// Exporta uma única loja para JSON (formato de compartilhamento)
+  /// VERSÃO 1.0: Inclui todos os itens da loja
+  static String exportShopJson(Shop shop) {
+    final export = ShopExport(shop: shop);
+    return const JsonEncoder.withIndent('  ').convert(export.toJson());
+  }
+
   /// Exporta múltiplos personagens para JSON
   static String exportCharacters(List<Character> characters) {
     final export = {
@@ -154,6 +190,7 @@ class ClipboardHelper {
   }
 
   /// Importa personagem(ns) de JSON
+  /// Suporta versão 1.0 (apenas personagem) e 2.0 (com itens e poderes)
   static ImportResult importFromJson(String jsonString) {
     try {
       final decoded = jsonDecode(jsonString);
@@ -163,6 +200,7 @@ class ClipboardHelper {
         return ImportResult.error('JSON inválido: não é um objeto');
       }
 
+      final version = decoded['version'] as String?;
       final type = decoded['type'] as String?;
 
       if (type == 'character') {
@@ -173,13 +211,40 @@ class ClipboardHelper {
         }
 
         try {
-          final character = Character.fromJson(data as Map<String, dynamic>);
-          return ImportResult.success([character]);
+          // Verifica se é versão 2.0 (com itens e poderes)
+          if (version == '2.0' && data is Map<String, dynamic>) {
+            // Versão 2.0: data contém character, items e powers
+            final characterData = data['character'] as Map<String, dynamic>?;
+            final itemsData = data['items'] as List?;
+            final powersData = data['powers'] as List?;
+
+            if (characterData == null) {
+              return ImportResult.error('Campo "character" não encontrado na versão 2.0');
+            }
+
+            final character = Character.fromJson(characterData);
+
+            // Parseia itens
+            final items = itemsData
+                ?.map((json) => Item.fromJson(json as Map<String, dynamic>))
+                .toList() ?? [];
+
+            // Parseia poderes
+            final powers = powersData
+                ?.map((json) => Power.fromJson(json as Map<String, dynamic>))
+                .toList() ?? [];
+
+            return ImportResult.success([character], items: items, powers: powers);
+          } else {
+            // Versão 1.0 (ou sem versão): data é o personagem direto
+            final character = Character.fromJson(data as Map<String, dynamic>);
+            return ImportResult.success([character]);
+          }
         } catch (e) {
           return ImportResult.error('Erro ao parsear personagem: $e');
         }
       } else if (type == 'characters') {
-        // Múltiplos personagens
+        // Múltiplos personagens (versão 1.0 apenas)
         final data = decoded['data'];
         if (data == null) {
           return ImportResult.error('Campo "data" não encontrado');
@@ -221,13 +286,17 @@ class ClipboardHelper {
 class ImportResult {
   final bool success;
   final List<Character>? characters;
+  final List<Item>? items;
+  final List<Power>? powers;
   final String? errorMessage;
 
-  ImportResult.success(this.characters)
+  ImportResult.success(this.characters, {this.items, this.powers})
       : success = true,
         errorMessage = null;
 
   ImportResult.error(this.errorMessage)
       : success = false,
-        characters = null;
+        characters = null,
+        items = null,
+        powers = null;
 }

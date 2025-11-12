@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../models/dice_pool.dart';
 import '../core/theme/app_colors.dart';
+import 'dice_widget.dart';
 
 /// Botão para adicionar um tipo de dado ao pool
 class DiceTypeButton extends StatelessWidget {
@@ -29,12 +29,9 @@ class DiceTypeButton extends StatelessWidget {
         return AppColors.neonRed;
       case DiceType.d20:
         return Colors.orange;
+      case DiceType.d100:
+        return Colors.yellow;
     }
-  }
-
-  /// Retorna o caminho do asset SVG do dado
-  String _getDiceAssetPath(DiceType type) {
-    return 'assets/images/dice/${type.name}.svg';
   }
 
   @override
@@ -58,13 +55,10 @@ class DiceTypeButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Ícone do dado
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: SvgPicture.asset(
-                  _getDiceAssetPath(type),
-                  colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-                ),
+              DiceWidget(
+                diceType: type,
+                size: 24,
+                color: color,
               ),
               const SizedBox(height: 2),
               // Número de faces

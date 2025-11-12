@@ -151,6 +151,21 @@ class Character {
 
   int get iniciativa => iniciativaBase + agilidade;
 
+  // Cálculos de Combate (Sistema Ordem Paranormal)
+  /// Peso máximo que o personagem pode carregar (Força x 10)
+  int get pesoMaximo => forca * 10;
+
+  /// Defesa base calculada (10 + Agilidade)
+  /// Nota: Bônus de armadura deve ser adicionado externamente
+  int get defesaCalculada => 10 + agilidade;
+
+  /// Bloqueio calculado (Força + Vigor)
+  int get bloqueioCalculado => forca + vigor;
+
+  /// Deslocamento calculado em metros (Agilidade x 3)
+  /// Nota: Penalidades de armadura devem ser aplicadas externamente
+  int get deslocamentoCalculado => agilidade * 3;
+
   // Validações (Ordem Paranormal)
   static const int MIN_ATTRIBUTE = -1;
   static const int MAX_ATTRIBUTE_INITIAL = 3;

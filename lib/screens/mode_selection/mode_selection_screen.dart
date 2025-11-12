@@ -59,24 +59,16 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen>
             position: _slideAnimation,
             child: Column(
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 60),
 
-                // Título HEXATOMBE
-                ShaderMask(
-                  shaderCallback: (bounds) =>
-                      AppColors.redMagentaGradient.createShader(bounds),
-                  child: const Text(
-                    'HEXATOMBE',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 3.0,
-                      color: Colors.white,
-                    ),
-                  ),
+                // Título HEXATOMBE (Imagem)
+                Image.asset(
+                  'assets/images/icons/hexatombe.png',
+                  height: 280,
+                  fit: BoxFit.contain,
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
                 // Subtítulo
                 Text(

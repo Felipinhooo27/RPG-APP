@@ -10,6 +10,7 @@ import '../../core/database/dice_repository.dart';
 import '../../widgets/dice_pool_item.dart';
 import '../../widgets/dice_result_item.dart';
 import '../../widgets/dice_type_button.dart';
+import 'dice_history_screen.dart';
 
 /// Tela de rolagem de dados estilo Google
 class GoogleDiceRollerScreen extends StatefulWidget {
@@ -201,49 +202,104 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Pool de dados (mesa)
-                    if (_currentPool.dice.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.deepBlack,
-                          border: Border.all(
-                            color: AppColors.magenta.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
+                    // Mesa de Dados unificada (SEMPRE VISÍVEL)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.deepBlack,
+                        border: Border.all(
+                          color: AppColors.magenta.withValues(alpha: 0.3),
+                          width: 1,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Mesa de Dados',
-                                  style: AppTextStyles.body.copyWith(
-                                    color: AppColors.magenta,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Mesa de Dados',
+                                style: AppTextStyles.body.copyWith(
+                                  color: AppColors.magenta,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                TextButton.icon(
-                                  onPressed: _clearPool,
-                                  icon: Icon(
-                                    Icons.clear_all,
-                                    color: AppColors.neonRed,
-                                    size: 18,
-                                  ),
-                                  label: Text(
-                                    'Limpar',
-                                    style: TextStyle(
-                                      color: AppColors.neonRed,
-                                      fontSize: 12,
+                              ),
+                              Row(
+                                children: [
+                                  // Badge de total (quando há resultados)
+                                  if (_lastResults.isNotEmpty) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.orange,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Total $_total',
+                                        style: TextStyle(
+                                          color: Colors.orange,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  // Botão Limpar (só aparece quando há dados)
+                                  if (_currentPool.dice.isNotEmpty || _lastResults.isNotEmpty)
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        setState(() {
+                                          _lastResults = [];
+                                          _currentPool = _currentPool.clear();
+                                        });
+                                      },
+                                      icon: Icon(
+                                        Icons.clear_all,
+                                        color: AppColors.neonRed,
+                                        size: 18,
+                                      ),
+                                      label: Text(
+                                        'Limpar',
+                                        style: TextStyle(
+                                          color: AppColors.neonRed,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Área de dados - mostra pool, resultados OU mensagem vazia
+                          if (_currentPool.dice.isEmpty && _lastResults.isEmpty)
+                            // Mesa vazia
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  'Adicione dados para começar',
+                                  style: TextStyle(
+                                    color: AppColors.silver.withValues(alpha: 0.5),
+                                    fontSize: 14,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
+                              ),
+                            )
+                          else if (_lastResults.isEmpty)
+                            // Mostra pool (antes de rolar)
                             Wrap(
                               spacing: 12,
                               runSpacing: 12,
@@ -253,9 +309,24 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
                                         onRemove: () => _removeDice(diceItem.id),
                                       ))
                                   .toList(),
+                            )
+                          else
+                            // Mostra resultados (depois de rolar)
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: _lastResults
+                                  .map((result) => DiceResultItemWidget(
+                                        result: result,
+                                        animate: true,
+                                      ))
+                                  .toList(),
                             ),
-                            const SizedBox(height: 12),
-                            // Fórmula
+
+                          const SizedBox(height: 12),
+
+                          // Fórmula (apenas quando há dados no pool e não há resultados)
+                          if (_currentPool.dice.isNotEmpty && _lastResults.isEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -273,88 +344,79 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Resultados
-                    if (_lastResults.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.deepBlack,
-                          border: Border.all(
-                            color: Colors.orange.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Resultados',
-                                  style: AppTextStyles.body.copyWith(
-                                    color: Colors.orange,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Colors.orange,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Total $_total',
-                                    style: TextStyle(
-                                      color: Colors.orange,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: _lastResults
-                                  .map((result) => DiceResultItemWidget(
-                                        result: result,
-                                        animate: true,
-                                      ))
-                                  .toList(),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                    ),
+                    const SizedBox(height: 24),
 
                     // Histórico
                     if (_history.isNotEmpty) ...[
-                      Text(
-                        'Histórico',
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: AppColors.magenta,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Histórico',
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color: AppColors.magenta,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              InkWell(
+                                onTap: _navigateToFullHistory,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: AppColors.magenta),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.history, color: AppColors.magenta, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'VER TUDO',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.magenta,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              InkWell(
+                                onTap: _confirmClearHistory,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: AppColors.neonRed),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.delete_outline, color: AppColors.neonRed, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'LIMPAR',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.neonRed,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
-                      ..._history.take(10).map((entry) => _buildHistoryItem(entry)),
+                      ..._history.take(2).map((entry) => _buildHistoryItem(entry)),
                     ],
                   ],
                 ),
@@ -376,8 +438,10 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
               child: Column(
                 children: [
                   // Botões de tipos de dados
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  Wrap(
+                    alignment: WrapAlignment.spaceEvenly,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       DiceTypeButton(
                         type: DiceType.d4,
@@ -402,6 +466,10 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
                       DiceTypeButton(
                         type: DiceType.d20,
                         onPressed: () => _addDice(DiceType.d20),
+                      ),
+                      DiceTypeButton(
+                        type: DiceType.d100,
+                        onPressed: () => _addDice(DiceType.d100),
                       ),
                     ],
                   ),
@@ -524,5 +592,78 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
         ],
       ),
     );
+  }
+
+  /// Navega para a tela de histórico completo
+  Future<void> _navigateToFullHistory() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DiceHistoryScreen(initialHistory: _history),
+      ),
+    );
+
+    // Se o histórico foi limpo na outra tela, recarrega
+    if (result == true) {
+      _loadHistory();
+    }
+  }
+
+  /// Mostra dialog de confirmação para limpar histórico
+  Future<void> _confirmClearHistory() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkGray,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: const Text(
+          'LIMPAR HISTÓRICO?',
+          style: TextStyle(color: AppColors.lightGray),
+        ),
+        content: const Text(
+          'Esta ação irá excluir todas as rolagens do histórico. Esta ação não pode ser desfeita.',
+          style: TextStyle(color: AppColors.silver),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCELAR'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.neonRed,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
+            child: const Text('LIMPAR TUDO'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _repository.clearHistory();
+        setState(() => _history.clear());
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Histórico limpo com sucesso!'),
+              backgroundColor: AppColors.conhecimentoGreen,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao limpar histórico: $e'),
+              backgroundColor: AppColors.neonRed,
+            ),
+          );
+        }
+      }
+    }
   }
 }

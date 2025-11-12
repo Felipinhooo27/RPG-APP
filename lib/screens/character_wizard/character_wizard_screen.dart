@@ -44,6 +44,9 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
   int _intelecto = 0;
   int _presenca = 0;
 
+  // Step 5: Perícias
+  List<String> _periciasTreinadasSelecionadas = [];
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +67,7 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
     _vigor = char.vigor;
     _intelecto = char.intelecto;
     _presenca = char.presenca;
+    _periciasTreinadasSelecionadas = List.from(char.periciasTreinadas);
   }
 
   @override
@@ -562,29 +566,174 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
   // ==================== STEP 5: PERÍCIAS ====================
 
   Widget _buildStep5Pericias() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.school, size: 64, color: AppColors.silver.withOpacity(0.5)),
-            const SizedBox(height: 24),
-            Text('PERÍCIAS', style: AppTextStyles.title),
-            const SizedBox(height: 16),
-            Text(
-              'Sistema de perícias será implementado\nna próxima versão',
-              style: AppTextStyles.body.copyWith(color: AppColors.silver),
-              textAlign: TextAlign.center,
+    final pericias = {
+      'Acrobacia': {'attr': 'AGI', 'bonus': _agilidade},
+      'Adestramento': {'attr': 'PRE', 'bonus': _presenca},
+      'Artes': {'attr': 'PRE', 'bonus': _presenca},
+      'Atletismo': {'attr': 'FOR', 'bonus': _forca},
+      'Atualidades': {'attr': 'INT', 'bonus': _intelecto},
+      'Ciências': {'attr': 'INT', 'bonus': _intelecto},
+      'Crime': {'attr': 'AGI', 'bonus': _agilidade},
+      'Diplomacia': {'attr': 'PRE', 'bonus': _presenca},
+      'Enganação': {'attr': 'PRE', 'bonus': _presenca},
+      'Fortitude': {'attr': 'VIG', 'bonus': _vigor},
+      'Furtividade': {'attr': 'AGI', 'bonus': _agilidade},
+      'Iniciativa': {'attr': 'AGI', 'bonus': _agilidade},
+      'Intimidação': {'attr': 'PRE', 'bonus': _presenca},
+      'Intuição': {'attr': 'PRE', 'bonus': _presenca},
+      'Investigação': {'attr': 'INT', 'bonus': _intelecto},
+      'Luta': {'attr': 'FOR', 'bonus': _forca},
+      'Medicina': {'attr': 'INT', 'bonus': _intelecto},
+      'Ocultismo': {'attr': 'INT', 'bonus': _intelecto},
+      'Percepção': {'attr': 'PRE', 'bonus': _presenca},
+      'Pilotagem': {'attr': 'AGI', 'bonus': _agilidade},
+      'Pontaria': {'attr': 'AGI', 'bonus': _agilidade},
+      'Profissão': {'attr': 'INT', 'bonus': _intelecto},
+      'Reflexos': {'attr': 'AGI', 'bonus': _agilidade},
+      'Religião': {'attr': 'PRE', 'bonus': _presenca},
+      'Sobrevivência': {'attr': 'INT', 'bonus': _intelecto},
+      'Tática': {'attr': 'INT', 'bonus': _intelecto},
+      'Tecnologia': {'attr': 'INT', 'bonus': _intelecto},
+      'Vontade': {'attr': 'PRE', 'bonus': _presenca},
+    };
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('SELEÇÃO DE PERÍCIAS', style: AppTextStyles.title),
+          const SizedBox(height: 16),
+
+          // Contador
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: AppColors.conhecimentoGreen.withOpacity(0.1),
+              border: Border.all(color: AppColors.conhecimentoGreen),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Por enquanto, pule para a revisão final',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver.withOpacity(0.7)),
-              textAlign: TextAlign.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: AppColors.conhecimentoGreen, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_periciasTreinadasSelecionadas.length} PERÍCIAS SELECIONADAS',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.conhecimentoGreen,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Perícias treinadas ganham +5 de bônus. Recomendado: 4-5 perícias.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.conhecimentoGreen,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // Lista de perícias
+          ...pericias.entries.map((entry) {
+            final nome = entry.key;
+            final isTreinada = _periciasTreinadasSelecionadas.contains(nome);
+            final bonus = entry.value['bonus'] as int;
+            final bonusTreinada = isTreinada ? 5 : 0;
+            final total = bonus + bonusTreinada;
+            final attr = entry.value['attr'] as String;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isTreinada ? AppColors.conhecimentoGreen.withOpacity(0.1) : AppColors.darkGray,
+                border: Border.all(
+                  color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  // Checkbox
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (isTreinada) {
+                          _periciasTreinadasSelecionadas.remove(nome);
+                        } else {
+                          _periciasTreinadasSelecionadas.add(nome);
+                        }
+                      });
+                    },
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: isTreinada ? AppColors.conhecimentoGreen : Colors.transparent,
+                        border: Border.all(
+                          color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
+                          width: 2,
+                        ),
+                      ),
+                      child: isTreinada
+                          ? const Icon(Icons.check, color: AppColors.deepBlack, size: 16)
+                          : null,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Nome
+                  Expanded(
+                    child: Text(
+                      nome.toUpperCase(),
+                      style: AppTextStyles.uppercase.copyWith(
+                        fontSize: 11,
+                        color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
+                      ),
+                    ),
+                  ),
+
+                  // Atributo
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _getAttrColor(attr).withOpacity(0.2),
+                      border: Border.all(color: _getAttrColor(attr)),
+                    ),
+                    child: Text(
+                      attr,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: _getAttrColor(attr),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Bônus total
+                  Text(
+                    total >= 0 ? '+$total' : '$total',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
       ),
     );
   }
@@ -732,7 +881,7 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
       case 3: // Stats
         return true;
       case 4: // Perícias
-        return true;
+        return _periciasTreinadasSelecionadas.length >= 4;
       default:
         return false;
     }
@@ -771,10 +920,15 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
         presenca: _presenca,
       );
 
+      // Adicionar perícias selecionadas
+      final characterWithSkills = character.copyWith(
+        periciasTreinadas: _periciasTreinadasSelecionadas,
+      );
+
       if (widget.characterToEdit == null) {
-        await _characterRepo.create(character);
+        await _characterRepo.create(characterWithSkills);
       } else {
-        await _characterRepo.update(character.copyWith(id: widget.characterToEdit!.id));
+        await _characterRepo.update(characterWithSkills.copyWith(id: widget.characterToEdit!.id));
       }
 
       if (mounted) {
@@ -796,6 +950,23 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
           SnackBar(content: Text('Erro ao criar personagem: $e')),
         );
       }
+    }
+  }
+
+  Color _getAttrColor(String attr) {
+    switch (attr) {
+      case 'FOR':
+        return AppColors.forRed;
+      case 'AGI':
+        return AppColors.agiGreen;
+      case 'VIG':
+        return AppColors.vigBlue;
+      case 'INT':
+        return AppColors.intMagenta;
+      case 'PRE':
+        return AppColors.preGold;
+      default:
+        return AppColors.silver;
     }
   }
 }

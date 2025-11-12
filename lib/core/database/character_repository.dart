@@ -89,7 +89,14 @@ class CharacterRepository {
   }
 
   /// Importa uma lista de personagens (adiciona ou atualiza)
-  Future<List<Character>> importCharacters(List<Character> characters, {bool replace = false}) async {
+  /// Se newUserId for fornecido, o personagem será associado a esse usuário
+  /// Se generateNewId for true, gera um novo ID para o personagem
+  Future<List<Character>> importCharacters(
+    List<Character> characters, {
+    bool replace = false,
+    String? newUserId,
+    bool generateNewId = true,
+  }) async {
     List<Character> all;
 
     if (replace) {
@@ -101,11 +108,19 @@ class CharacterRepository {
     final imported = <Character>[];
 
     for (final char in characters) {
-      final index = all.indexWhere((c) => c.id == char.id);
+      // Gera novo ID se solicitado
+      final finalId = generateNewId ? _uuid.v4() : char.id;
+
+      // Usa novo userId se fornecido, senão mantém o original
+      final finalUserId = newUserId ?? char.userId;
+
+      final index = all.indexWhere((c) => c.id == finalId);
 
       if (index == -1) {
         // Novo personagem
         final newChar = char.copyWith(
+          id: finalId,
+          userId: finalUserId,
           criadoEm: DateTime.now(),
           atualizadoEm: DateTime.now(),
         );
@@ -113,7 +128,10 @@ class CharacterRepository {
         imported.add(newChar);
       } else {
         // Atualiza existente
-        final updated = char.copyWith(atualizadoEm: DateTime.now());
+        final updated = char.copyWith(
+          userId: finalUserId,
+          atualizadoEm: DateTime.now(),
+        );
         all[index] = updated;
         imported.add(updated);
       }

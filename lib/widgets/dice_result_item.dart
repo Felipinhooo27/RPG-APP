@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../models/dice_result.dart';
 import '../models/dice_pool.dart';
 import '../core/theme/app_colors.dart';
+import 'dice_widget.dart';
 import 'dart:math' as math;
 
 /// Widget que representa o resultado de um dado após ser rolado
@@ -67,12 +67,9 @@ class _DiceResultItemWidgetState extends State<DiceResultItemWidget>
         return AppColors.neonRed;
       case DiceType.d20:
         return Colors.orange;
+      case DiceType.d100:
+        return Colors.yellow;
     }
-  }
-
-  /// Retorna o caminho do asset SVG do dado
-  String _getDiceAssetPath(DiceType type) {
-    return 'assets/images/dice/${type.name}.svg';
   }
 
   @override
@@ -117,24 +114,12 @@ class _DiceResultItemWidgetState extends State<DiceResultItemWidget>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Ícone do dado
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: SvgPicture.asset(
-                    _getDiceAssetPath(widget.result.type),
-                    colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Valor rolado
-                Text(
-                  '${widget.result.value}',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                // Dado com a face específica rolada
+                DiceWidget(
+                  diceType: widget.result.type,
+                  faceValue: widget.result.value,
+                  size: 50,
+                  color: color,
                 ),
               ],
             ),

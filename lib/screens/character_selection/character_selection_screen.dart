@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/database/character_repository.dart';
+import '../../core/database/item_repository.dart';
+import '../../core/database/power_repository.dart';
 import '../../models/character.dart';
 import '../../core/utils/clipboard_helper.dart';
 import '../character_wizard/character_wizard_screen.dart';
@@ -336,12 +338,13 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.darkGray,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: const Icon(Icons.edit, color: AppColors.silver),
-            title: const Text('EDITAR'),
+            leading: const Icon(Icons.edit, color: AppColors.conhecimentoGreen),
+            title: Text('EDITAR', style: TextStyle(color: AppColors.lightGray)),
             onTap: () async {
               Navigator.pop(context);
               final result = await Navigator.push(
@@ -354,22 +357,21 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                 ),
               );
               if (result == true) {
-                _loadCharacters(); // Reload characters after edit
+                _loadCharacters();
               }
             },
           ),
-          if (widget.isMasterMode)
-            ListTile(
-              leading: const Icon(Icons.file_upload, color: AppColors.scarletRed),
-              title: const Text('EXPORTAR'),
-              onTap: () {
-                Navigator.pop(context);
-                _exportCharacter(character);
-              },
-            ),
+          ListTile(
+            leading: const Icon(Icons.share, color: AppColors.magenta),
+            title: Text('EXPORTAR', style: TextStyle(color: AppColors.lightGray)),
+            onTap: () {
+              Navigator.pop(context);
+              _exportCharacter(character);
+            },
+          ),
           ListTile(
             leading: const Icon(Icons.delete, color: AppColors.neonRed),
-            title: const Text('DELETAR'),
+            title: Text('DELETAR', style: TextStyle(color: AppColors.lightGray)),
             onTap: () {
               Navigator.pop(context);
               _deleteCharacter(character);
@@ -474,13 +476,47 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
       );
 
       if (confirm == true) {
-        // Importa personagens
-        await _characterRepo.importCharacters(result.characters!, replace: false);
+        // Importa personagens com novo userId e novo ID
+        final importedCharacters = await _characterRepo.importCharacters(
+          result.characters!,
+          replace: false,
+          newUserId: widget.userId,
+          generateNewId: true,
+        );
+
+        // Importa itens (se houver) com o novo characterId
+        if (result.items != null && result.items!.isNotEmpty) {
+          final itemRepo = ItemRepository();
+          for (final item in result.items!) {
+            // Atualiza characterId para o novo ID do personagem importado
+            final newItem = item.copyWith(
+              characterId: importedCharacters.first.id,
+            );
+            await itemRepo.create(newItem);
+          }
+        }
+
+        // Importa poderes (se houver) com o novo characterId
+        if (result.powers != null && result.powers!.isNotEmpty) {
+          final powerRepo = PowerRepository();
+          for (final power in result.powers!) {
+            // Atualiza characterId para o novo ID do personagem importado
+            final newPower = power.copyWith(
+              characterId: importedCharacters.first.id,
+            );
+            await powerRepo.create(newPower);
+          }
+        }
+
         await _loadCharacters();
 
         if (mounted) {
+          final itemCount = result.items?.length ?? 0;
+          final powerCount = result.powers?.length ?? 0;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$count personagem(ns) importado(s) com sucesso!')),
+            SnackBar(
+              content: Text('$count personagem(ns) + $itemCount itens + $powerCount poderes importados!'),
+            ),
           );
         }
       }
@@ -538,12 +574,56 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                 return;
               }
 
-              await _characterRepo.importCharacters(result.characters!, replace: false);
+              // Importa personagem com novo userId e novo ID
+              final importedCharacters = await _characterRepo.importCharacters(
+                result.characters!,
+                replace: false,
+                newUserId: widget.userId,
+                generateNewId: true,
+              );
+
+              // Importa itens (se houver) com o novo characterId
+              if (result.items != null && result.items!.isNotEmpty) {
+                final itemRepo = ItemRepository();
+                for (final item in result.items!) {
+                  // Atualiza characterId para o novo ID do personagem importado
+                  final newItem = item.copyWith(
+                    characterId: importedCharacters.first.id,
+                  );
+                  await itemRepo.create(newItem);
+                }
+              }
+
+              // Importa poderes (se houver) com o novo characterId
+              if (result.powers != null && result.powers!.isNotEmpty) {
+                final powerRepo = PowerRepository();
+                for (final power in result.powers!) {
+                  // Atualiza characterId para o novo ID do personagem importado
+                  final newPower = power.copyWith(
+                    characterId: importedCharacters.first.id,
+                  );
+                  await powerRepo.create(newPower);
+                }
+              }
+
               await _loadCharacters();
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${result.characters!.length} personagem(ns) importado(s)!')),
-              );
+              // Força atualização da UI
+              if (mounted) {
+                setState(() {});
+              }
+
+              final itemCount = result.items?.length ?? 0;
+              final powerCount = result.powers?.length ?? 0;
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '${result.characters!.length} personagem(ns) + $itemCount itens + $powerCount poderes importados!',
+                    ),
+                  ),
+                );
+              }
             },
             child: const Text('IMPORTAR'),
           ),
@@ -554,49 +634,115 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
 
   Future<void> _exportCharacter(Character character) async {
     try {
-      final json = ClipboardHelper.exportCharacter(character);
-      await ClipboardHelper.copyToClipboard(json);
+      // Exporta em JSON para fácil importação (versão 2.0 com itens e poderes)
+      final json = await ClipboardHelper.exportCharacterJson(character);
+      final jsonController = TextEditingController(text: json);
 
       if (mounted) {
-        showDialog(
+        await showDialog(
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: AppColors.darkGray,
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
             title: Row(
               children: [
-                const Icon(Icons.check_circle, color: AppColors.conhecimentoGreen),
+                const Icon(Icons.share, color: AppColors.magenta, size: 20),
                 const SizedBox(width: 8),
-                const Text('COPIADO!'),
+                Expanded(
+                  child: Text(
+                    'EXPORTAR PERSONAGEM',
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 14,
+                      color: AppColors.magenta,
+                    ),
+                  ),
+                ),
               ],
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Personagem "${character.nome}" copiado para área de transferência.',
-                  style: AppTextStyles.body,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Agora você pode compartilhar com outros jogadores!',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver),
-                ),
-              ],
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Personagem: ${character.nome}',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.lightGray,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Copie o JSON abaixo e compartilhe:',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.silver,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 300,
+                    decoration: BoxDecoration(
+                      color: AppColors.deepBlack,
+                      border: Border.all(color: AppColors.silver.withValues(alpha: 0.3)),
+                    ),
+                    child: TextField(
+                      controller: jsonController,
+                      maxLines: null,
+                      readOnly: true,
+                      style: TextStyle(
+                        color: AppColors.lightGray,
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             actions: [
-              ElevatedButton(
+              TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
+                child: const Text('FECHAR'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await ClipboardHelper.copyToClipboard(json);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${character.nome} copiado para área de transferência!'),
+                        backgroundColor: AppColors.conhecimentoGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    Navigator.pop(context);
+                  }
+                },
+                icon: const Icon(Icons.copy),
+                label: const Text('COPIAR'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.magenta,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                ),
               ),
             ],
           ),
         );
       }
+
+      jsonController.dispose();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao exportar: $e')),
+          SnackBar(
+            content: Text('Erro ao exportar: $e'),
+            backgroundColor: AppColors.neonRed,
+          ),
         );
       }
     }

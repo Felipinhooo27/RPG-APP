@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'item.dart';
+import 'item_rarity.dart';
+import 'buff_type.dart';
+import 'buff_duration.dart';
 
 /// Tipos de loja
 enum ShopType {
@@ -32,6 +35,14 @@ class ShopItem {
   String? formulaCura;
   String? efeitoAdicional;
 
+  // Novos campos - Sistema de Raridade e Buffs
+  ItemRarity raridade;
+  BuffType? buffTipo;
+  String? buffDescricao;
+  BuffDuration? buffDuracao;
+  int? buffTurnos; // Quantidade de turnos (se buffDuracao == turnos)
+  int? buffValor; // Magnitude do buff (ex: +2 defesa, +5 velocidade)
+
   ShopItem({
     required this.id,
     required this.nome,
@@ -47,6 +58,12 @@ class ShopItem {
     this.efeitoMaldicao,
     this.formulaCura,
     this.efeitoAdicional,
+    this.raridade = ItemRarity.comum,
+    this.buffTipo,
+    this.buffDescricao,
+    this.buffDuracao,
+    this.buffTurnos,
+    this.buffValor,
   });
 
   Map<String, dynamic> toJson() {
@@ -65,6 +82,12 @@ class ShopItem {
       'efeitoMaldicao': efeitoMaldicao,
       'formulaCura': formulaCura,
       'efeitoAdicional': efeitoAdicional,
+      'raridade': raridade.name,
+      'buffTipo': buffTipo?.name,
+      'buffDescricao': buffDescricao,
+      'buffDuracao': buffDuracao?.name,
+      'buffTurnos': buffTurnos,
+      'buffValor': buffValor,
     };
   }
 
@@ -87,6 +110,18 @@ class ShopItem {
       efeitoMaldicao: json['efeitoMaldicao'] as String?,
       formulaCura: json['formulaCura'] as String?,
       efeitoAdicional: json['efeitoAdicional'] as String?,
+      raridade: json['raridade'] != null
+          ? ItemRarity.fromString(json['raridade'] as String)
+          : ItemRarity.comum,
+      buffTipo: json['buffTipo'] != null
+          ? BuffType.fromString(json['buffTipo'] as String)
+          : null,
+      buffDescricao: json['buffDescricao'] as String?,
+      buffDuracao: json['buffDuracao'] != null
+          ? BuffDuration.fromString(json['buffDuracao'] as String)
+          : null,
+      buffTurnos: json['buffTurnos'] as int?,
+      buffValor: json['buffValor'] as int?,
     );
   }
 
@@ -105,6 +140,12 @@ class ShopItem {
     String? efeitoMaldicao,
     String? formulaCura,
     String? efeitoAdicional,
+    ItemRarity? raridade,
+    BuffType? buffTipo,
+    String? buffDescricao,
+    BuffDuration? buffDuracao,
+    int? buffTurnos,
+    int? buffValor,
   }) {
     return ShopItem(
       id: id ?? this.id,
@@ -121,6 +162,12 @@ class ShopItem {
       efeitoMaldicao: efeitoMaldicao ?? this.efeitoMaldicao,
       formulaCura: formulaCura ?? this.formulaCura,
       efeitoAdicional: efeitoAdicional ?? this.efeitoAdicional,
+      raridade: raridade ?? this.raridade,
+      buffTipo: buffTipo ?? this.buffTipo,
+      buffDescricao: buffDescricao ?? this.buffDescricao,
+      buffDuracao: buffDuracao ?? this.buffDuracao,
+      buffTurnos: buffTurnos ?? this.buffTurnos,
+      buffValor: buffValor ?? this.buffValor,
     );
   }
 }
@@ -131,6 +178,7 @@ class Shop {
   String nome;
   String descricao;
   ShopType tipo;
+  String? nomeDono; // Nome do dono da loja (opcional, para lojas geradas)
 
   List<ShopItem> itens;
 
@@ -143,6 +191,7 @@ class Shop {
     required this.nome,
     required this.descricao,
     required this.tipo,
+    this.nomeDono,
     List<ShopItem>? itens,
     DateTime? criadoEm,
     DateTime? atualizadoEm,
@@ -157,6 +206,7 @@ class Shop {
       'nome': nome,
       'descricao': descricao,
       'tipo': tipo.name,
+      'nomeDono': nomeDono,
       'itens': itens.map((item) => item.toJson()).toList(),
       'criadoEm': criadoEm.toIso8601String(),
       'atualizadoEm': atualizadoEm.toIso8601String(),
@@ -172,6 +222,7 @@ class Shop {
         (e) => e.name == json['tipo'],
         orElse: () => ShopType.mercador,
       ),
+      nomeDono: json['nomeDono'] as String?,
       itens: (json['itens'] as List<dynamic>?)
               ?.map((item) => ShopItem.fromJson(item as Map<String, dynamic>))
               .toList() ??
@@ -193,6 +244,7 @@ class Shop {
     String? nome,
     String? descricao,
     ShopType? tipo,
+    String? nomeDono,
     List<ShopItem>? itens,
     DateTime? criadoEm,
     DateTime? atualizadoEm,
@@ -202,6 +254,7 @@ class Shop {
       nome: nome ?? this.nome,
       descricao: descricao ?? this.descricao,
       tipo: tipo ?? this.tipo,
+      nomeDono: nomeDono ?? this.nomeDono,
       itens: itens ?? this.itens,
       criadoEm: criadoEm ?? this.criadoEm,
       atualizadoEm: atualizadoEm ?? DateTime.now(),

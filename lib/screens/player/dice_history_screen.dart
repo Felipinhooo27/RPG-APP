@@ -1,0 +1,246 @@
+import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../models/dice_roll_history.dart';
+import '../../core/database/dice_repository.dart';
+
+/// Tela de histórico completo de rolagens de dados
+/// Mostra TODOS os rolls com opção de limpar histórico
+class DiceHistoryScreen extends StatefulWidget {
+  final List<DiceRollHistory> initialHistory;
+
+  const DiceHistoryScreen({
+    super.key,
+    required this.initialHistory,
+  });
+
+  @override
+  State<DiceHistoryScreen> createState() => _DiceHistoryScreenState();
+}
+
+class _DiceHistoryScreenState extends State<DiceHistoryScreen> {
+  final _repository = DiceRepository();
+  late List<DiceRollHistory> _history;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _history = widget.initialHistory;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.deepBlack,
+      appBar: AppBar(
+        backgroundColor: AppColors.darkGray,
+        elevation: 0,
+        title: Text('HISTÓRICO COMPLETO', style: AppTextStyles.title),
+        actions: [
+          if (_history.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: AppColors.neonRed),
+              onPressed: _confirmClearHistory,
+              tooltip: 'Limpar histórico',
+            ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.magenta),
+            )
+          : _history.isEmpty
+              ? _buildEmptyState()
+              : _buildHistoryList(),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.casino, size: 64, color: AppColors.silver.withOpacity(0.3)),
+          const SizedBox(height: 16),
+          Text(
+            'NENHUMA ROLAGEM',
+            style: AppTextStyles.uppercase.copyWith(
+              color: AppColors.silver.withOpacity(0.5),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Seu histórico está vazio',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.silver.withOpacity(0.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _history.length,
+      itemBuilder: (context, index) {
+        final entry = _history[index];
+        return _buildHistoryItem(entry, index);
+      },
+    );
+  }
+
+  Widget _buildHistoryItem(DiceRollHistory entry, int index) {
+    final time = '${entry.timestamp.hour.toString().padLeft(2, '0')}:'
+        '${entry.timestamp.minute.toString().padLeft(2, '0')}:'
+        '${entry.timestamp.second.toString().padLeft(2, '0')}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.darkGray,
+        border: Border(
+          left: BorderSide(color: AppColors.magenta, width: 4),
+          top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+          right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+          bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Número do roll
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.magenta.withOpacity(0.2),
+              border: Border.all(color: AppColors.magenta),
+            ),
+            child: Center(
+              child: Text(
+                '${_history.length - index}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.magenta,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+
+          // Horário
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                time,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.silver.withOpacity(0.7),
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                entry.formula,
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.lightGray,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+
+          const Spacer(),
+
+          // Resultado
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.energiaYellow.withOpacity(0.2),
+              border: Border.all(color: AppColors.energiaYellow),
+            ),
+            child: Text(
+              entry.total.toString(),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.energiaYellow,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmClearHistory() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkGray,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: const Text(
+          'LIMPAR HISTÓRICO?',
+          style: TextStyle(color: AppColors.lightGray),
+        ),
+        content: const Text(
+          'Esta ação irá excluir todas as rolagens do histórico. Esta ação não pode ser desfeita.',
+          style: TextStyle(color: AppColors.silver),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCELAR'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.neonRed,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
+            child: const Text('LIMPAR TUDO'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
+
+      try {
+        await _repository.clearHistory();
+        setState(() {
+          _history.clear();
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Histórico limpo com sucesso!'),
+              backgroundColor: AppColors.conhecimentoGreen,
+            ),
+          );
+          // Retorna true para indicar que o histórico foi limpo
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao limpar histórico: $e'),
+              backgroundColor: AppColors.neonRed,
+            ),
+          );
+        }
+      }
+    }
+  }
+}

@@ -187,6 +187,16 @@ class _SplashScreenState extends State<SplashScreen>
                                     width: 2,
                                   ),
                                 ),
+                                child: Center(
+                                  child: Image.asset(
+                                    'assets/images/icons/simbolodesangue.png',
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.contain,
+                                    color: AppColors.scarletRed,
+                                    colorBlendMode: BlendMode.srcIn,
+                                  ),
+                                ),
                               );
                             },
                           ),
@@ -200,21 +210,13 @@ class _SplashScreenState extends State<SplashScreen>
 
                   const SizedBox(height: 48),
 
-                  // Título HEXATOMBE
+                  // Título HEXATOMBE (Imagem)
                   FadeTransition(
                     opacity: _fadeController,
-                    child: ShaderMask(
-                      shaderCallback: (bounds) =>
-                          AppColors.redMagentaGradient.createShader(bounds),
-                      child: const Text(
-                        'HEXATOMBE',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 4.0,
-                          color: Colors.white,
-                        ),
-                      ),
+                    child: Image.asset(
+                      'assets/images/icons/hexatombe.png',
+                      height: 220,
+                      fit: BoxFit.contain,
                     ),
                   ),
 

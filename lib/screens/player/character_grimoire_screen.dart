@@ -3,11 +3,20 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../models/character.dart';
 import '../../core/database/character_repository.dart';
+import '../../core/database/item_repository.dart';
+import '../../core/database/power_repository.dart';
 import '../../core/database/local_storage.dart';
+import 'inventory_management_screen.dart';
+import 'powers_management_screen.dart';
 import 'dart:math' as math;
 
+/// @deprecated Esta tela foi substituída pelo widget CharacterSheetTabView
+/// que agora é exibido diretamente na aba PERSONAGENS do PlayerHomeScreen.
+/// Mantido apenas para referência.
+///
 /// Ficha Completa do Personagem (Grimório)
 /// 4 abas: STATUS | ATRIBUTOS | PERÍCIAS | OUTROS
+@Deprecated('Use CharacterSheetTabView dentro do PlayerHomeScreen')
 class CharacterGrimoireScreen extends StatefulWidget {
   final Character character;
 
@@ -250,18 +259,23 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
           Row(
             children: [
               Expanded(
-                child: _buildStatCard('DEFESA', _character.defesa.toString(), AppColors.forRed),
+                child: _buildStatCard('DEFESA', _character.defesaCalculada.toString(), AppColors.forRed),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildStatCard('BLOQUEIO', _character.bloqueio.toString(), AppColors.vigBlue),
+                child: _buildStatCard('BLOQUEIO', _character.bloqueioCalculado.toString(), AppColors.vigBlue),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildStatCard('DESL', _character.deslocamento.toString(), AppColors.agiGreen),
+                child: _buildStatCard('DESL', '${_character.deslocamentoCalculado}m', AppColors.agiGreen),
               ),
             ],
           ),
+
+          const SizedBox(height: 16),
+
+          // Peso do inventário
+          _buildWeightSection(),
 
           const SizedBox(height: 24),
 
@@ -422,6 +436,90 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWeightSection() {
+    final itemRepo = ItemRepository();
+
+    return FutureBuilder<int>(
+      future: itemRepo.getTotalWeight(_character.id),
+      builder: (context, snapshot) {
+        final pesoAtual = snapshot.data ?? 0;
+        final pesoMax = _character.pesoMaximo;
+        final percentual = pesoMax > 0 ? (pesoAtual / pesoMax) : 0.0;
+
+        Color weightColor;
+        if (percentual >= 1.0) {
+          weightColor = AppColors.neonRed; // Sobrecarga
+        } else if (percentual >= 0.75) {
+          weightColor = AppColors.sanYellow; // Quase cheio
+        } else {
+          weightColor = AppColors.conhecimentoGreen; // OK
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.darkGray,
+            border: Border.all(color: weightColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'PESO DO INVENTÁRIO',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: weightColor,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  Text(
+                    '$pesoAtual / $pesoMax kg',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: weightColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Barra de progresso
+              Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  color: AppColors.deepBlack,
+                  border: Border.all(color: weightColor.withOpacity(0.3)),
+                ),
+                child: FractionallySizedBox(
+                  widthFactor: percentual.clamp(0.0, 1.0),
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    color: weightColor,
+                  ),
+                ),
+              ),
+              if (percentual >= 1.0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '⚠ SOBRECARGA! Velocidade e agilidade reduzidas.',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: AppColors.neonRed,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -949,108 +1047,202 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
   }
 
   Widget _buildInventarioSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.inventory_2, color: AppColors.energiaYellow, size: 20),
-            const SizedBox(width: 8),
-            Text('INVENTÁRIO', style: AppTextStyles.title.copyWith(color: AppColors.energiaYellow)),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.energiaYellow.withOpacity(0.2),
-                border: Border.all(color: AppColors.energiaYellow),
+    return FutureBuilder<int>(
+      future: _countItems(),
+      builder: (context, snapshot) {
+        final itemCount = snapshot.data ?? 0;
+
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => InventoryManagementScreen(character: _character),
               ),
-              child: Text(
-                '${_character.inventarioIds.length} ITENS',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.energiaYellow,
-                  letterSpacing: 1.0,
-                ),
-              ),
+            ).then((_) => setState(() {})); // Refresh ao voltar
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.energiaYellow.withOpacity(0.1),
+              border: Border.all(color: AppColors.energiaYellow.withOpacity(0.3), width: 2),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _character.inventarioIds.isEmpty
-            ? _buildEmptyState('Nenhum item no inventário', Icons.inventory)
-            : FutureBuilder<List<dynamic>>(
-                future: _loadItems(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: AppColors.energiaYellow),
-                    );
-                  }
+            child: Row(
+              children: [
+                // Ícone grande
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.energiaYellow.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.inventory_2,
+                    color: AppColors.energiaYellow,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 16),
 
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return _buildEmptyState('Nenhum item encontrado', Icons.inventory);
-                  }
+                // Conteúdo
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'INVENTÁRIO',
+                            style: AppTextStyles.title.copyWith(
+                              color: AppColors.energiaYellow,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.energiaYellow.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$itemCount ITENS',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.energiaYellow,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Gerencie seus itens e equipamentos',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.silver.withOpacity(0.6),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                  return Column(
-                    children: snapshot.data!.map((item) => _buildItemCard(item)).toList(),
-                  );
-                },
-              ),
-      ],
+                // Seta
+                const SizedBox(width: 12),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppColors.energiaYellow,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildPoderesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.auto_awesome, color: AppColors.medoPurple, size: 20),
-            const SizedBox(width: 8),
-            Text('PODERES E RITUAIS', style: AppTextStyles.title.copyWith(color: AppColors.medoPurple)),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.medoPurple.withOpacity(0.2),
-                border: Border.all(color: AppColors.medoPurple),
+    return FutureBuilder<int>(
+      future: _countPowers(),
+      builder: (context, snapshot) {
+        final powerCount = snapshot.data ?? 0;
+
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PowersManagementScreen(character: _character),
               ),
-              child: Text(
-                '${_character.poderesIds.length} PODERES',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.medoPurple,
-                  letterSpacing: 1.0,
-                ),
-              ),
+            ).then((_) => setState(() {})); // Refresh ao voltar
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.medoPurple.withOpacity(0.1),
+              border: Border.all(color: AppColors.medoPurple.withOpacity(0.3), width: 2),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _character.poderesIds.isEmpty
-            ? _buildEmptyState('Nenhum poder aprendido', Icons.auto_awesome)
-            : FutureBuilder<List<dynamic>>(
-                future: _loadPowers(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: AppColors.medoPurple),
-                    );
-                  }
+            child: Row(
+              children: [
+                // Ícone grande
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.medoPurple.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    color: AppColors.medoPurple,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 16),
 
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return _buildEmptyState('Nenhum poder encontrado', Icons.auto_awesome);
-                  }
+                // Conteúdo
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'PODERES E RITUAIS',
+                            style: AppTextStyles.title.copyWith(
+                              color: AppColors.medoPurple,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.medoPurple.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$powerCount PODERES',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.medoPurple,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Gerencie seus poderes paranormais',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.silver.withOpacity(0.6),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                  return Column(
-                    children: snapshot.data!.map((power) => _buildPowerCard(power)).toList(),
-                  );
-                },
-              ),
-      ],
+                // Seta
+                const SizedBox(width: 12),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppColors.medoPurple,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1106,215 +1298,8 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
     );
   }
 
-  Widget _buildEmptyState(String message, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border.all(color: AppColors.silver.withOpacity(0.3)),
-      ),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(icon, size: 48, color: AppColors.silver.withOpacity(0.3)),
-            const SizedBox(height: 12),
-            Text(
-              message.toUpperCase(),
-              style: AppTextStyles.uppercase.copyWith(
-                color: AppColors.silver.withOpacity(0.5),
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildItemCard(dynamic itemJson) {
-    final nome = itemJson['nome'] as String? ?? 'Item Desconhecido';
-    final descricao = itemJson['descricao'] as String? ?? '';
-    final tipo = itemJson['tipo'] as String? ?? 'equipamento';
-    final quantidade = itemJson['quantidade'] as int? ?? 1;
-    final espaco = itemJson['espaco'] as int? ?? 1;
-
-    final tipoColor = _getItemTypeColor(tipo);
-    final tipoLabel = _getItemTypeLabel(tipo);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border(
-          left: BorderSide(color: tipoColor, width: 4),
-          top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: tipoColor.withOpacity(0.2),
-                  border: Border.all(color: tipoColor),
-                ),
-                child: Text(
-                  tipoLabel,
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                    color: tipoColor,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'QTD: $quantidade',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.silver.withOpacity(0.7),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Icon(Icons.inventory_2, size: 14, color: AppColors.silver.withOpacity(0.5)),
-              const SizedBox(width: 4),
-              Text(
-                '${espaco * quantidade}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.silver.withOpacity(0.7),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            nome.toUpperCase(),
-            style: AppTextStyles.uppercase.copyWith(
-              fontSize: 13,
-              color: AppColors.lightGray,
-            ),
-          ),
-          if (descricao.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              descricao,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.silver.withOpacity(0.6),
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPowerCard(dynamic powerJson) {
-    final nome = powerJson['nome'] as String? ?? 'Poder Desconhecido';
-    final descricao = powerJson['descricao'] as String? ?? '';
-    final elemento = powerJson['elemento'] as String? ?? 'conhecimento';
-    final custoPE = powerJson['custoPE'] as int? ?? 0;
-    final circulo = powerJson['circulo'] as int?;
-
-    final elementoColor = _getElementoColor(elemento);
-    final elementoLabel = _getElementoLabel(elemento);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border(
-          left: BorderSide(color: elementoColor, width: 4),
-          top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: elementoColor.withOpacity(0.2),
-                  border: Border.all(color: elementoColor),
-                ),
-                child: Text(
-                  elementoLabel,
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                    color: elementoColor,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-              if (circulo != null) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.medoPurple.withOpacity(0.2),
-                    border: Border.all(color: AppColors.medoPurple),
-                  ),
-                  child: Text(
-                    '$circuloº CÍRCULO',
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.medoPurple,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ),
-              ],
-              const Spacer(),
-              Icon(Icons.flash_on, size: 14, color: AppColors.energiaYellow),
-              const SizedBox(width: 4),
-              Text(
-                '$custoPE PE',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.energiaYellow,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            nome.toUpperCase(),
-            style: AppTextStyles.uppercase.copyWith(
-              fontSize: 13,
-              color: AppColors.lightGray,
-            ),
-          ),
-          if (descricao.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              descricao,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.silver.withOpacity(0.6),
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  // Métodos _buildEmptyState, _buildItemCard e _buildPowerCard removidos
+  // Não são mais necessários após refatoração para botões de navegação
 
   Future<List<dynamic>> _loadItems() async {
     final storage = LocalStorage();
@@ -1332,6 +1317,28 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
       final powerId = power['id'] as String?;
       return powerId != null && _character.poderesIds.contains(powerId);
     }).toList();
+  }
+
+  /// Conta itens diretamente do banco por characterId
+  Future<int> _countItems() async {
+    try {
+      final itemRepository = ItemRepository();
+      return await itemRepository.countByCharacterId(_character.id);
+    } catch (e) {
+      debugPrint('Erro ao contar itens: $e');
+      return 0;
+    }
+  }
+
+  /// Conta poderes diretamente do banco por characterId
+  Future<int> _countPowers() async {
+    try {
+      final powerRepository = PowerRepository();
+      return await powerRepository.countByCharacterId(_character.id);
+    } catch (e) {
+      debugPrint('Erro ao contar poderes: $e');
+      return 0;
+    }
   }
 
   Map<String, String> _getClasseHabilidades() {

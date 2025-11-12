@@ -3,9 +3,14 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/database/character_repository.dart';
 import '../../models/character.dart';
+import '../../core/utils/clipboard_helper.dart';
 import '../player/google_dice_roller_screen.dart';
+import '../player/character_grimoire_screen.dart';
+import '../character_wizard/character_wizard_screen.dart';
 import 'advanced_generator_screen.dart';
 import 'quick_character_generator_screen.dart';
+import 'shop_management_screen.dart';
+import 'shop_generator_screen.dart';
 import 'iniciativa_screen.dart';
 import 'notes_screen.dart';
 import 'mass_payment_screen.dart';
@@ -296,54 +301,14 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   }
 
   void _showNPCDetails(Character character) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.darkGray,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        title: Text(
-          character.nome.toUpperCase(),
-          style: AppTextStyles.uppercase.copyWith(color: AppColors.scarletRed),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CharacterGrimoireScreen(
+          character: character,
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Classe', character.classe.name.toUpperCase()),
-            _buildDetailRow('Origem', character.origem.name.toUpperCase()),
-            _buildDetailRow('NEX', '${character.nex}%'),
-            const Divider(color: AppColors.silver),
-            _buildDetailRow('FOR', character.forca.toString()),
-            _buildDetailRow('AGI', character.agilidade.toString()),
-            _buildDetailRow('VIG', character.vigor.toString()),
-            _buildDetailRow('INT', character.intelecto.toString()),
-            _buildDetailRow('PRE', character.presenca.toString()),
-            const Divider(color: AppColors.silver),
-            _buildDetailRow('PV', '${character.pvAtual}/${character.pvMax}'),
-            _buildDetailRow('PE', '${character.peAtual}/${character.peMax}'),
-            _buildDetailRow('SAN', '${character.sanAtual}/${character.sanMax}'),
-            _buildDetailRow('Defesa', character.defesa.toString()),
-            _buildDetailRow('Créditos', '\$${character.creditos}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('FECHAR'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showNPCOptions(character);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.scarletRed,
-            ),
-            child: const Text('OPÇÕES'),
-          ),
-        ],
       ),
-    );
+    ).then((_) => _loadCharacters());
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -380,11 +345,20 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
           ListTile(
             leading: const Icon(Icons.edit, color: AppColors.conhecimentoGreen),
             title: const Text('EDITAR'),
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edição será implementada')),
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CharacterWizardScreen(
+                    userId: character.userId,
+                    characterToEdit: character,
+                  ),
+                ),
               );
+              if (result == true) {
+                _loadCharacters();
+              }
             },
           ),
           ListTile(
@@ -392,9 +366,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
             title: const Text('EXPORTAR'),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Exportação será implementada')),
-              );
+              _exportCharacter(character);
             },
           ),
           ListTile(
@@ -446,6 +418,122 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _exportCharacter(Character character) async {
+    try {
+      // Exporta em JSON para fácil importação (versão 2.0 com itens e poderes)
+      final json = await ClipboardHelper.exportCharacterJson(character);
+      final jsonController = TextEditingController(text: json);
+
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.darkGray,
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            title: Row(
+              children: [
+                const Icon(Icons.share, color: AppColors.magenta, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'EXPORTAR PERSONAGEM',
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 14,
+                      color: AppColors.magenta,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Personagem: ${character.nome}',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.lightGray,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Copie o JSON abaixo e compartilhe:',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.silver,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 300,
+                    decoration: BoxDecoration(
+                      color: AppColors.deepBlack,
+                      border: Border.all(color: AppColors.silver.withValues(alpha: 0.3)),
+                    ),
+                    child: TextField(
+                      controller: jsonController,
+                      maxLines: null,
+                      readOnly: true,
+                      style: TextStyle(
+                        color: AppColors.lightGray,
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('FECHAR'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await ClipboardHelper.copyToClipboard(json);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${character.nome} copiado para área de transferência!'),
+                        backgroundColor: AppColors.conhecimentoGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    Navigator.pop(context);
+                  }
+                },
+                icon: const Icon(Icons.copy),
+                label: const Text('COPIAR'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.magenta,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      jsonController.dispose();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao exportar: $e'),
+            backgroundColor: AppColors.neonRed,
+          ),
+        );
+      }
+    }
   }
 
   // ==========================================================================
@@ -676,6 +764,87 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
 
         const SizedBox(height: 20),
 
+        // Shop Generator Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.darkGray,
+            border: Border.all(color: Colors.orange, width: 2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.store, color: Colors.orange, size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'GERADOR DE LOJAS',
+                      style: AppTextStyles.uppercase.copyWith(
+                        fontSize: 16,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Crie lojas completas instantaneamente com itens variados. '
+                'Armas, curas, equipamentos, itens amaldiçoados e muito mais. 400+ itens únicos!',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.silver,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _buildFeatureBadge('400+ Itens'),
+                  const SizedBox(width: 8),
+                  _buildFeatureBadge('7 Presets Prontos'),
+                  const SizedBox(width: 8),
+                  _buildFeatureBadge('Sistema de Raridade'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ShopGeneratorScreen(),
+                      ),
+                    );
+
+                    // Atualiza lojas se necessário
+                    if (result == true) {
+                      // Pode adicionar callback aqui se precisar atualizar alguma lista
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                  child: const Text(
+                    'ABRIR GERADOR DE LOJAS',
+                    style: TextStyle(
+                      letterSpacing: 1.5,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
         // Info Card
         Container(
           padding: const EdgeInsets.all(16),
@@ -726,11 +895,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   // TAB 3: LOJA (Placeholder)
   // ==========================================================================
   Widget _buildLojaTab() {
-    return _buildPlaceholderTab(
-      icon: Icons.store,
-      title: 'GERENCIAR LOJAS',
-      description: 'Crie e gerencie lojas para os jogadores',
-    );
+    return const ShopManagementScreen();
   }
 
   // ==========================================================================
