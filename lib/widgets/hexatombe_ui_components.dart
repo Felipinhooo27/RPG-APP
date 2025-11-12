@@ -817,13 +817,13 @@ class _RunaAtributoPainter extends CustomPainter {
       );
       labelPainter.paint(canvas, labelOffset);
 
-      // Valor do atributo
+      // Valor do atributo (FORA do pentágono, colorido)
       final valuePainter = TextPainter(
         text: TextSpan(
           text: attributes[i].toString(),
-          style: const TextStyle(
-            color: Color(0xFFe0e0e0),
-            fontSize: 20,
+          style: TextStyle(
+            color: colors[i],  // Cor específica de cada atributo
+            fontSize: 26,      // Maior, já que está fora
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -831,10 +831,30 @@ class _RunaAtributoPainter extends CustomPainter {
       );
       valuePainter.layout();
 
-      // Posiciona o valor próximo ao ponto
+      // Calcular direção do centro para o vértice
+      final direction = Offset(
+        positions[i].dx - center.dx,
+        positions[i].dy - center.dy,
+      );
+      final distance = math.sqrt(
+        direction.dx * direction.dx + direction.dy * direction.dy
+      );
+      final normalized = Offset(
+        direction.dx / distance,
+        direction.dy / distance,
+      );
+
+      // Empurrar número PARA FORA do vértice
+      final valueDistance = 30.0;  // Distância além do vértice
+      final valuePosition = Offset(
+        positions[i].dx + normalized.dx * valueDistance,
+        positions[i].dy + normalized.dy * valueDistance,
+      );
+
+      // Centralizar texto no ponto calculado
       final valueOffset = Offset(
-        valuePositions[i].dx - valuePainter.width / 2,
-        valuePositions[i].dy - valuePainter.height / 2,
+        valuePosition.dx - valuePainter.width / 2,
+        valuePosition.dy - valuePainter.height / 2,
       );
       valuePainter.paint(canvas, valueOffset);
     }
