@@ -144,34 +144,32 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
 
   Widget _buildParticipantCard(CombatParticipant participant, int index) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border.all(color: AppColors.silver.withOpacity(0.3)),
+        border: Border(
+          left: BorderSide(color: AppColors.scarletRed, width: 4),
+          bottom: BorderSide(color: AppColors.silver.withValues(alpha: 0.1)),
+        ),
       ),
       child: Row(
         children: [
-          // Iniciativa
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.neonRed.withOpacity(0.2),
-              border: Border.all(color: AppColors.neonRed, width: 2),
-            ),
-            child: Center(
-              child: Text(
-                participant.iniciativa.toString(),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.neonRed,
-                ),
+          // Iniciativa (apenas número, sem caixa)
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 44,
+            child: Text(
+              participant.iniciativa.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: AppColors.scarletRed,
+                fontFamily: 'monospace',
               ),
             ),
           ),
 
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
 
           // Info
           Expanded(
@@ -180,23 +178,26 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
               children: [
                 Text(
                   participant.nome.toUpperCase(),
-                  style: AppTextStyles.uppercase.copyWith(fontSize: 13),
+                  style: AppTextStyles.uppercase.copyWith(
+                    fontSize: 14,
+                    color: AppColors.lightGray,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'PV: ${participant.pvAtual}/${participant.pvMax}',
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.pvRed.withOpacity(0.7),
+                    color: AppColors.silver.withValues(alpha: 0.6),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Remover
+          // Remover (X vermelho)
           IconButton(
-            icon: Icon(Icons.close, color: AppColors.silver.withOpacity(0.5)),
+            icon: const Icon(Icons.close, color: AppColors.scarletRed, size: 20),
             onPressed: () => setState(() => _participants.removeAt(index)),
           ),
         ],
@@ -208,50 +209,69 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.darkGray,
         border: Border(
-          top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+          top: BorderSide(color: AppColors.silver.withValues(alpha: 0.2)),
         ),
       ),
       child: Column(
         children: [
+          // Botões de adicionar (apenas texto, sem cor de fundo)
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _addFromCharacters,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.conhecimentoGreen,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              TextButton.icon(
+                onPressed: _addFromCharacters,
+                icon: const Icon(Icons.person_add, color: AppColors.lightGray, size: 18),
+                label: Text(
+                  'ADICIONAR PERSONAGEM',
+                  style: TextStyle(
+                    color: AppColors.lightGray,
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: const Text('ADICIONAR PERSONAGEM'),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _addCustomCombatant,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.magenta,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              Container(
+                width: 1,
+                height: 30,
+                color: AppColors.silver.withValues(alpha: 0.2),
+              ),
+              TextButton.icon(
+                onPressed: _addCustomCombatant,
+                icon: const Icon(Icons.group_add, color: AppColors.lightGray, size: 18),
+                label: Text(
+                  'ADICIONAR INIMIGO',
+                  style: TextStyle(
+                    color: AppColors.lightGray,
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: const Text('ADICIONAR INIMIGO'),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          // Botão principal vermelho
           SizedBox(
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
               onPressed: _participants.isEmpty ? null : _startCombat,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.neonRed,
+                backgroundColor: AppColors.scarletRed,
                 disabledBackgroundColor: AppColors.darkGray,
                 shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                elevation: 0,
               ),
-              child: const Text('INICIAR COMBATE'),
+              child: const Text(
+                'INICIAR COMBATE',
+                style: TextStyle(
+                  letterSpacing: 2.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
@@ -266,44 +286,17 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.darkGray,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        title: const Text('SELECIONE PERSONAGEM'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: characters.length,
-            separatorBuilder: (_, __) => const Divider(color: AppColors.silver),
-            itemBuilder: (context, index) {
-              final char = characters[index];
-              return ListTile(
-                title: Text(
-                  char.nome.toUpperCase(),
-                  style: AppTextStyles.uppercase.copyWith(fontSize: 12),
-                ),
-                subtitle: Text('PV: ${char.pvMax} | DEF: ${char.defesa}'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _addParticipant(
-                    nome: char.nome,
-                    pvMax: char.pvMax,
-                    pvAtual: char.pvAtual,
-                    defesa: char.defesa,
-                    agilidade: char.agilidade,
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CANCELAR'),
-          ),
-        ],
+      builder: (context) => _CharacterSelectionModal(
+        characters: characters,
+        onCharacterSelected: (char) {
+          _addParticipant(
+            nome: char.nome,
+            pvMax: char.pvMax,
+            pvAtual: char.pvAtual,
+            defesa: char.defesa,
+            agilidade: char.agilidade,
+          );
+        },
       ),
     );
   }
@@ -727,6 +720,205 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
         _currentTurn++;
       }
     });
+  }
+}
+
+// =============================================================================
+// MODAL: Seleção de Personagens com Busca (Design Hexatombe)
+// =============================================================================
+class _CharacterSelectionModal extends StatefulWidget {
+  final List<Character> characters;
+  final Function(Character) onCharacterSelected;
+
+  const _CharacterSelectionModal({
+    required this.characters,
+    required this.onCharacterSelected,
+  });
+
+  @override
+  State<_CharacterSelectionModal> createState() => _CharacterSelectionModalState();
+}
+
+class _CharacterSelectionModalState extends State<_CharacterSelectionModal> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Character> _filteredCharacters = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredCharacters = widget.characters;
+    _searchController.addListener(_filterCharacters);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterCharacters() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredCharacters = widget.characters.where((char) {
+        return char.nome.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.deepBlack,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.deepBlack,
+          border: Border.all(color: AppColors.scarletRed.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: AppColors.scarletRed.withValues(alpha: 0.3)),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    'ADICIONAR AO COMBATE',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2.5,
+                      color: AppColors.scarletRed,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.scarletRed),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Barra de pesquisa (SEM CAIXA, apenas linha)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                decoration: InputDecoration(
+                  hintText: 'Pesquisar personagem ou inimigo...',
+                  hintStyle: TextStyle(
+                    color: AppColors.silver.withValues(alpha: 0.4),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: AppColors.scarletRed.withValues(alpha: 0.7),
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.scarletRed.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.scarletRed,
+                      width: 3,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Lista de personagens (rolável)
+            Flexible(
+              child: _filteredCharacters.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          'Nenhum personagem encontrado',
+                          style: TextStyle(
+                            color: AppColors.silver.withValues(alpha: 0.5),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      itemCount: _filteredCharacters.length,
+                      separatorBuilder: (_, __) => Divider(
+                        color: AppColors.silver.withValues(alpha: 0.1),
+                        height: 1,
+                      ),
+                      itemBuilder: (context, index) {
+                        final char = _filteredCharacters[index];
+                        return InkWell(
+                          onTap: () {
+                            Navigator.pop(context);
+                            widget.onCharacterSelected(char);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        char.nome.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.5,
+                                          color: AppColors.lightGray,
+                                          fontFamily: 'monospace',
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'PV: ${char.pvMax} | DEF: ${char.defesa}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.silver.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.add_circle_outline,
+                                  color: AppColors.scarletRed,
+                                  size: 24,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 }
 

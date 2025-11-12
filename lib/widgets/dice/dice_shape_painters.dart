@@ -249,7 +249,7 @@ class PentagonPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Painter para hexágono (d100)
+/// Painter para hexágono (d20)
 class HexagonPainter extends CustomPainter {
   final Color fillColor;
   final bool hasGlow;
@@ -311,6 +311,53 @@ class HexagonPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+/// Painter para círculo (d100)
+class CirclePainter extends CustomPainter {
+  final Color fillColor;
+  final bool hasGlow;
+  final double strokeWidth;
+
+  CirclePainter({
+    required this.fillColor,
+    this.hasGlow = false,
+    this.strokeWidth = 0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    // Preenchimento
+    final fillPaint = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius, fillPaint);
+
+    // Glow effect
+    if (hasGlow) {
+      final glowPaint = Paint()
+        ..color = fillColor.withOpacity(0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawCircle(center, radius, glowPaint);
+    }
+
+    // Contorno
+    if (strokeWidth > 0) {
+      final strokePaint = Paint()
+        ..color = fillColor.withOpacity(0.9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth;
+      canvas.drawCircle(center, radius, strokePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 /// Widget helper que retorna o painter correto para cada tipo de dado
 class DiceShapeWidget extends StatelessWidget {
   final int faces;
@@ -363,14 +410,14 @@ class DiceShapeWidget extends StatelessWidget {
           strokeWidth: strokeWidth,
         );
       case 20:
-        return TrianglePainter(
+        return HexagonPainter(
           fillColor: color,
           hasGlow: hasGlow,
           strokeWidth: strokeWidth,
         );
       case 100:
       default:
-        return HexagonPainter(
+        return CirclePainter(
           fillColor: color,
           hasGlow: hasGlow,
           strokeWidth: strokeWidth,

@@ -383,15 +383,48 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
 
           const SizedBox(height: 24),
 
+          // Botão de distribuição aleatória (destaque)
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                final randomDist = CharacterGenerator.generateRandomDistribution();
+                _applySuggestedDistribution(randomDist);
+              },
+              icon: const Icon(Icons.casino, size: 20),
+              label: const Text('DISTRIBUIÇÃO ALEATÓRIA'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.scarletRed,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
           // Distribuições sugeridas
           Text('DISTRIBUIÇÕES SUGERIDAS', style: AppTextStyles.labelMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
+          Text(
+            'Clique em uma build para aplicar',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.silver.withOpacity(0.7),
+              fontSize: 10,
+            ),
+          ),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: CharacterGenerator.getSuggestedDistributions().map((dist) {
               return OutlinedButton(
                 onPressed: () => _applySuggestedDistribution(dist),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                ),
                 child: Text(
                   'FOR${dist['forca']} AGI${dist['agilidade']} VIG${dist['vigor']} INT${dist['intelecto']} PRE${dist['presenca']}',
                   style: const TextStyle(fontSize: 10),

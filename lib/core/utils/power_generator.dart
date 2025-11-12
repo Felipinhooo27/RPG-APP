@@ -55,6 +55,9 @@ class PowerGenerator {
           )
         : <PowerTemplate>[];
 
+    // Set global para rastrear todos os poderes já gerados (anti-duplicação)
+    final generatedPowerNames = <String>{};
+
     // Calcula distribuição entre poderes e rituais
     final ritualCount = _calculateRitualCount(powerCount, maxCirculo);
     final regularPowerCount = powerCount - ritualCount;
@@ -68,6 +71,7 @@ class PowerGenerator {
         regularPowerCount,
         availablePowers,
         useRandom,
+        generatedPowerNames,
       ));
     } else {
       // Distribui entre elementos
@@ -76,6 +80,7 @@ class PowerGenerator {
         regularPowerCount,
         availablePowers,
         useRandom,
+        generatedPowerNames,
       ));
     }
 
@@ -88,6 +93,7 @@ class PowerGenerator {
         availableRituals,
         elementoPreferido,
         useRandom,
+        generatedPowerNames,
       ));
     }
 
@@ -110,23 +116,26 @@ class PowerGenerator {
     int count,
     List<PowerTemplate> availablePowers,
     bool useRandom,
+    Set<String> generatedPowerNames,
   ) {
     final powers = <Power>[];
     final elementoPowers = availablePowers
         .where((p) => p.elemento == elemento && !p.isRitual)
+        .where((p) => !generatedPowerNames.contains(p.nome))
         .toList();
 
     if (elementoPowers.isEmpty) return powers;
 
-    // Seleciona poderes (evita duplicatas)
+    // Seleciona poderes (evita duplicatas localmente também)
     final selectedTemplates = <PowerTemplate>[];
     for (int i = 0; i < count && elementoPowers.isNotEmpty; i++) {
-      PowerTemplate template;
+      PowerTemplate? template;
 
       if (useRandom) {
         // Remove templates já selecionados
         final available = elementoPowers
             .where((p) => !selectedTemplates.contains(p))
+            .where((p) => !generatedPowerNames.contains(p.nome))
             .toList();
         if (available.isEmpty) break;
 
@@ -135,6 +144,7 @@ class PowerGenerator {
         // Seleciona em ordem de NEX mínimo (mais fracos primeiro)
         final available = elementoPowers
             .where((p) => !selectedTemplates.contains(p))
+            .where((p) => !generatedPowerNames.contains(p.nome))
             .toList();
         if (available.isEmpty) break;
 
@@ -143,6 +153,7 @@ class PowerGenerator {
       }
 
       selectedTemplates.add(template);
+      generatedPowerNames.add(template.nome);
       powers.add(_createPowerFromTemplate(template, characterId));
     }
 
@@ -155,9 +166,13 @@ class PowerGenerator {
     int count,
     List<PowerTemplate> availablePowers,
     bool useRandom,
+    Set<String> generatedPowerNames,
   ) {
     final powers = <Power>[];
-    final regularPowers = availablePowers.where((p) => !p.isRitual).toList();
+    final regularPowers = availablePowers
+        .where((p) => !p.isRitual)
+        .where((p) => !generatedPowerNames.contains(p.nome))
+        .toList();
 
     if (regularPowers.isEmpty) return powers;
 
@@ -178,7 +193,8 @@ class PowerGenerator {
           final elementoPowers = regularPowers
               .where((p) =>
                   p.elemento == leastUsedElemento &&
-                  !selectedTemplates.contains(p))
+                  !selectedTemplates.contains(p) &&
+                  !generatedPowerNames.contains(p.nome))
               .toList();
 
           if (elementoPowers.isNotEmpty) {
@@ -190,6 +206,7 @@ class PowerGenerator {
         if (template == null) {
           final available = regularPowers
               .where((p) => !selectedTemplates.contains(p))
+              .where((p) => !generatedPowerNames.contains(p.nome))
               .toList();
           if (available.isEmpty) break;
 
@@ -200,17 +217,20 @@ class PowerGenerator {
         final elemento = elementos[i % elementos.length];
         final elementoPowers = regularPowers
             .where((p) =>
-                p.elemento == elemento && !selectedTemplates.contains(p))
+                p.elemento == elemento &&
+                !selectedTemplates.contains(p) &&
+                !generatedPowerNames.contains(p.nome))
             .toList();
 
         if (elementoPowers.isEmpty) {
           // Fallback para qualquer poder disponível
           final available = regularPowers
               .where((p) => !selectedTemplates.contains(p))
+              .where((p) => !generatedPowerNames.contains(p.nome))
               .toList();
           if (available.isEmpty) break;
 
-          elementoPowers.sort((a, b) => a.nivelMinimo.compareTo(b.nivelMinimo));
+          available.sort((a, b) => a.nivelMinimo.compareTo(b.nivelMinimo));
           template = available.first;
         } else {
           elementoPowers.sort((a, b) => a.nivelMinimo.compareTo(b.nivelMinimo));
@@ -218,10 +238,9 @@ class PowerGenerator {
         }
       }
 
-      if (template != null) {
-        selectedTemplates.add(template);
-        powers.add(_createPowerFromTemplate(template, characterId));
-      }
+      selectedTemplates.add(template);
+      generatedPowerNames.add(template.nome);
+      powers.add(_createPowerFromTemplate(template, characterId));
     }
 
     return powers;
@@ -235,6 +254,7 @@ class PowerGenerator {
     List<PowerTemplate> availableRituals,
     ElementoOutroLado? elementoPreferido,
     bool useRandom,
+    Set<String> generatedPowerNames,
   ) {
     final powers = <Power>[];
     final selectedTemplates = <PowerTemplate>[];
@@ -242,6 +262,7 @@ class PowerGenerator {
     // Filtra rituais por círculos disponíveis
     final validRituals = availableRituals
         .where((r) => r.circulo != null && r.circulo! <= maxCirculo)
+        .where((r) => !generatedPowerNames.contains(r.nome))
         .toList();
 
     if (validRituals.isEmpty) return powers;
@@ -256,13 +277,16 @@ class PowerGenerator {
 
         var circleRituals = validRituals
             .where((r) =>
-                r.circulo == targetCircle && !selectedTemplates.contains(r))
+                r.circulo == targetCircle &&
+                !selectedTemplates.contains(r) &&
+                !generatedPowerNames.contains(r.nome))
             .toList();
 
         // Fallback: qualquer círculo disponível
         if (circleRituals.isEmpty) {
           circleRituals = validRituals
               .where((r) => !selectedTemplates.contains(r))
+              .where((r) => !generatedPowerNames.contains(r.nome))
               .toList();
         }
 
@@ -273,6 +297,7 @@ class PowerGenerator {
         // Modo determinístico: círculos em ordem crescente
         final available = validRituals
             .where((r) => !selectedTemplates.contains(r))
+            .where((r) => !generatedPowerNames.contains(r.nome))
             .toList();
 
         if (available.isEmpty) break;
@@ -287,10 +312,9 @@ class PowerGenerator {
         template = available.first;
       }
 
-      if (template != null) {
-        selectedTemplates.add(template);
-        powers.add(_createPowerFromTemplate(template, characterId));
-      }
+      selectedTemplates.add(template);
+      generatedPowerNames.add(template.nome);
+      powers.add(_createPowerFromTemplate(template, characterId));
     }
 
     return powers;

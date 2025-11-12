@@ -60,18 +60,20 @@ class _ShopScreenState extends State<ShopScreen> {
     super.dispose();
   }
 
-  Future<void> _loadShop() async {
+  Future<void> _loadShop({bool createDefaultIfEmpty = true}) async {
     setState(() => _isLoading = true);
     try {
       final shops = await _shopRepo.getAll();
       setState(() {
-        _currentShop = shops.isNotEmpty ? shops.first : _createDefaultShop();
+        _currentShop = shops.isNotEmpty
+            ? shops.first
+            : (createDefaultIfEmpty ? _createDefaultShop() : null);
         _filteredItems = _currentShop?.itens ?? [];
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _currentShop = _createDefaultShop();
+        _currentShop = createDefaultIfEmpty ? _createDefaultShop() : null;
         _filteredItems = _currentShop?.itens ?? [];
         _isLoading = false;
       });
@@ -1103,7 +1105,8 @@ class _ShopScreenState extends State<ShopScreen> {
     if (confirm == true) {
       try {
         await _shopRepo.delete(_currentShop!.id);
-        _loadShop();
+        // Não recria loja padrão após exclusão manual
+        await _loadShop(createDefaultIfEmpty: false);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

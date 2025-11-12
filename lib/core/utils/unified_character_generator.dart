@@ -3,8 +3,10 @@ import 'package:uuid/uuid.dart';
 import '../../models/character.dart';
 import '../../models/item.dart';
 import '../../models/power.dart';
+import '../../models/skill.dart';
 import 'item_generator.dart';
 import 'power_generator.dart';
+import 'character_generator.dart';
 
 /// Categorias de personagem (10 Tiers)
 enum CharacterTier {
@@ -262,6 +264,9 @@ class UnifiedCharacterGenerator {
     // Iniciativa
     final iniciativaBase = customIniciativa ?? 0;
 
+    // Gera perícias automaticamente baseado no tier
+    final pericias = _generateSkills(tier, classe, origem);
+
     // Cria o personagem (sem itens/poderes ainda)
     final characterId = _uuid.v4();
     final character = Character(
@@ -289,7 +294,7 @@ class UnifiedCharacterGenerator {
       deslocamento: 9,
       iniciativaBase: iniciativaBase,
       creditos: creditos,
-      periciasTreinadas: [],
+      periciasTreinadas: pericias,
       inventarioIds: [],
       poderesIds: [],
     );
@@ -334,9 +339,14 @@ class UnifiedCharacterGenerator {
     );
   }
 
-  /// Distribui atributos de forma balanceada
+  /// Distribui atributos de forma TOTALMENTE aleatória e variada
   static Map<String, int> _distributeAttributes(int pontosDisponiveis, CharacterTier tier) {
-    // Todos começam em 0
+    // Para tiers baixos (1-3), usa distribuição simples
+    if (pontosDisponiveis <= 3) {
+      return CharacterGenerator.generateRandomDistribution();
+    }
+
+    // Para tiers altos, usa lógica avançada com máximo maior
     final attrs = {
       'forca': 0,
       'agilidade': 0,
@@ -350,15 +360,32 @@ class UnifiedCharacterGenerator {
         ? 6
         : 5;
 
-    // Distribui pontos aleatoriamente
+    // Distribui pontos de forma aleatória e variada
     var pontosRestantes = pontosDisponiveis;
     final keys = attrs.keys.toList()..shuffle(_random);
 
+    // Estratégia: chance de criar builds especializadas vs balanceadas
+    final isSpecialized = _random.nextDouble() < 0.5; // 50% de chance
+
+    if (isSpecialized && pontosRestantes >= 4) {
+      // Build especializada: foca 60% dos pontos em 1-2 atributos
+      final focusCount = _random.nextDouble() < 0.7 ? 1 : 2;
+      final focusAttributes = keys.take(focusCount).toList();
+      final focusPoints = (pontosRestantes * 0.6).floor();
+
+      for (final attr in focusAttributes) {
+        final pontos = (focusPoints / focusCount).floor();
+        attrs[attr] = pontos.clamp(0, maxValue);
+        pontosRestantes -= attrs[attr]!;
+      }
+    }
+
+    // Distribui pontos restantes aleatoriamente
     while (pontosRestantes > 0) {
       for (final key in keys) {
         if (pontosRestantes <= 0) break;
 
-        if (attrs[key]! < maxValue) {
+        if (attrs[key]! < maxValue && _random.nextDouble() < 0.6) {
           attrs[key] = attrs[key]! + 1;
           pontosRestantes--;
         }
@@ -366,6 +393,105 @@ class UnifiedCharacterGenerator {
     }
 
     return attrs;
+  }
+
+  /// Gera perícias automaticamente baseado no tier
+  static List<String> _generateSkills(CharacterTier tier, CharacterClass classe, Origem origem) {
+    // Define quantas perícias gerar baseado no tier
+    final skillCount = _getSkillCountForTier(tier);
+    if (skillCount == 0) return [];
+
+    final availableSkills = Skill.getPadrao();
+    final selectedSkills = <String>[];
+
+    // Perícias prioritárias por classe
+    final classPriority = _getClassPrioritySkills(classe);
+
+    // Perícias prioritárias por origem
+    final origemPriority = _getOrigemPrioritySkills(origem);
+
+    // Combina prioridades (remove duplicatas)
+    final prioritySkills = {...classPriority, ...origemPriority}.toList();
+
+    // Seleciona perícias prioritárias primeiro
+    for (final skill in prioritySkills) {
+      if (selectedSkills.length >= skillCount) break;
+      if (availableSkills.contains(skill)) {
+        selectedSkills.add(skill);
+      }
+    }
+
+    // Preenche restante aleatoriamente
+    final remainingSkills = availableSkills.where((s) => !selectedSkills.contains(s)).toList();
+    while (selectedSkills.length < skillCount && remainingSkills.isNotEmpty) {
+      final skill = remainingSkills[_random.nextInt(remainingSkills.length)];
+      selectedSkills.add(skill);
+      remainingSkills.remove(skill);
+    }
+
+    return selectedSkills;
+  }
+
+  /// Retorna quantidade de perícias por tier
+  static int _getSkillCountForTier(CharacterTier tier) {
+    switch (tier) {
+      case CharacterTier.civilIniciante:
+        return 2;
+      case CharacterTier.mercenario:
+        return 3;
+      case CharacterTier.soldado:
+        return 4;
+      case CharacterTier.profissional:
+        return 5;
+      case CharacterTier.lider:
+        return 6;
+      case CharacterTier.chefe:
+        return 7;
+      case CharacterTier.elite:
+        return 8;
+      case CharacterTier.entidadeMenor:
+        return 9;
+      case CharacterTier.entidadeMaior:
+        return 10;
+    }
+  }
+
+  /// Perícias prioritárias por classe
+  static List<String> _getClassPrioritySkills(CharacterClass classe) {
+    switch (classe) {
+      case CharacterClass.combatente:
+        return ['Luta', 'Pontaria', 'Atletismo', 'Fortitude', 'Tática', 'Intimidação'];
+      case CharacterClass.especialista:
+        return ['Furtividade', 'Percepção', 'Investigação', 'Reflexos', 'Tecnologia', 'Crime'];
+      case CharacterClass.ocultista:
+        return ['Ocultismo', 'Vontade', 'Intuição', 'Medicina', 'Ciências', 'Religião'];
+    }
+  }
+
+  /// Perícias prioritárias por origem
+  static List<String> _getOrigemPrioritySkills(Origem origem) {
+    switch (origem) {
+      case Origem.academico:
+        return ['Ciências', 'Tecnologia', 'Investigação'];
+      case Origem.agente:
+        return ['Pontaria', 'Tática', 'Percepção'];
+      case Origem.artista:
+        return ['Artes', 'Enganação', 'Diplomacia'];
+      case Origem.atleta:
+        return ['Atletismo', 'Acrobacia', 'Fortitude'];
+      case Origem.investigador:
+        return ['Investigação', 'Intuição', 'Percepção'];
+      case Origem.lutador:
+        return ['Luta', 'Atletismo', 'Intimidação'];
+      case Origem.mercenario:
+        return ['Pontaria', 'Tática', 'Sobrevivência'];
+      case Origem.militar:
+        return ['Pontaria', 'Tática', 'Fortitude'];
+      case Origem.policial:
+        return ['Pontaria', 'Investigação', 'Intimidação'];
+      default:
+        return ['Percepção', 'Iniciativa', 'Reflexos'];
+    }
   }
 
   /// Gera nome baseado no sexo
@@ -421,31 +547,92 @@ class UnifiedCharacterGenerator {
   }
 
   // ============================================================================
-  // LISTAS DE NOMES
+  // LISTAS DE NOMES (EXPANDIDAS PARA 100+ CADA)
   // ============================================================================
 
   static const List<String> _nomesMasculinos = [
+    // Brasileiros populares
     'André', 'Bruno', 'Carlos', 'Diego', 'Eduardo', 'Felipe', 'Gabriel',
     'Henrique', 'Igor', 'João', 'Lucas', 'Marcos', 'Pedro', 'Rafael',
     'Rodrigo', 'Thiago', 'Victor', 'William', 'Alexandre', 'Daniel',
+    'Gustavo', 'Matheus', 'Leonardo', 'Fernando', 'Ricardo', 'Renato',
+    'Marcelo', 'Paulo', 'Vinicius', 'Fábio', 'Márcio', 'Júlio', 'César',
+    'Leandro', 'Anderson', 'Roberto', 'José', 'Antônio', 'Francisco',
+    // Modernos e internacionais
+    'Enzo', 'Noah', 'Liam', 'Oliver', 'Benjamin', 'Lucas', 'Henry',
+    'Arthur', 'Miguel', 'Samuel', 'Nathan', 'Isaac', 'Ryan', 'Dylan',
+    'Kevin', 'Eric', 'Anthony', 'Thomas', 'Joshua', 'Christopher',
+    'Nicholas', 'Jonathan', 'Matthew', 'Andrew', 'Jason', 'Justin',
+    'David', 'James', 'Robert', 'Michael', 'George', 'Edward', 'Richard',
+    // Nomes únicos/distintos
+    'Atlas', 'Axel', 'Dante', 'Felix', 'Hugo', 'Ivan', 'Kai', 'Leon',
+    'Max', 'Otto', 'Raul', 'Seth', 'Tobias', 'Ugo', 'Vitor', 'Yuri',
+    'Adrian', 'Brennan', 'Caleb', 'Damian', 'Elias', 'Finn', 'Griffin',
+    'Harrison', 'Jasper', 'Klaus', 'Lorenzo', 'Miles', 'Nico', 'Oscar',
+    'Phoenix', 'Quentin', 'Sebastian', 'Tristan', 'Vincent', 'Wesley', 'Xander', 'Zane',
+    'Ciro', 'Ravi', 'Davi', 'Pietro', 'Kaio', 'Breno', 'Caio', 'Erick',
   ];
 
   static const List<String> _nomesFemininos = [
+    // Brasileiras populares
     'Ana', 'Beatriz', 'Carla', 'Daniela', 'Eduarda', 'Fernanda', 'Gabriela',
     'Helena', 'Isabela', 'Juliana', 'Larissa', 'Maria', 'Natália', 'Patricia',
     'Rafaela', 'Sophia', 'Tatiana', 'Vanessa', 'Amanda', 'Camila',
+    'Débora', 'Elisa', 'Flávia', 'Giovana', 'Heloísa', 'Ingrid', 'Jéssica',
+    'Karen', 'Letícia', 'Marina', 'Nicole', 'Olivia', 'Paula', 'Renata',
+    'Sabrina', 'Teresa', 'Valentina', 'Yasmin', 'Bianca', 'Carolina',
+    // Modernas e internacionais
+    'Alice', 'Emma', 'Mia', 'Luna', 'Ella', 'Grace', 'Lily', 'Emily',
+    'Ava', 'Chloe', 'Sophie', 'Hannah', 'Zoe', 'Scarlett', 'Victoria',
+    'Aurora', 'Stella', 'Maya', 'Ruby', 'Violet', 'Hazel', 'Ivy',
+    'Willow', 'Rose', 'Jade', 'Eleanor', 'Penelope', 'Aria', 'Layla',
+    'Naomi', 'Ellie', 'Madeline', 'Sarah', 'Rachel', 'Rebecca', 'Laura',
+    // Nomes únicos/distintos
+    'Athena', 'Iris', 'Nova', 'Luna', 'Celeste', 'Diana', 'Freya',
+    'Gaia', 'Kira', 'Lyra', 'Mila', 'Nina', 'Orla', 'Piper', 'Quinn',
+    'Raquel', 'Serena', 'Thalia', 'Uma', 'Vera', 'Wanda', 'Yara', 'Zara',
+    'Cecília', 'Luana', 'Melissa', 'Bruna', 'Vitória', 'Clara', 'Lorena',
+    'Alana', 'Mariana', 'Aline', 'Silvia', 'Lívia', 'Priscila', 'Mônica',
   ];
 
   static const List<String> _nomesNeutros = [
     'Alex', 'Ariel', 'Casey', 'Dakota', 'Eden', 'Jordan', 'Morgan',
     'Parker', 'Quinn', 'Riley', 'Sage', 'Taylor', 'Sam', 'Roni',
-    'Kim', 'Pat', 'Jess', 'Chris', 'Ash', 'Blair',
+    'Kim', 'Pat', 'Jess', 'Chris', 'Ash', 'Blair', 'Drew', 'Emerson',
+    'Finley', 'Hayden', 'Indigo', 'Justice', 'Kai', 'Logan', 'Marley',
+    'Noah', 'Ocean', 'Phoenix', 'Raven', 'Skyler', 'River', 'Rowan',
+    'Charlie', 'Jamie', 'Avery', 'Peyton', 'Reese', 'Cameron', 'Dylan',
+    'Angel', 'Sage', 'Micah', 'Sasha', 'Harper', 'Jessie', 'Robin',
+    'Stevie', 'Frankie', 'Bailey', 'Addison', 'Reed', 'Jules', 'Blake',
+    'Kai', 'Ellis', 'Arden', 'Kendall', 'Lennon', 'Sawyer', 'Shiloh',
+    'Sterling', 'Tatum', 'Val', 'Winter', 'Wren', 'Nevada', 'Adrian',
+    'Alexis', 'Amari', 'Brooklyn', 'Campbell', 'Carson', 'Dakota', 'Denver',
+    'Elliott', 'Finley', 'Gray', 'Haven', 'Hollis', 'Ivory', 'Jaden',
+    'Kennedy', 'Lake', 'Lane', 'London', 'Memphis', 'Milan', 'Nova',
   ];
 
   static const List<String> _sobrenomes = [
+    // Brasileiros comuns
     'Silva', 'Santos', 'Oliveira', 'Souza', 'Ferreira', 'Pereira', 'Costa',
     'Rodrigues', 'Almeida', 'Nascimento', 'Lima', 'Araújo', 'Fernandes',
     'Carvalho', 'Gomes', 'Martins', 'Rocha', 'Ribeiro', 'Alves', 'Monteiro',
+    'Mendes', 'Barros', 'Freitas', 'Barbosa', 'Pinto', 'Moura', 'Cavalcanti',
+    'Dias', 'Castro', 'Campos', 'Cardoso', 'Correia', 'Teixeira', 'Vieira',
+    'Azevedo', 'Borges', 'Soares', 'Machado', 'Melo', 'Reis', 'Nunes',
+    // Internacionais variados
+    'Anderson', 'Baker', 'Brown', 'Clark', 'Davis', 'Evans', 'Garcia',
+    'Harris', 'Jackson', 'Johnson', 'Jones', 'King', 'Lee', 'Lewis',
+    'Martin', 'Martinez', 'Miller', 'Moore', 'Nelson', 'Parker', 'Robinson',
+    'Rodriguez', 'Smith', 'Taylor', 'Thomas', 'Thompson', 'Walker', 'White',
+    'Williams', 'Wilson', 'Wright', 'Young', 'Allen', 'Hall', 'Hill',
+    // Sobrenomes únicos/distintos
+    'Blackwood', 'Cross', 'Fox', 'Gray', 'Hunter', 'Knight', 'Rivers',
+    'Sterling', 'Stone', 'Storm', 'West', 'Winter', 'Wolf', 'Woods',
+    'Drake', 'Frost', 'Harper', 'Hayes', 'Kane', 'Mercer', 'Noble',
+    'Porter', 'Quinn', 'Reeves', 'Shepherd', 'Sinclair', 'Torres', 'Vale',
+    'Vega', 'Ward', 'Webb', 'York', 'Archer', 'Blake', 'Crane', 'Ellis',
+    'Flynn', 'Grant', 'Hudson', 'Knox', 'Lane', 'Nash', 'Pierce', 'Reed',
+    'Santos', 'Vaughn', 'Wells', 'Chambers', 'Cohen', 'Dixon', 'Duncan',
   ];
 }
 

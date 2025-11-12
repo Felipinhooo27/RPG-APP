@@ -149,32 +149,112 @@ class CharacterGenerator {
     return pontosGastos == pontosDisponiveis;
   }
 
-  /// Retorna distribuições balanceadas sugeridas (4 pontos)
+  /// Gera uma distribuição de atributos COMPLETAMENTE ALEATÓRIA e válida
+  ///
+  /// Usa um algoritmo que:
+  /// 1. Decide aleatoriamente se vai usar um atributo negativo (-1) ou não
+  /// 2. Distribui os pontos de forma aleatória respeitando as regras
+  /// 3. Garante que todos os builds sejam válidos mas MUITO variados
+  static Map<String, int> generateRandomDistribution() {
+    final random = DateTime.now().millisecondsSinceEpoch;
+    final attributes = ['forca', 'agilidade', 'vigor', 'intelecto', 'presenca'];
+
+    // 30% de chance de usar um atributo negativo para ter 5 pontos
+    final useNegative = (random % 100) < 30;
+    final pontosDisponiveis = useNegative ? 5 : 4;
+
+    // Inicializa todos em 0
+    final distribution = <String, int>{
+      'forca': 0,
+      'agilidade': 0,
+      'vigor': 0,
+      'intelecto': 0,
+      'presenca': 0,
+    };
+
+    // Se usar negativo, escolhe um atributo aleatório para ser -1
+    if (useNegative) {
+      final negativeIndex = (random ~/ 7) % attributes.length;
+      distribution[attributes[negativeIndex]] = -1;
+    }
+
+    // Distribui os pontos de forma aleatória
+    var pontosRestantes = pontosDisponiveis;
+    var tentativas = 0;
+
+    while (pontosRestantes > 0 && tentativas < 100) {
+      // Escolhe um atributo aleatório que não seja negativo
+      final attrIndex = (random + tentativas * 13) % attributes.length;
+      final attr = attributes[attrIndex];
+
+      if (distribution[attr]! < 3 && distribution[attr]! >= 0) {
+        // Decide quantos pontos colocar (1 a 3, mas não pode exceder restantes)
+        final pontosAColocar = ((random + tentativas * 7) % 3) + 1;
+        final pontos = pontosAColocar.clamp(1, pontosRestantes);
+
+        // Garante que não ultrapasse 3
+        final novoValor = (distribution[attr]! + pontos).clamp(0, 3);
+        final pontosUsados = novoValor - distribution[attr]!;
+
+        distribution[attr] = novoValor;
+        pontosRestantes -= pontosUsados;
+      }
+
+      tentativas++;
+    }
+
+    return distribution;
+  }
+
+  /// Retorna distribuições balanceadas sugeridas com MUITO mais variedade
   static List<Map<String, int>> getSuggestedDistributions() {
     return [
-      // Balanceado
-      {'forca': 1, 'agilidade': 1, 'vigor': 1, 'intelecto': 1, 'presenca': 0},
-
-      // Combatente físico
+      // === Builds Especializadas (Foco em 1 atributo) ===
+      {'forca': 3, 'agilidade': 1, 'vigor': 0, 'intelecto': 0, 'presenca': 0},
       {'forca': 3, 'agilidade': 0, 'vigor': 1, 'intelecto': 0, 'presenca': 0},
-
-      // Combatente ágil
       {'forca': 0, 'agilidade': 3, 'vigor': 1, 'intelecto': 0, 'presenca': 0},
-
-      // Tanque
+      {'forca': 0, 'agilidade': 3, 'vigor': 0, 'intelecto': 1, 'presenca': 0},
       {'forca': 1, 'agilidade': 0, 'vigor': 3, 'intelecto': 0, 'presenca': 0},
-
-      // Especialista investigador
+      {'forca': 0, 'agilidade': 0, 'vigor': 3, 'intelecto': 1, 'presenca': 0},
       {'forca': 0, 'agilidade': 1, 'vigor': 0, 'intelecto': 3, 'presenca': 0},
+      {'forca': 0, 'agilidade': 0, 'vigor': 1, 'intelecto': 3, 'presenca': 0},
+      {'forca': 0, 'agilidade': 0, 'vigor': 1, 'intelecto': 0, 'presenca': 3},
+      {'forca': 0, 'agilidade': 1, 'vigor': 0, 'intelecto': 0, 'presenca': 3},
 
-      // Ocultista carismático
-      {'forca': 0, 'agilidade': 0, 'vigor': 1, 'intelecto': 1, 'presenca': 2},
+      // === Builds Híbridas (Foco em 2 atributos) ===
+      {'forca': 2, 'agilidade': 2, 'vigor': 0, 'intelecto': 0, 'presenca': 0},
+      {'forca': 2, 'agilidade': 0, 'vigor': 2, 'intelecto': 0, 'presenca': 0},
+      {'forca': 2, 'agilidade': 0, 'vigor': 0, 'intelecto': 2, 'presenca': 0},
+      {'forca': 0, 'agilidade': 2, 'vigor': 2, 'intelecto': 0, 'presenca': 0},
+      {'forca': 0, 'agilidade': 2, 'vigor': 0, 'intelecto': 2, 'presenca': 0},
+      {'forca': 0, 'agilidade': 2, 'vigor': 0, 'intelecto': 0, 'presenca': 2},
+      {'forca': 0, 'agilidade': 0, 'vigor': 2, 'intelecto': 2, 'presenca': 0},
+      {'forca': 0, 'agilidade': 0, 'vigor': 2, 'intelecto': 0, 'presenca': 2},
+      {'forca': 0, 'agilidade': 0, 'vigor': 0, 'intelecto': 2, 'presenca': 2},
 
-      // Ocultista inteligente
-      {'forca': 0, 'agilidade': 0, 'vigor': 1, 'intelecto': 2, 'presenca': 1},
+      // === Builds Balanceadas (3-4 atributos) ===
+      {'forca': 1, 'agilidade': 1, 'vigor': 1, 'intelecto': 1, 'presenca': 0},
+      {'forca': 1, 'agilidade': 1, 'vigor': 1, 'intelecto': 0, 'presenca': 1},
+      {'forca': 1, 'agilidade': 1, 'vigor': 0, 'intelecto': 1, 'presenca': 1},
+      {'forca': 1, 'agilidade': 0, 'vigor': 1, 'intelecto': 1, 'presenca': 1},
+      {'forca': 0, 'agilidade': 1, 'vigor': 1, 'intelecto': 1, 'presenca': 1},
+      {'forca': 2, 'agilidade': 1, 'vigor': 1, 'intelecto': 0, 'presenca': 0},
+      {'forca': 2, 'agilidade': 0, 'vigor': 1, 'intelecto': 1, 'presenca': 0},
+      {'forca': 0, 'agilidade': 2, 'vigor': 1, 'intelecto': 1, 'presenca': 0},
 
-      // Com sacrifício (-1 em Força para ter 5 pontos)
+      // === Builds com Sacrifício (-1 para ter 5 pontos) ===
+      {'forca': -1, 'agilidade': 3, 'vigor': 2, 'intelecto': 0, 'presenca': 0},
+      {'forca': -1, 'agilidade': 2, 'vigor': 2, 'intelecto': 1, 'presenca': 0},
+      {'forca': -1, 'agilidade': 2, 'vigor': 1, 'intelecto': 2, 'presenca': 0},
       {'forca': -1, 'agilidade': 2, 'vigor': 1, 'intelecto': 1, 'presenca': 1},
+      {'forca': -1, 'agilidade': 1, 'vigor': 2, 'intelecto': 2, 'presenca': 0},
+      {'forca': -1, 'agilidade': 1, 'vigor': 1, 'intelecto': 2, 'presenca': 1},
+      {'forca': -1, 'agilidade': 0, 'vigor': 2, 'intelecto': 3, 'presenca': 0},
+      {'forca': -1, 'agilidade': 0, 'vigor': 2, 'intelecto': 2, 'presenca': 1},
+      {'forca': -1, 'agilidade': 0, 'vigor': 1, 'intelecto': 3, 'presenca': 1},
+      {'forca': 0, 'agilidade': -1, 'vigor': 3, 'intelecto': 2, 'presenca': 0},
+      {'forca': 0, 'agilidade': -1, 'vigor': 2, 'intelecto': 3, 'presenca': 0},
+      {'forca': 0, 'agilidade': -1, 'vigor': 2, 'intelecto': 2, 'presenca': 1},
     ];
   }
 

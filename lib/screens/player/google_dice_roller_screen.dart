@@ -69,7 +69,7 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
     });
   }
 
-  /// Mostra dialog para adicionar modificador
+  /// Mostra dialog para adicionar modificador (Design Hexatombe)
   void _showModifierDialog() {
     final controller = TextEditingController(
       text: _currentPool.modifier != 0 ? _currentPool.modifier.toString() : '',
@@ -77,56 +77,108 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         backgroundColor: AppColors.deepBlack,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppColors.magenta, width: 2),
-        ),
-        title: const Text(
-          'MODIFICADOR',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2.0,
-            color: AppColors.scarletRed,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.deepBlack,
+            border: Border.all(color: AppColors.scarletRed.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Título
+              Text(
+                'MODIFICADOR',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.5,
+                  color: AppColors.scarletRed,
+                  fontFamily: 'monospace',
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Campo de input (SEM CAIXA, apenas linha arranhada)
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.numberWithOptions(signed: true),
+                autofocus: true,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Ex: +5 ou -3',
+                  hintStyle: TextStyle(
+                    color: AppColors.silver.withValues(alpha: 0.4),
+                    fontSize: 16,
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.scarletRed.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.scarletRed,
+                      width: 3,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Botões (apenas texto, sem caixas)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Cancelar',
+                      style: TextStyle(
+                        color: AppColors.silver.withValues(alpha: 0.7),
+                        fontSize: 14,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 16),
+
+                  TextButton(
+                    onPressed: () {
+                      final value = int.tryParse(controller.text.replaceAll('+', '')) ?? 0;
+                      setState(() {
+                        _currentPool = _currentPool.updateModifier(value);
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'OK',
+                      style: TextStyle(
+                        color: AppColors.scarletRed,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          style: TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: 'Ex: +5 ou -3',
-            hintStyle: TextStyle(color: Colors.grey),
-            prefixText: '+',
-            prefixStyle: TextStyle(color: AppColors.magenta),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppColors.magenta),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppColors.magenta, width: 2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () {
-              final value = int.tryParse(controller.text) ?? 0;
-              setState(() {
-                _currentPool = _currentPool.updateModifier(value);
-              });
-              Navigator.pop(context);
-            },
-            child: Text('OK', style: TextStyle(color: AppColors.magenta)),
-          ),
-        ],
       ),
     );
   }

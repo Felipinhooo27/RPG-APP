@@ -588,7 +588,7 @@ class ArchiveListItem extends StatelessWidget {
 
             // Badge de contagem (minimalista)
             Text(
-              '$count ITEMS',
+              '$count ITENS',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,

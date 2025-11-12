@@ -32,10 +32,10 @@ class HexagonDiceButton extends StatelessWidget {
       case 12:
         return const Color(0xFFF44336); // Vermelho
       case 20:
-        return const Color(0xFFFF9800); // Laranja
+        return const Color(0xFFFFEB3B); // Amarelo
       case 100:
       default:
-        return const Color(0xFFFFEB3B); // Amarelo
+        return const Color(0xFFFF9800); // Laranja
     }
   }
 

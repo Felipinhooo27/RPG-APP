@@ -36,6 +36,9 @@ class ItemGenerator {
     // Filtra templates disponíveis para o NEX
     final availableTemplates = ItemTemplateDatabase.getCommonItemsByNex(nex);
 
+    // Set para rastrear itens já gerados (anti-duplicação)
+    final generatedItemNames = <String>{};
+
     switch (classe) {
       case CharacterClass.combatente:
         items.addAll(_generateCombatenteKit(
@@ -45,6 +48,8 @@ class ItemGenerator {
           itemCount,
           availableTemplates,
           useRandom,
+          nex,
+          generatedItemNames,
         ));
         break;
 
@@ -56,6 +61,8 @@ class ItemGenerator {
           itemCount,
           availableTemplates,
           useRandom,
+          nex,
+          generatedItemNames,
         ));
         break;
 
@@ -67,11 +74,23 @@ class ItemGenerator {
           itemCount,
           availableTemplates,
           useRandom,
+          nex,
+          generatedItemNames,
         ));
         break;
     }
 
     return items;
+  }
+
+  /// Calcula máximo de armas baseado no NEX
+  /// - NEX 5-15: Máximo 1 arma
+  /// - NEX 20-50: Máximo 2 armas
+  /// - NEX 55+: Máximo 3 armas
+  int _getMaxWeaponsForNex(int nex) {
+    if (nex <= 15) return 1;
+    if (nex <= 50) return 2;
+    return 3;
   }
 
   /// Gera kit para Combatente
@@ -83,55 +102,88 @@ class ItemGenerator {
     int itemCount,
     List<ItemTemplate> availableTemplates,
     bool useRandom,
+    int nex,
+    Set<String> generatedItemNames,
   ) {
     final items = <Item>[];
+    final maxWeapons = _getMaxWeaponsForNex(nex);
+    int weaponCount = 0;
 
     // 1. Arma primária (obrigatório)
     final primaryWeapon = _selectPrimaryWeapon(
       origem,
       availableTemplates,
       useRandom,
+      nex,
+      generatedItemNames,
       preferRanged: _isRangedOrigem(origem),
     );
     if (primaryWeapon != null) {
-      items.add(_createItemFromTemplate(primaryWeapon, characterId));
+      final item = _createItemFromTemplate(primaryWeapon, characterId);
+      items.add(item);
+      generatedItemNames.add(primaryWeapon.nome);
+      weaponCount++;
     }
 
-    // 2. Arma secundária (tier 3+)
-    if (tier >= 3 && items.length < itemCount) {
+    // 2. Arma secundária (se permitido pelo NEX)
+    if (weaponCount < maxWeapons && items.length < itemCount) {
       final secondaryWeapon = _selectSecondaryWeapon(
         origem,
         availableTemplates,
         useRandom,
-        avoidDuplicate: primaryWeapon?.nome,
+        nex,
+        generatedItemNames,
       );
       if (secondaryWeapon != null) {
-        items.add(_createItemFromTemplate(secondaryWeapon, characterId));
+        final item = _createItemFromTemplate(secondaryWeapon, characterId);
+        items.add(item);
+        generatedItemNames.add(secondaryWeapon.nome);
+        weaponCount++;
       }
     }
 
-    // 3. Armadura/Proteção (tier 2+)
+    // 3. Arma terciária (apenas para NEX 55+, se permitido)
+    if (weaponCount < maxWeapons && items.length < itemCount) {
+      final tertiaryWeapon = _selectSecondaryWeapon(
+        origem,
+        availableTemplates,
+        useRandom,
+        nex,
+        generatedItemNames,
+      );
+      if (tertiaryWeapon != null) {
+        final item = _createItemFromTemplate(tertiaryWeapon, characterId);
+        items.add(item);
+        generatedItemNames.add(tertiaryWeapon.nome);
+        weaponCount++;
+      }
+    }
+
+    // 4. Armadura/Proteção (tier 2+)
     if (tier >= 2 && items.length < itemCount) {
-      final armor = _selectArmor(availableTemplates, useRandom);
+      final armor = _selectArmor(availableTemplates, useRandom, generatedItemNames);
       if (armor != null) {
         items.add(_createItemFromTemplate(armor, characterId));
+        generatedItemNames.add(armor.nome);
       }
     }
 
-    // 4. Itens de cura (sempre 1-2)
+    // 5. Itens de cura (sempre 1-2)
     final healingCount = tier >= 4 ? 2 : 1;
     for (int i = 0; i < healingCount && items.length < itemCount; i++) {
-      final healing = _selectHealing(availableTemplates, useRandom);
+      final healing = _selectHealing(availableTemplates, useRandom, generatedItemNames);
       if (healing != null) {
         items.add(_createItemFromTemplate(healing, characterId));
+        generatedItemNames.add(healing.nome);
       }
     }
 
-    // 5. Utilidades (preenche até o limite)
+    // 6. Utilidades (preenche até o limite)
     while (items.length < itemCount) {
-      final utility = _selectUtility(availableTemplates, useRandom);
+      final utility = _selectUtility(availableTemplates, useRandom, generatedItemNames);
       if (utility != null) {
         items.add(_createItemFromTemplate(utility, characterId));
+        generatedItemNames.add(utility.nome);
       } else {
         break; // Sem mais utilidades disponíveis
       }
@@ -149,45 +201,72 @@ class ItemGenerator {
     int itemCount,
     List<ItemTemplate> availableTemplates,
     bool useRandom,
+    int nex,
+    Set<String> generatedItemNames,
   ) {
     final items = <Item>[];
+    final maxWeapons = _getMaxWeaponsForNex(nex);
+    int weaponCount = 0;
 
     // 1. Arma versátil (obrigatório)
     final weapon = _selectPrimaryWeapon(
       origem,
       availableTemplates,
       useRandom,
+      nex,
+      generatedItemNames,
       preferRanged: true, // Especialistas preferem armas de fogo
     );
     if (weapon != null) {
       items.add(_createItemFromTemplate(weapon, characterId));
+      generatedItemNames.add(weapon.nome);
+      weaponCount++;
     }
 
-    // 2. Itens de cura (sempre 1-2)
-    final healingCount = tier >= 3 ? 2 : 1;
-    for (int i = 0; i < healingCount && items.length < itemCount; i++) {
-      final healing = _selectHealing(availableTemplates, useRandom);
-      if (healing != null) {
-        items.add(_createItemFromTemplate(healing, characterId));
+    // 2. Arma secundária opcional (se NEX permitir)
+    if (weaponCount < maxWeapons && items.length < itemCount && tier >= 3) {
+      final secondWeapon = _selectSecondaryWeapon(
+        origem,
+        availableTemplates,
+        useRandom,
+        nex,
+        generatedItemNames,
+      );
+      if (secondWeapon != null) {
+        items.add(_createItemFromTemplate(secondWeapon, characterId));
+        generatedItemNames.add(secondWeapon.nome);
+        weaponCount++;
       }
     }
 
-    // 3. Equipamentos especializados (tier 2+)
+    // 3. Itens de cura (sempre 1-2)
+    final healingCount = tier >= 3 ? 2 : 1;
+    for (int i = 0; i < healingCount && items.length < itemCount; i++) {
+      final healing = _selectHealing(availableTemplates, useRandom, generatedItemNames);
+      if (healing != null) {
+        items.add(_createItemFromTemplate(healing, characterId));
+        generatedItemNames.add(healing.nome);
+      }
+    }
+
+    // 4. Equipamentos especializados (tier 2+)
     if (tier >= 2) {
       final equipmentCount = (itemCount * 0.3).ceil(); // 30% do kit
       for (int i = 0; i < equipmentCount && items.length < itemCount; i++) {
-        final equipment = _selectEquipment(availableTemplates, useRandom);
+        final equipment = _selectEquipment(availableTemplates, useRandom, generatedItemNames);
         if (equipment != null) {
           items.add(_createItemFromTemplate(equipment, characterId));
+          generatedItemNames.add(equipment.nome);
         }
       }
     }
 
-    // 4. Utilidades (preenche resto)
+    // 5. Utilidades (preenche resto)
     while (items.length < itemCount) {
-      final utility = _selectUtility(availableTemplates, useRandom);
+      final utility = _selectUtility(availableTemplates, useRandom, generatedItemNames);
       if (utility != null) {
         items.add(_createItemFromTemplate(utility, characterId));
+        generatedItemNames.add(utility.nome);
       } else {
         break;
       }
@@ -205,31 +284,37 @@ class ItemGenerator {
     int itemCount,
     List<ItemTemplate> availableTemplates,
     bool useRandom,
+    int nex,
+    Set<String> generatedItemNames,
   ) {
     final items = <Item>[];
 
-    // 1. Arma leve de defesa (opcional, tier 1-2 sempre tem)
-    if (tier <= 2 || (useRandom && _random.nextDouble() < 0.5)) {
-      final weapon = _selectLightWeapon(availableTemplates, useRandom);
+    // 1. Arma leve de defesa (opcional, tier 1-2 sempre tem, respeitando limite NEX)
+    final maxWeapons = _getMaxWeaponsForNex(nex);
+    if (maxWeapons > 0 && (tier <= 2 || (useRandom && _random.nextDouble() < 0.5))) {
+      final weapon = _selectLightWeapon(availableTemplates, useRandom, generatedItemNames);
       if (weapon != null) {
         items.add(_createItemFromTemplate(weapon, characterId));
+        generatedItemNames.add(weapon.nome);
       }
     }
 
     // 2. Itens de cura paranormais (sempre 2-3)
     final healingCount = tier >= 4 ? 3 : 2;
     for (int i = 0; i < healingCount && items.length < itemCount; i++) {
-      final healing = _selectHealing(availableTemplates, useRandom);
+      final healing = _selectHealing(availableTemplates, useRandom, generatedItemNames);
       if (healing != null) {
         items.add(_createItemFromTemplate(healing, characterId));
+        generatedItemNames.add(healing.nome);
       }
     }
 
     // 3. Utilidades paranormais/rituais
     while (items.length < itemCount) {
-      final utility = _selectUtility(availableTemplates, useRandom);
+      final utility = _selectUtility(availableTemplates, useRandom, generatedItemNames);
       if (utility != null) {
         items.add(_createItemFromTemplate(utility, characterId));
+        generatedItemNames.add(utility.nome);
       } else {
         break;
       }
@@ -243,11 +328,18 @@ class ItemGenerator {
   ItemTemplate? _selectPrimaryWeapon(
     Origem origem,
     List<ItemTemplate> availableTemplates,
-    bool useRandom, {
+    bool useRandom,
+    int nex,
+    Set<String> generatedItemNames, {
     bool preferRanged = false,
   }) {
-    final weapons = availableTemplates
-        .where((t) => t.tipo == ItemType.arma && !t.isAmaldicoado)
+    // Para NEX 65+, 20% de chance de incluir armas amaldiçoadas
+    final includeCursed = nex >= 65 && useRandom && _random.nextDouble() < 0.2;
+
+    var weapons = availableTemplates
+        .where((t) => t.tipo == ItemType.arma)
+        .where((t) => includeCursed || !t.isAmaldicoado)
+        .where((t) => !generatedItemNames.contains(t.nome))
         .toList();
 
     if (weapons.isEmpty) return null;
@@ -276,16 +368,18 @@ class ItemGenerator {
   ItemTemplate? _selectSecondaryWeapon(
     Origem origem,
     List<ItemTemplate> availableTemplates,
-    bool useRandom, {
-    String? avoidDuplicate,
-  }) {
-    var weapons = availableTemplates
-        .where((t) => t.tipo == ItemType.arma && !t.isAmaldicoado)
-        .toList();
+    bool useRandom,
+    int nex,
+    Set<String> generatedItemNames,
+  ) {
+    // Para NEX 65+, 15% de chance de incluir armas amaldiçoadas
+    final includeCursed = nex >= 65 && useRandom && _random.nextDouble() < 0.15;
 
-    if (avoidDuplicate != null) {
-      weapons = weapons.where((w) => w.nome != avoidDuplicate).toList();
-    }
+    var weapons = availableTemplates
+        .where((t) => t.tipo == ItemType.arma)
+        .where((t) => includeCursed || !t.isAmaldicoado)
+        .where((t) => !generatedItemNames.contains(t.nome))
+        .toList();
 
     if (weapons.isEmpty) return null;
 
@@ -299,12 +393,14 @@ class ItemGenerator {
   ItemTemplate? _selectLightWeapon(
     List<ItemTemplate> availableTemplates,
     bool useRandom,
+    Set<String> generatedItemNames,
   ) {
     final lightWeapons = availableTemplates
         .where((t) =>
             t.tipo == ItemType.arma &&
             !t.isAmaldicoado &&
             t.espacoUnitario <= 1)
+        .where((t) => !generatedItemNames.contains(t.nome))
         .toList();
 
     if (lightWeapons.isEmpty) return null;
@@ -319,9 +415,11 @@ class ItemGenerator {
   ItemTemplate? _selectArmor(
     List<ItemTemplate> availableTemplates,
     bool useRandom,
+    Set<String> generatedItemNames,
   ) {
     final armors = availableTemplates
         .where((t) => t.defesaBonus != null && t.defesaBonus! > 0)
+        .where((t) => !generatedItemNames.contains(t.nome))
         .toList();
 
     if (armors.isEmpty) return null;
@@ -336,9 +434,11 @@ class ItemGenerator {
   ItemTemplate? _selectHealing(
     List<ItemTemplate> availableTemplates,
     bool useRandom,
+    Set<String> generatedItemNames,
   ) {
     final healing = availableTemplates
         .where((t) => t.formulaCura != null && !t.isAmaldicoado)
+        .where((t) => !generatedItemNames.contains(t.nome))
         .toList();
 
     if (healing.isEmpty) return null;
@@ -357,12 +457,14 @@ class ItemGenerator {
   ItemTemplate? _selectUtility(
     List<ItemTemplate> availableTemplates,
     bool useRandom,
+    Set<String> generatedItemNames,
   ) {
     // Utilities podem ser consumíveis ou equipamentos
     final utilities = availableTemplates
         .where((t) =>
             (t.tipo == ItemType.consumivel || t.tipo == ItemType.equipamento) &&
             !t.isAmaldicoado)
+        .where((t) => !generatedItemNames.contains(t.nome))
         .toList();
 
     if (utilities.isEmpty) return null;
@@ -377,9 +479,11 @@ class ItemGenerator {
   ItemTemplate? _selectEquipment(
     List<ItemTemplate> availableTemplates,
     bool useRandom,
+    Set<String> generatedItemNames,
   ) {
     final equipment = availableTemplates
         .where((t) => t.tipo == ItemType.equipamento && !t.isAmaldicoado)
+        .where((t) => !generatedItemNames.contains(t.nome))
         .toList();
 
     if (equipment.isEmpty) return null;
