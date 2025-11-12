@@ -7,8 +7,7 @@ import '../../core/utils/clipboard_helper.dart';
 import '../player/google_dice_roller_screen.dart';
 import '../player/character_grimoire_screen.dart';
 import '../character_wizard/character_wizard_screen.dart';
-import 'advanced_generator_screen.dart';
-import 'quick_character_generator_screen.dart';
+import 'unified_character_generator_screen.dart';
 import 'shop_management_screen.dart';
 import 'shop_generator_screen.dart';
 import 'iniciativa_screen.dart';
@@ -45,7 +44,8 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   Future<void> _loadCharacters() async {
     setState(() => _isLoading = true);
     try {
-      final characters = await _repo.getAll();
+      // Carrega apenas personagens do mestre (userId: master_001)
+      final characters = await _repo.getByUserId(widget.userId);
       setState(() {
         _allCharacters = characters;
         _isLoading = false;
@@ -543,7 +543,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Quick Generator Card
+        // Unified Generator Card
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -559,7 +559,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'GERADOR RÁPIDO',
+                      'GERADOR DE PERSONAGENS',
                       style: AppTextStyles.uppercase.copyWith(
                         fontSize: 16,
                         color: AppColors.neonRed,
@@ -570,19 +570,22 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Gere NPCs instantaneamente para combates e encontros. '
-                'Selecione apenas o nível de poder e deixe o sistema criar automaticamente.',
+                'Gere NPCs balanceados para combates e encontros. '
+                '10 níveis de poder + customização completa de sexo, nome e atributos. '
+                'Toggle entre modo Rápido e Avançado.',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.silver,
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  _buildFeatureBadge('4 Níveis de Poder'),
-                  const SizedBox(width: 8),
-                  _buildFeatureBadge('Geração Instantânea'),
+                  _buildFeatureBadge('10 Tiers'),
+                  _buildFeatureBadge('Sexo Customizável'),
+                  _buildFeatureBadge('Rápido/Avançado'),
                 ],
               ),
               const SizedBox(height: 16),
@@ -594,7 +597,9 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const QuickCharacterGeneratorScreen(),
+                        builder: (context) => UnifiedCharacterGeneratorScreen(
+                          userId: widget.userId,
+                        ),
                       ),
                     );
                     _loadCharacters();
@@ -604,82 +609,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                   ),
                   child: const Text(
-                    'ABRIR GERADOR RÁPIDO',
-                    style: TextStyle(letterSpacing: 1.5),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Advanced Generator Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.darkGray,
-            border: Border.all(color: AppColors.magenta, width: 2),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.auto_awesome, color: AppColors.magenta, size: 32),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'GERADOR AVANÇADO',
-                      style: AppTextStyles.uppercase.copyWith(
-                        fontSize: 16,
-                        color: AppColors.magenta,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Crie personagens completos e balanceados com controle total. '
-                'Sistema de tiers, distribuição de atributos, seleção de perícias e poderes.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.silver,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildFeatureBadge('Totalmente Customizável'),
-                  const SizedBox(width: 8),
-                  _buildFeatureBadge('Sistema de Tiers'),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AdvancedGeneratorScreen(userId: widget.userId),
-                      ),
-                    );
-
-                    if (result == true) {
-                      _loadCharacters();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.magenta,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                  ),
-                  child: const Text(
-                    'ABRIR GERADOR AVANÇADO',
+                    'ABRIR GERADOR',
                     style: TextStyle(letterSpacing: 1.5),
                   ),
                 ),

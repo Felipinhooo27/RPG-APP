@@ -33,6 +33,13 @@ enum Origem {
   vitima,
 }
 
+/// Enumeração de Sexo
+enum Sexo {
+  masculino,
+  feminino,
+  naoBinario,
+}
+
 /// Model de Personagem seguindo as regras de Ordem Paranormal
 ///
 /// REGRAS:
@@ -53,6 +60,7 @@ class Character {
   String? trilha;
   String? patente;
   int nex; // 5-99%
+  Sexo? sexo; // masculino, feminino ou não-binário
 
   // Atributos (0-5)
   int forca;
@@ -105,6 +113,7 @@ class Character {
     this.trilha,
     this.patente,
     required this.nex,
+    this.sexo,
     required this.forca,
     required this.agilidade,
     required this.vigor,
@@ -187,6 +196,7 @@ class Character {
       'trilha': trilha,
       'patente': patente,
       'nex': nex,
+      'sexo': sexo?.name,
       'forca': forca,
       'agilidade': agilidade,
       'vigor': vigor,
@@ -230,6 +240,12 @@ class Character {
       trilha: json['trilha'] as String?,
       patente: json['patente'] as String?,
       nex: json['nex'] as int,
+      sexo: json['sexo'] != null
+          ? Sexo.values.firstWhere(
+              (e) => e.name == json['sexo'],
+              orElse: () => Sexo.naoBinario,
+            )
+          : null,
       forca: json['forca'] as int,
       agilidade: json['agilidade'] as int,
       vigor: json['vigor'] as int,
@@ -282,6 +298,7 @@ class Character {
     String? trilha,
     String? patente,
     int? nex,
+    Sexo? sexo,
     int? forca,
     int? agilidade,
     int? vigor,
@@ -316,6 +333,7 @@ class Character {
       trilha: trilha ?? this.trilha,
       patente: patente ?? this.patente,
       nex: nex ?? this.nex,
+      sexo: sexo ?? this.sexo,
       forca: forca ?? this.forca,
       agilidade: agilidade ?? this.agilidade,
       vigor: vigor ?? this.vigor,

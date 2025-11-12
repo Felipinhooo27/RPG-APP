@@ -43,9 +43,9 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final characters = widget.isMasterMode
-          ? await _characterRepo.getAll()
-          : await _characterRepo.getByUserId(widget.userId);
+      // Sempre filtra por userId (player_001 ou master_001)
+      // para garantir separação entre personagens de jogador e NPCs de mestre
+      final characters = await _characterRepo.getByUserId(widget.userId);
 
       setState(() {
         _characters = characters;

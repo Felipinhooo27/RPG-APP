@@ -13,6 +13,7 @@ class ItemTemplate {
   final int precoBase;
   final int espacoUnitario;
   final int patenteMinima;
+  final int nexMinimo; // NEX mínimo para usar o item
 
   // Campos específicos
   final String? formulaDano;
@@ -39,6 +40,7 @@ class ItemTemplate {
     required this.precoBase,
     this.espacoUnitario = 1,
     this.patenteMinima = 0,
+    this.nexMinimo = 5, // NEX padrão 5% (iniciante)
     this.formulaDano,
     this.multiplicadorCritico,
     this.efeitoCritico,
@@ -116,6 +118,7 @@ class ItemTemplateDatabase {
       precoBase: 3500,
       espacoUnitario: 2,
       patenteMinima: 2,
+      nexMinimo: 20,
       formulaDano: '2d6',
       multiplicadorCritico: 3,
       efeitoCritico: 'Recuo extremo, -2 próximo ataque',
@@ -152,6 +155,7 @@ class ItemTemplateDatabase {
       precoBase: 8000,
       espacoUnitario: 5,
       patenteMinima: 3,
+      nexMinimo: 35,
       formulaDano: '2d10+2',
       multiplicadorCritico: 3,
       efeitoCritico: 'Penetra cobertura leve',
@@ -238,6 +242,7 @@ class ItemTemplateDatabase {
       precoBase: 2000,
       espacoUnitario: 2,
       patenteMinima: 2,
+      nexMinimo: 20,
       formulaDano: '1d10+1',
       multiplicadorCritico: 3,
       efeitoCritico: 'Corte preciso: +1d6 sangramento',
@@ -300,6 +305,7 @@ class ItemTemplateDatabase {
       precoBase: 15000,
       espacoUnitario: 4,
       patenteMinima: 4,
+      nexMinimo: 50,
       formulaDano: '2d8',
       multiplicadorCritico: 2,
       efeitoCritico: 'Área 3m cone, ignição',
@@ -756,6 +762,7 @@ class ItemTemplateDatabase {
       precoBase: 25000,
       espacoUnitario: 2,
       patenteMinima: 4,
+      nexMinimo: 65,
       isAmaldicoado: true,
       formulaDano: '2d8+4',
       multiplicadorCritico: 3,
@@ -770,6 +777,7 @@ class ItemTemplateDatabase {
       precoBase: 18000,
       espacoUnitario: 1,
       patenteMinima: 3,
+      nexMinimo: 40,
       isAmaldicoado: true,
       formulaDano: '1d10+2',
       multiplicadorCritico: 3,
@@ -2561,6 +2569,47 @@ class ItemTemplateDatabase {
       ...utilidades,
       ...equipamentos,
     ];
+  }
+
+  /// Filtra templates por NEX mínimo (retorna todos disponíveis para aquele NEX)
+  static List<ItemTemplate> getByNexLevel(int nex) {
+    return getAll().where((t) => t.nexMinimo <= nex).toList();
+  }
+
+  /// Filtra armas disponíveis para um NEX
+  static List<ItemTemplate> getArmasByNex(int nex) {
+    return [...armasComuns, ...armasAmaldicoadas]
+        .where((t) => t.nexMinimo <= nex)
+        .toList();
+  }
+
+  /// Filtra consumíveis (curas, comidas) disponíveis para um NEX
+  static List<ItemTemplate> getConsumivelsByNex(int nex) {
+    return [...curas, ...curasAmaldicoadas, ...comidas]
+        .where((t) => t.nexMinimo <= nex)
+        .toList();
+  }
+
+  /// Filtra equipamentos disponíveis para um NEX
+  static List<ItemTemplate> getEquipamentosByNex(int nex) {
+    return equipamentos.where((t) => t.nexMinimo <= nex).toList();
+  }
+
+  /// Filtra utilidades disponíveis para um NEX
+  static List<ItemTemplate> getUtilidadesByNex(int nex) {
+    return utilidades.where((t) => t.nexMinimo <= nex).toList();
+  }
+
+  /// Retorna apenas items comuns (não amaldiçoados) disponíveis para um NEX
+  static List<ItemTemplate> getCommonItemsByNex(int nex) {
+    return getAll()
+        .where((t) => !t.isAmaldicoado && t.nexMinimo <= nex)
+        .toList();
+  }
+
+  /// Retorna items iniciais recomendados (NEX 5%)
+  static List<ItemTemplate> getStarterItems() {
+    return getAll().where((t) => t.nexMinimo == 5 && !t.isAmaldicoado).toList();
   }
 }
 
