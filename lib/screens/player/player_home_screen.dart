@@ -3,7 +3,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../models/character.dart';
 import 'character_grimoire_screen.dart';
-import 'dice_roller_screen.dart';
+import 'google_dice_roller_screen.dart';
 import 'shop_screen.dart';
 import 'stats_dashboard_screen.dart';
 import 'achievements_screen.dart';
@@ -195,7 +195,7 @@ class _PlayerHomeScreenState extends State<PlayerHomeScreen> {
   // TAB 2: DADOS
   // ============================================================================
   Widget _buildDadosTab() {
-    return const DiceRollerScreen();
+    return const GoogleDiceRollerScreen();
   }
 
   // ============================================================================

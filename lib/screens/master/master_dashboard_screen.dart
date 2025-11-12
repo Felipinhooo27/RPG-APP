@@ -3,7 +3,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/database/character_repository.dart';
 import '../../models/character.dart';
-import '../player/dice_roller_screen.dart';
+import '../player/google_dice_roller_screen.dart';
 import 'advanced_generator_screen.dart';
 import 'quick_character_generator_screen.dart';
 import 'iniciativa_screen.dart';
@@ -791,7 +791,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   // TAB 6: DADOS (Rolador de dados)
   // ==========================================================================
   Widget _buildDadosTab() {
-    return const DiceRollerScreen();
+    return const GoogleDiceRollerScreen();
   }
 
   Widget _buildBottomNav() {

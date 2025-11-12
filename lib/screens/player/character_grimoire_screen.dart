@@ -466,42 +466,157 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
   // TAB 2: ATRIBUTOS (Display hexagonal)
   // ==========================================================================
   Widget _buildAtributosTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const SizedBox(height: 24),
+    return Container(
+      color: AppColors.deepBlack,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Título da seção
+            Center(
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    'ATRIBUTOS',
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 20,
+                      color: AppColors.scarletRed,
+                      letterSpacing: 3.0,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 2,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          AppColors.scarletRed,
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-          // Display hexagonal dos atributos
-          Center(
-            child: SizedBox(
-              width: 300,
-              height: 300,
-              child: CustomPaint(
-                painter: HexagonalAttributesPainter(
-                  forca: _character.forca,
-                  agilidade: _character.agilidade,
-                  vigor: _character.vigor,
-                  intelecto: _character.intelecto,
-                  presenca: _character.presenca,
+            const SizedBox(height: 32),
+
+            // Display hexagonal dos atributos (maior)
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.scarletRed.withOpacity(0.2),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  width: 340,
+                  height: 340,
+                  child: CustomPaint(
+                    painter: HexagonalAttributesPainter(
+                      forca: _character.forca,
+                      agilidade: _character.agilidade,
+                      vigor: _character.vigor,
+                      intelecto: _character.intelecto,
+                      presenca: _character.presenca,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 32),
+            const SizedBox(height: 40),
 
-          // Lista detalhada de atributos
-          _buildAttributeDetail('FORÇA', _character.forca, AppColors.forRed, Icons.fitness_center),
-          const SizedBox(height: 12),
-          _buildAttributeDetail('AGILIDADE', _character.agilidade, AppColors.agiGreen, Icons.directions_run),
-          const SizedBox(height: 12),
-          _buildAttributeDetail('VIGOR', _character.vigor, AppColors.vigBlue, Icons.favorite),
-          const SizedBox(height: 12),
-          _buildAttributeDetail('INTELECTO', _character.intelecto, AppColors.intMagenta, Icons.psychology),
-          const SizedBox(height: 12),
-          _buildAttributeDetail('PRESENÇA', _character.presenca, AppColors.preGold, Icons.group),
-        ],
+            // Info sobre atributos
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.scarletRed.withOpacity(0.1),
+                border: Border.all(color: AppColors.scarletRed.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.scarletRed, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Os atributos determinam suas capacidades e modificam seus testes',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.silver,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Divisor
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          AppColors.scarletRed.withOpacity(0.5),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'DETALHAMENTO',
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 10,
+                      color: AppColors.scarletRed,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.scarletRed.withOpacity(0.5),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // Lista detalhada de atributos
+            _buildAttributeDetail('FORÇA', _character.forca, AppColors.forRed, Icons.fitness_center),
+            _buildAttributeDetail('AGILIDADE', _character.agilidade, AppColors.agiGreen, Icons.directions_run),
+            _buildAttributeDetail('VIGOR', _character.vigor, AppColors.vigBlue, Icons.favorite),
+            _buildAttributeDetail('INTELECTO', _character.intelecto, AppColors.intMagenta, Icons.psychology),
+            _buildAttributeDetail('PRESENÇA', _character.presenca, AppColors.preGold, Icons.group),
+
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
@@ -509,46 +624,122 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
   Widget _buildAttributeDetail(String label, int value, Color color, IconData icon) {
     final modifier = value >= 0 ? '+$value' : '$value';
 
+    // Descrições dos atributos
+    final descriptions = {
+      'FORÇA': 'Poder físico, dano em combate corpo a corpo',
+      'AGILIDADE': 'Reflexos, esquiva, ataques à distância',
+      'VIGOR': 'Resistência, pontos de vida, fortitude',
+      'INTELECTO': 'Raciocínio, investigação, perícias mentais',
+      'PRESENÇA': 'Carisma, intimidação, pontos de esforço',
+    };
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border.all(color: color),
+        color: AppColors.deepBlack,
+        border: Border(
+          left: BorderSide(color: color, width: 6),
+          top: BorderSide(color: color.withOpacity(0.3), width: 1),
+          right: BorderSide(color: color.withOpacity(0.3), width: 1),
+          bottom: BorderSide(color: color.withOpacity(0.3), width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 8,
+            spreadRadius: 0,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppTextStyles.uppercase.copyWith(
-                    fontSize: 14,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            // Círculo com ícone
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withOpacity(0.15),
+                border: Border.all(color: color, width: 2.5),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+
+            const SizedBox(width: 20),
+
+            // Informações do atributo
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 16,
+                      color: color,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    descriptions[label] ?? '',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.silver.withOpacity(0.7),
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.2),
+                          border: Border.all(color: color, width: 1),
+                        ),
+                        child: Text(
+                          'MODIFICADOR: $modifier',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Valor grande
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                border: Border.all(color: color, width: 2.5),
+              ),
+              child: Center(
+                child: Text(
+                  value.toString(),
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
                     color: color,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Modificador: $modifier',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.silver,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          Text(
-            value.toString(),
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1297,30 +1488,121 @@ class HexagonalAttributesPainter extends CustomPainter {
     // Desenha polígono de atributos
     _drawAttributesPolygon(canvas, center, radius);
 
+    // Desenha símbolo central
+    _drawCentralSymbol(canvas, center);
+
     // Desenha labels e valores
     _drawLabels(canvas, center, radius);
   }
 
+  void _drawCentralSymbol(Canvas canvas, Offset center) {
+    // Círculo externo (glow vermelho)
+    canvas.drawCircle(
+      center,
+      32,
+      Paint()
+        ..color = AppColors.scarletRed.withOpacity(0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+
+    // Círculo de fundo
+    canvas.drawCircle(
+      center,
+      28,
+      Paint()..color = AppColors.deepBlack,
+    );
+
+    // Círculo de borda principal
+    canvas.drawCircle(
+      center,
+      28,
+      Paint()
+        ..color = AppColors.scarletRed
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+
+    // Círculo interno menor
+    canvas.drawCircle(
+      center,
+      20,
+      Paint()
+        ..color = AppColors.scarletRed.withOpacity(0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // Desenha símbolo do Outro Lado (estrela de 5 pontas)
+    final symbolPath = Path();
+    final symbolRadius = 14.0;
+
+    for (int i = 0; i < 5; i++) {
+      // Pontas externas
+      final angle1 = -math.pi / 2 + (2 * math.pi * i / 5);
+      final outerPoint = Offset(
+        center.dx + symbolRadius * math.cos(angle1),
+        center.dy + symbolRadius * math.sin(angle1),
+      );
+
+      // Pontas internas
+      final angle2 = angle1 + (math.pi / 5);
+      final innerPoint = Offset(
+        center.dx + (symbolRadius * 0.4) * math.cos(angle2),
+        center.dy + (symbolRadius * 0.4) * math.sin(angle2),
+      );
+
+      if (i == 0) {
+        symbolPath.moveTo(outerPoint.dx, outerPoint.dy);
+      } else {
+        symbolPath.lineTo(outerPoint.dx, outerPoint.dy);
+      }
+      symbolPath.lineTo(innerPoint.dx, innerPoint.dy);
+    }
+    symbolPath.close();
+
+    // Preenche a estrela
+    canvas.drawPath(
+      symbolPath,
+      Paint()..color = AppColors.scarletRed.withOpacity(0.6),
+    );
+
+    // Contorno da estrela
+    canvas.drawPath(
+      symbolPath,
+      Paint()
+        ..color = AppColors.scarletRed
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // Ponto central
+    canvas.drawCircle(
+      center,
+      3,
+      Paint()..color = AppColors.scarletRed,
+    );
+  }
+
   void _drawHexagonalGrid(Canvas canvas, Offset center, double radius) {
     final paint = Paint()
-      ..color = AppColors.silver.withOpacity(0.1)
+      ..color = AppColors.scarletRed.withOpacity(0.15)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+      ..strokeWidth = 1.5;
 
     // Desenha 5 níveis (0-5)
     for (int level = 1; level <= 5; level++) {
       final levelRadius = radius * (level / 5);
-      final path = _createPentagonPath(center, levelRadius);
+      final path = _createHexagonPath(center, levelRadius);
       canvas.drawPath(path, paint);
     }
 
-    // Desenha linhas radiais
+    // Desenha linhas radiais (6 linhas para hexágono)
     final radialPaint = Paint()
-      ..color = AppColors.silver.withOpacity(0.1)
-      ..strokeWidth = 1;
+      ..color = AppColors.scarletRed.withOpacity(0.15)
+      ..strokeWidth = 1.5;
 
-    for (int i = 0; i < 5; i++) {
-      final angle = -math.pi / 2 + (2 * math.pi * i / 5);
+    for (int i = 0; i < 6; i++) {
+      final angle = -math.pi / 2 + (2 * math.pi * i / 6);
       final end = Offset(
         center.dx + radius * math.cos(angle),
         center.dy + radius * math.sin(angle),
@@ -1330,20 +1612,24 @@ class HexagonalAttributesPainter extends CustomPainter {
   }
 
   void _drawAttributesPolygon(Canvas canvas, Offset center, double radius) {
-    final attributes = [forca, agilidade, vigor, intelecto, presenca];
-    final colors = [
-      AppColors.forRed,
-      AppColors.agiGreen,
-      AppColors.vigBlue,
-      AppColors.intMagenta,
-      AppColors.preGold,
+    // Distribuição dos atributos no hexágono (6 posições, usando 5)
+    // Posições: AGI(0-topo), INT(1-sup.dir), PRE(2-inf.dir), VIG(4-inf.esq), FOR(5-sup.esq)
+    final attributePositions = [
+      {'attr': agilidade, 'color': AppColors.agiGreen, 'index': 0},
+      {'attr': intelecto, 'color': AppColors.intMagenta, 'index': 1},
+      {'attr': presenca, 'color': AppColors.preGold, 'index': 2},
+      {'attr': vigor, 'color': AppColors.vigBlue, 'index': 4},
+      {'attr': forca, 'color': AppColors.forRed, 'index': 5},
     ];
 
     final path = Path();
+    bool firstPoint = true;
 
-    for (int i = 0; i < 5; i++) {
-      final value = (attributes[i] + 1).clamp(0, 6); // -1 a 5 → 0 a 6
-      final angle = -math.pi / 2 + (2 * math.pi * i / 5);
+    // Desenha polígono conectando os atributos
+    for (var attrData in attributePositions) {
+      final value = ((attrData['attr'] as int) + 1).clamp(0, 6); // -1 a 5 → 0 a 6
+      final index = attrData['index'] as int;
+      final angle = -math.pi / 2 + (2 * math.pi * index / 6);
       final distance = radius * (value / 6);
 
       final point = Offset(
@@ -1351,31 +1637,39 @@ class HexagonalAttributesPainter extends CustomPainter {
         center.dy + distance * math.sin(angle),
       );
 
-      if (i == 0) {
+      if (firstPoint) {
         path.moveTo(point.dx, point.dy);
+        firstPoint = false;
       } else {
         path.lineTo(point.dx, point.dy);
       }
     }
     path.close();
 
-    // Preenche polígono
+    // Preenche polígono com gradiente
     final fillPaint = Paint()
-      ..color = AppColors.scarletRed.withOpacity(0.2)
+      ..shader = RadialGradient(
+        colors: [
+          AppColors.scarletRed.withOpacity(0.3),
+          AppColors.scarletRed.withOpacity(0.1),
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, fillPaint);
 
-    // Contorno
+    // Contorno do polígono
     final strokePaint = Paint()
-      ..color = AppColors.scarletRed
+      ..color = AppColors.scarletRed.withOpacity(0.8)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = 2.5;
     canvas.drawPath(path, strokePaint);
 
-    // Desenha pontos
-    for (int i = 0; i < 5; i++) {
-      final value = (attributes[i] + 1).clamp(0, 6);
-      final angle = -math.pi / 2 + (2 * math.pi * i / 5);
+    // Desenha círculos dos atributos (maiores e mais destacados)
+    for (var attrData in attributePositions) {
+      final value = ((attrData['attr'] as int) + 1).clamp(0, 6);
+      final index = attrData['index'] as int;
+      final color = attrData['color'] as Color;
+      final angle = -math.pi / 2 + (2 * math.pi * index / 6);
       final distance = radius * (value / 6);
 
       final point = Offset(
@@ -1383,43 +1677,78 @@ class HexagonalAttributesPainter extends CustomPainter {
         center.dy + distance * math.sin(angle),
       );
 
+      // Círculo externo (glow)
       canvas.drawCircle(
         point,
-        4,
-        Paint()..color = colors[i],
+        10,
+        Paint()..color = color.withOpacity(0.3),
+      );
+
+      // Círculo principal
+      canvas.drawCircle(
+        point,
+        7,
+        Paint()..color = color,
+      );
+
+      // Círculo interno (destaque)
+      canvas.drawCircle(
+        point,
+        3,
+        Paint()..color = AppColors.deepBlack,
       );
     }
   }
 
   void _drawLabels(Canvas canvas, Offset center, double radius) {
-    final labels = ['FOR', 'AGI', 'VIG', 'INT', 'PRE'];
-    final attributes = [forca, agilidade, vigor, intelecto, presenca];
-    final colors = [
-      AppColors.forRed,
-      AppColors.agiGreen,
-      AppColors.vigBlue,
-      AppColors.intMagenta,
-      AppColors.preGold,
+    // Mesma distribuição do hexágono
+    final labelData = [
+      {'label': 'AGI', 'value': agilidade, 'color': AppColors.agiGreen, 'index': 0},
+      {'label': 'INT', 'value': intelecto, 'color': AppColors.intMagenta, 'index': 1},
+      {'label': 'PRE', 'value': presenca, 'color': AppColors.preGold, 'index': 2},
+      {'label': 'VIG', 'value': vigor, 'color': AppColors.vigBlue, 'index': 4},
+      {'label': 'FOR', 'value': forca, 'color': AppColors.forRed, 'index': 5},
     ];
 
-    for (int i = 0; i < 5; i++) {
-      final angle = -math.pi / 2 + (2 * math.pi * i / 5);
-      final labelRadius = radius + 30;
+    for (var data in labelData) {
+      final index = data['index'] as int;
+      final angle = -math.pi / 2 + (2 * math.pi * index / 6);
+      final labelRadius = radius + 40;
 
       final labelPos = Offset(
         center.dx + labelRadius * math.cos(angle),
         center.dy + labelRadius * math.sin(angle),
       );
 
-      // Label
+      final color = data['color'] as Color;
+      final label = data['label'] as String;
+      final value = data['value'] as int;
+
+      // Círculo de fundo para label
+      canvas.drawCircle(
+        labelPos,
+        24,
+        Paint()..color = AppColors.deepBlack.withOpacity(0.8),
+      );
+
+      canvas.drawCircle(
+        labelPos,
+        24,
+        Paint()
+          ..color = color.withOpacity(0.3)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+
+      // Label (nome do atributo)
       final labelPainter = TextPainter(
         text: TextSpan(
-          text: labels[i],
+          text: label,
           style: TextStyle(
-            color: colors[i],
-            fontSize: 12,
+            color: color,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.0,
+            letterSpacing: 1.2,
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -1427,15 +1756,16 @@ class HexagonalAttributesPainter extends CustomPainter {
       labelPainter.layout();
       labelPainter.paint(
         canvas,
-        Offset(labelPos.dx - labelPainter.width / 2, labelPos.dy - labelPainter.height / 2),
+        Offset(labelPos.dx - labelPainter.width / 2, labelPos.dy - 14),
       );
 
-      // Valor
+      // Valor do atributo
+      final modifier = value >= 0 ? '+$value' : '$value';
       final valuePainter = TextPainter(
         text: TextSpan(
-          text: attributes[i].toString(),
+          text: modifier,
           style: TextStyle(
-            color: colors[i],
+            color: color,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -1445,15 +1775,15 @@ class HexagonalAttributesPainter extends CustomPainter {
       valuePainter.layout();
       valuePainter.paint(
         canvas,
-        Offset(labelPos.dx - valuePainter.width / 2, labelPos.dy + 12),
+        Offset(labelPos.dx - valuePainter.width / 2, labelPos.dy + 2),
       );
     }
   }
 
-  Path _createPentagonPath(Offset center, double radius) {
+  Path _createHexagonPath(Offset center, double radius) {
     final path = Path();
-    for (int i = 0; i < 5; i++) {
-      final angle = -math.pi / 2 + (2 * math.pi * i / 5);
+    for (int i = 0; i < 6; i++) {
+      final angle = -math.pi / 2 + (2 * math.pi * i / 6);
       final point = Offset(
         center.dx + radius * math.cos(angle),
         center.dy + radius * math.sin(angle),
