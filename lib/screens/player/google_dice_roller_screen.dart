@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../models/dice_pool.dart';
 import '../../models/dice_result.dart';
 import '../../models/dice_roll_history.dart';
 import '../../core/database/dice_repository.dart';
-import '../../widgets/dice_pool_item.dart';
-import '../../widgets/dice_result_item.dart';
-import '../../widgets/dice_type_button.dart';
+import '../../widgets/dice/hexagon_dice_button.dart';
+import '../../widgets/dice/hexagon_result_badge.dart';
+import '../../widgets/dice/results_splash_area.dart';
+import '../../widgets/dice/formula_staging.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 import 'dice_history_screen.dart';
 
 /// Tela de rolagem de dados estilo Google
@@ -49,6 +50,11 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
     });
   }
 
+  /// Retorna quantos dados de um tipo específico estão no pool
+  int _getDiceCount(DiceType type) {
+    return _currentPool.dice.where((d) => d.type == type).length;
+  }
+
   /// Remove um dado do pool
   void _removeDice(String diceId) {
     setState(() {
@@ -77,9 +83,14 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: AppColors.magenta, width: 2),
         ),
-        title: Text(
-          'Modificador',
-          style: AppTextStyles.titleSmall.copyWith(color: AppColors.magenta),
+        title: const Text(
+          'MODIFICADOR',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2.0,
+            color: AppColors.scarletRed,
+          ),
         ),
         content: TextField(
           controller: controller,
@@ -172,6 +183,22 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
     });
   }
 
+  /// Volta para o pool (limpa resultados mas mantém o pool)
+  void _returnToPool() {
+    setState(() {
+      _lastResults = [];
+    });
+  }
+
+  /// Limpa tudo (pool, modificador e resultados)
+  void _clearAll() {
+    setState(() {
+      _currentPool = _currentPool.clear();
+      _currentPool = _currentPool.updateModifier(0);
+      _lastResults = [];
+    });
+  }
+
   /// Calcula o total dos últimos resultados
   int get _total {
     if (_lastResults.isEmpty) return 0;
@@ -182,232 +209,96 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.deepBlack,
+      backgroundColor: const Color(0xFF1a1a1a),
       body: SafeArea(
         child: Column(
           children: [
-            // Área de resultados e pool
+            // Área de resultados e histórico
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Título
                     Text(
                       'Jogar os dados',
-                      style: AppTextStyles.title.copyWith(
-                        color: AppColors.magenta,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 3.0,
+                        color: Color(0xFFe0e0e0),
+                        fontFamily: 'monospace',
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // Mesa de Dados unificada (SEMPRE VISÍVEL)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.deepBlack,
-                        border: Border.all(
-                          color: AppColors.magenta.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Mesa de Dados',
-                                style: AppTextStyles.body.copyWith(
-                                  color: AppColors.magenta,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  // Badge de total (quando há resultados)
-                                  if (_lastResults.isNotEmpty) ...[
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.orange.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: Colors.orange,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Total $_total',
-                                        style: TextStyle(
-                                          color: Colors.orange,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                  ],
-                                  // Botão Limpar (só aparece quando há dados)
-                                  if (_currentPool.dice.isNotEmpty || _lastResults.isNotEmpty)
-                                    TextButton.icon(
-                                      onPressed: () {
-                                        setState(() {
-                                          _lastResults = [];
-                                          _currentPool = _currentPool.clear();
-                                        });
-                                      },
-                                      icon: Icon(
-                                        Icons.clear_all,
-                                        color: AppColors.neonRed,
-                                        size: 18,
-                                      ),
-                                      label: Text(
-                                        'Limpar',
-                                        style: TextStyle(
-                                          color: AppColors.neonRed,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
+                    // Fórmula de Preparação
+                    FormulaStaging(pool: _currentPool),
 
-                          // Área de dados - mostra pool, resultados OU mensagem vazia
-                          if (_currentPool.dice.isEmpty && _lastResults.isEmpty)
-                            // Mesa vazia
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Text(
-                                  'Adicione dados para começar',
-                                  style: TextStyle(
-                                    color: AppColors.silver.withValues(alpha: 0.5),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else if (_lastResults.isEmpty)
-                            // Mostra pool (antes de rolar)
-                            Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: _currentPool.dice
-                                  .map((diceItem) => DicePoolItemWidget(
-                                        diceItem: diceItem,
-                                        onRemove: () => _removeDice(diceItem.id),
-                                      ))
-                                  .toList(),
-                            )
-                          else
-                            // Mostra resultados (depois de rolar)
-                            Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: _lastResults
-                                  .map((result) => DiceResultItemWidget(
-                                        result: result,
-                                        animate: true,
-                                      ))
-                                  .toList(),
-                            ),
-
-                          const SizedBox(height: 12),
-
-                          // Fórmula (apenas quando há dados no pool e não há resultados)
-                          if (_currentPool.dice.isNotEmpty && _lastResults.isEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.magenta.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                _currentPool.formula,
-                                style: AppTextStyles.body.copyWith(
-                                  color: AppColors.magenta,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                    // Área de Invocação
+                    ResultsSplashArea(
+                      pool: _currentPool,
+                      results: _lastResults,
+                      total: _lastResults.isNotEmpty ? _total : null,
+                      isRolling: _isRolling,
+                      onRemoveDice: _removeDice,
                     ),
-                    const SizedBox(height: 24),
 
-                    // Histórico
+                    const SizedBox(height: 32),
+
+                    // Log de Ritual (Histórico Refatorado)
                     if (_history.isNotEmpty) ...[
+                      // Divisor
+                      const GrungeDivider(heavy: true),
+                      const SizedBox(height: 24),
+
+                      // Cabeçalho (sem caixas)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Histórico',
-                            style: AppTextStyles.titleSmall.copyWith(
-                              color: AppColors.magenta,
+                          const Text(
+                            'HISTÓRICO',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2.5,
+                              color: AppColors.scarletRed,
+                              fontFamily: 'monospace',
                             ),
                           ),
                           Row(
                             children: [
+                              // Botão Ver Tudo (apenas texto)
                               InkWell(
                                 onTap: _navigateToFullHistory,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: AppColors.magenta),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.history, color: AppColors.magenta, size: 14),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'VER TUDO',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.magenta,
-                                          letterSpacing: 1.0,
-                                        ),
-                                      ),
-                                    ],
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'VER TUDO',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                      color: Color(0xFFe0e0e0),
+                                    ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 16),
+                              // Botão Limpar (apenas texto vermelho)
                               InkWell(
                                 onTap: _confirmClearHistory,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: AppColors.neonRed),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.delete_outline, color: AppColors.neonRed, size: 14),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'LIMPAR',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.neonRed,
-                                          letterSpacing: 1.0,
-                                        ),
-                                      ),
-                                    ],
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'LIMPAR',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                      color: AppColors.scarletRed,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -415,7 +306,7 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       ..._history.take(2).map((entry) => _buildHistoryItem(entry)),
                     ],
                   ],
@@ -423,108 +314,159 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
               ),
             ),
 
-            // Botões de controle (fixos na parte inferior)
+            // Barra do Arsenal (fixo na parte inferior)
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.deepBlack,
-                border: Border(
-                  top: BorderSide(
-                    color: AppColors.magenta.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
+              decoration: const BoxDecoration(
+                color: Color(0xFF0d0d0d),
               ),
               child: Column(
                 children: [
-                  // Botões de tipos de dados
-                  Wrap(
-                    alignment: WrapAlignment.spaceEvenly,
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      DiceTypeButton(
-                        type: DiceType.d4,
-                        onPressed: () => _addDice(DiceType.d4),
-                      ),
-                      DiceTypeButton(
-                        type: DiceType.d6,
-                        onPressed: () => _addDice(DiceType.d6),
-                      ),
-                      DiceTypeButton(
-                        type: DiceType.d8,
-                        onPressed: () => _addDice(DiceType.d8),
-                      ),
-                      DiceTypeButton(
-                        type: DiceType.d10,
-                        onPressed: () => _addDice(DiceType.d10),
-                      ),
-                      DiceTypeButton(
-                        type: DiceType.d12,
-                        onPressed: () => _addDice(DiceType.d12),
-                      ),
-                      DiceTypeButton(
-                        type: DiceType.d20,
-                        onPressed: () => _addDice(DiceType.d20),
-                      ),
-                      DiceTypeButton(
-                        type: DiceType.d100,
-                        onPressed: () => _addDice(DiceType.d100),
-                      ),
-                    ],
+                  // Linha de hexágonos (sem modificador)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        HexagonDiceButton(
+                          faces: 4,
+                          count: _getDiceCount(DiceType.d4),
+                          onTap: () => _addDice(DiceType.d4),
+                        ),
+                        const SizedBox(width: 8),
+                        HexagonDiceButton(
+                          faces: 6,
+                          count: _getDiceCount(DiceType.d6),
+                          onTap: () => _addDice(DiceType.d6),
+                        ),
+                        const SizedBox(width: 8),
+                        HexagonDiceButton(
+                          faces: 8,
+                          count: _getDiceCount(DiceType.d8),
+                          onTap: () => _addDice(DiceType.d8),
+                        ),
+                        const SizedBox(width: 8),
+                        HexagonDiceButton(
+                          faces: 10,
+                          count: _getDiceCount(DiceType.d10),
+                          onTap: () => _addDice(DiceType.d10),
+                        ),
+                        const SizedBox(width: 8),
+                        HexagonDiceButton(
+                          faces: 12,
+                          count: _getDiceCount(DiceType.d12),
+                          onTap: () => _addDice(DiceType.d12),
+                        ),
+                        const SizedBox(width: 8),
+                        HexagonDiceButton(
+                          faces: 20,
+                          count: _getDiceCount(DiceType.d20),
+                          onTap: () => _addDice(DiceType.d20),
+                        ),
+                        const SizedBox(width: 8),
+                        HexagonDiceButton(
+                          faces: 100,
+                          count: _getDiceCount(DiceType.d100),
+                          onTap: () => _addDice(DiceType.d100),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                  // Botão modificador e rolar
+                  // Linha de botões: ± | ROLAR/VOLTAR | X
                   Row(
                     children: [
-                      // Botão modificador
-                      Expanded(
-                        flex: 1,
+                      // Botão ± (modificador)
+                      SizedBox(
+                        width: 56,
+                        height: 56,
                         child: ElevatedButton(
                           onPressed: _showModifierDialog,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.magenta.withValues(alpha: 0.2),
-                            foregroundColor: AppColors.magenta,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: AppColors.magenta, width: 2),
+                            backgroundColor: _currentPool.modifier != 0
+                                ? const Color(0xFF673AB7).withOpacity(0.3)
+                                : const Color(0xFF2a2a2a),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.zero,
                             ),
+                            elevation: 0,
                           ),
                           child: Text(
                             _currentPool.modifier == 0
                                 ? '±'
-                                : '${_currentPool.modifier > 0 ? '+' : ''}${_currentPool.modifier}',
-                            style: TextStyle(
-                              fontSize: 20,
+                                : (_currentPool.modifier > 0
+                                    ? '+${_currentPool.modifier}'
+                                    : '${_currentPool.modifier}'),
+                            style: const TextStyle(
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              fontFamily: 'monospace',
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // Botão rolar
+                      const SizedBox(width: 8),
+
+                      // Botão ROLAR/VOLTAR (central - ocupa espaço restante)
                       Expanded(
-                        flex: 3,
+                        child: SizedBox(
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isRolling
+                                ? null
+                                : (_lastResults.isNotEmpty
+                                    ? _returnToPool
+                                    : (_currentPool.dice.isEmpty ? null : _rollDice)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.scarletRed,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: const Color(0xFF2a2a2a),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.zero,
+                              ),
+                              elevation: 0,
+                              shadowColor: AppColors.scarletRed.withOpacity(0.5),
+                            ),
+                            child: Text(
+                              _isRolling
+                                  ? 'INVOCANDO...'
+                                  : (_lastResults.isNotEmpty ? 'V O L T A R' : 'R O L A R'),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 4.0,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Botão X (limpar tudo)
+                      SizedBox(
+                        width: 56,
+                        height: 56,
                         child: ElevatedButton(
-                          onPressed: _isRolling ? null : _rollDice,
+                          onPressed: (_currentPool.dice.isEmpty &&
+                                  _currentPool.modifier == 0 &&
+                                  _lastResults.isEmpty)
+                              ? null
+                              : _clearAll,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            backgroundColor: const Color(0xFF2a2a2a),
+                            foregroundColor: AppColors.neonRed,
+                            disabledBackgroundColor: const Color(0xFF1a1a1a),
+                            disabledForegroundColor: const Color(0xFF444444),
+                            padding: EdgeInsets.zero,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.zero,
                             ),
-                            elevation: 8,
+                            elevation: 0,
                           ),
-                          child: Text(
-                            _isRolling ? 'Rolando...' : 'Rolar',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: const Icon(Icons.close, size: 28),
                         ),
                       ),
                     ],
@@ -542,52 +484,43 @@ class _GoogleDiceRollerScreenState extends State<GoogleDiceRollerScreen> {
     final dateFormat = DateFormat('HH:mm:ss');
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.deepBlack,
-        border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.3),
-          width: 1,
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFF2a2a2a),
+            width: 1,
+          ),
         ),
-        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
           // Timestamp
           Text(
             dateFormat.format(entry.timestamp),
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
+            style: const TextStyle(
+              color: Color(0xFF888888),
+              fontSize: 11,
+              fontFamily: 'monospace',
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           // Fórmula
           Expanded(
             child: Text(
               entry.formula,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
+              style: const TextStyle(
+                color: Color(0xFFe0e0e0),
+                fontSize: 12,
+                fontFamily: 'monospace',
               ),
             ),
           ),
-          // Total
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '${entry.total}',
-              style: TextStyle(
-                color: Colors.orange,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          const SizedBox(width: 16),
+          // Total em hexágono (Glifo de Resultado)
+          HexagonResultBadge(
+            value: entry.total,
+            isSmall: true,
           ),
         ],
       ),

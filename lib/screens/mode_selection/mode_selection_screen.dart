@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 import '../character_selection/character_selection_screen.dart';
 import '../master/master_dashboard_screen.dart';
 
 /// Tela de seleção de modo: JOGADOR vs MESTRE
-/// Design exatamente como a referência fornecida
+/// Design minimalista estilo "dossiê paranormal"
 class ModeSelectionScreen extends StatefulWidget {
   const ModeSelectionScreen({super.key});
 
@@ -52,103 +53,144 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.deepBlack,
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: Column(
-              children: [
-                const SizedBox(height: 60),
+      body: GrungeBackground(
+        opacity: 0.06,
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Column(
+                children: [
+                  const SizedBox(height: 60),
 
-                // Título HEXATOMBE (Imagem)
-                Image.asset(
-                  'assets/images/icons/hexatombe.png',
-                  height: 280,
-                  fit: BoxFit.contain,
-                ),
-
-                const SizedBox(height: 16),
-
-                // Subtítulo
-                Text(
-                  'Feito pelos alunos do CCO Noturno',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.silver.withOpacity(0.7),
+                  // Logo HEXATOMBE
+                  Image.asset(
+                    'assets/images/icons/hexatombe.png',
+                    height: 280,
+                    fit: BoxFit.contain,
                   ),
-                ),
-                Text(
-                  '6º Período 2025',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.silver.withOpacity(0.7),
+
+                  const SizedBox(height: 16),
+
+                  // Subtítulo
+                  Text(
+                    'Feito pelos alunos do CCO Noturno',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.silver.withValues(alpha: 0.7),
+                    ),
                   ),
-                ),
-
-                const Spacer(),
-
-                // Card JOGADOR
-                _ModeCard(
-                  icon: Icons.person_outline,
-                  title: 'JOGADOR',
-                  subtitle: 'Gerencie seus personagens',
-                  description:
-                      'Crie fichas, role dados e controle\nseu inventário',
-                  color: AppColors.scarletRed,
-                  onTap: () => _navigateToCharacterSelection(context, false),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Card MESTRE
-                _ModeCard(
-                  icon: Icons.shield_outlined,
-                  title: 'MESTRE',
-                  subtitle: 'Controle total da campanha',
-                  description:
-                      'Gerencie personagens, combate\ne anotações',
-                  color: AppColors.magenta,
-                  onTap: () => _navigateToCharacterSelection(context, true),
-                ),
-
-                const Spacer(),
-
-                // Créditos no footer
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Felipe Pontes Herculani Alves - 20224254',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.silver.withOpacity(0.5),
-                          fontSize: 10,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Gabriel Lentini Linhares Marques - 20232582',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.silver.withOpacity(0.5),
-                          fontSize: 10,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Vicenzo Guizi Pulici - 20224604',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.silver.withOpacity(0.5),
-                          fontSize: 10,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                  Text(
+                    '6º Período 2025',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.silver.withValues(alpha: 0.7),
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 16),
-              ],
+                  const Spacer(),
+
+                  // Divisor superior
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: GrungeDivider(
+                      color: AppColors.scarletRed.withValues(alpha: 0.3),
+                      height: 2,
+                      heavy: false,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Entrada JOGADOR
+                  _ModeEntry(
+                    icon: Icons.casino_outlined,
+                    title: 'JOGADOR',
+                    subtitle: 'Gerencie seus personagens',
+                    description: 'Crie fichas, role dados e controle seu inventário',
+                    onTap: () => _navigateToCharacterSelection(context, false),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Divisor Grunge entre opções
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 48),
+                    child: GrungeDivider(
+                      color: AppColors.scarletRed,
+                      height: 3,
+                      heavy: true,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Entrada MESTRE
+                  _ModeEntry(
+                    icon: Icons.menu_book_outlined,
+                    title: 'MESTRE',
+                    subtitle: 'Controle total da campanha',
+                    description: 'Gerencie personagens, combate e anotações',
+                    onTap: () => _navigateToCharacterSelection(context, true),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Divisor inferior
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: GrungeDivider(
+                      color: AppColors.scarletRed.withValues(alpha: 0.3),
+                      height: 2,
+                      heavy: false,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Créditos (estilo typewriter)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Felipe Pontes Herculani Alves - 20224254',
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 10,
+                            color: AppColors.silver,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Gabriel Lentini Linhares Marques - 20232582',
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 10,
+                            color: AppColors.silver,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Vicenzo Guizi Pulici - 20224604',
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 10,
+                            color: AppColors.silver,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ),
@@ -161,7 +203,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen>
       // Master vai direto pro dashboard
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => MasterDashboardScreen(
+          builder: (context) => const MasterDashboardScreen(
             userId: 'master_001',
           ),
         ),
@@ -170,7 +212,7 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen>
       // Player vai pra seleção de personagem
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => CharacterSelectionScreen(
+          builder: (context) => const CharacterSelectionScreen(
             userId: 'player_001',
             isMasterMode: false,
           ),
@@ -180,29 +222,27 @@ class _ModeSelectionScreenState extends State<ModeSelectionScreen>
   }
 }
 
-/// Widget do card de modo (Jogador ou Mestre)
-class _ModeCard extends StatefulWidget {
+/// Widget de entrada de modo (design minimalista inline)
+class _ModeEntry extends StatefulWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final String description;
-  final Color color;
   final VoidCallback onTap;
 
-  const _ModeCard({
+  const _ModeEntry({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.description,
-    required this.color,
     required this.onTap,
   });
 
   @override
-  State<_ModeCard> createState() => _ModeCardState();
+  State<_ModeEntry> createState() => _ModeEntryState();
 }
 
-class _ModeCardState extends State<_ModeCard> {
+class _ModeEntryState extends State<_ModeEntry> {
   bool _isPressed = false;
 
   @override
@@ -215,81 +255,88 @@ class _ModeCardState extends State<_ModeCard> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        padding: const EdgeInsets.all(24),
+        duration: const Duration(milliseconds: 150),
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.only(left: 20, right: 16, top: 16, bottom: 16),
         decoration: BoxDecoration(
-          color: AppColors.darkGray,
-          border: Border.all(
-            color: widget.color.withOpacity(_isPressed ? 1.0 : 0.5),
-            width: _isPressed ? 3 : 2,
+          color: _isPressed
+              ? AppColors.darkGray.withValues(alpha: 0.8)
+              : Colors.transparent,
+          border: Border(
+            left: BorderSide(
+              color: AppColors.scarletRed,
+              width: _isPressed ? 6 : 4,
+            ),
+            top: BorderSide(
+              color: AppColors.silver.withValues(alpha: _isPressed ? 0.3 : 0.15),
+              width: 1,
+            ),
+            bottom: BorderSide(
+              color: AppColors.silver.withValues(alpha: _isPressed ? 0.3 : 0.15),
+              width: 1,
+            ),
+            right: BorderSide(
+              color: AppColors.silver.withValues(alpha: _isPressed ? 0.3 : 0.15),
+              width: 1,
+            ),
           ),
-          boxShadow: [
-            if (_isPressed)
-              BoxShadow(
-                color: widget.color.withOpacity(0.4),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-          ],
+          boxShadow: _isPressed
+              ? [
+                  BoxShadow(
+                    color: AppColors.scarletRed.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
-            // Ícone com glow
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: widget.color.withOpacity(0.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.color.withOpacity(0.5),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: Icon(
-                widget.icon,
-                size: 48,
-                color: widget.color,
-              ),
+            // Ícone temático (SEM container)
+            Icon(
+              widget.icon,
+              size: 40,
+              color: AppColors.scarletRed,
             ),
 
             const SizedBox(width: 20),
 
-            // Textos
+            // Textos (hierarquia tipográfica)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título
+                  // Título GRANDE
                   Text(
                     widget.title,
-                    style: AppTextStyles.title.copyWith(
-                      fontSize: 28,
-                      color: widget.color,
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 24,
+                      letterSpacing: 2.5,
+                      color: AppColors.lightGray,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 4),
 
-                  // Subtítulo
+                  // Subtítulo médio
                   Text(
                     widget.subtitle,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: widget.color,
-                      fontWeight: FontWeight.w600,
+                      color: AppColors.scarletRed,
+                      fontSize: 11,
+                      letterSpacing: 1.0,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
 
-                  // Descrição
+                  // Descrição pequena
                   Text(
                     widget.description,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.silver.withOpacity(0.7),
+                      color: AppColors.silver.withValues(alpha: 0.7),
+                      fontSize: 10,
                       height: 1.4,
                     ),
                   ),
@@ -300,8 +347,8 @@ class _ModeCardState extends State<_ModeCard> {
             // Seta
             Icon(
               Icons.arrow_forward,
-              color: widget.color,
-              size: 24,
+              color: AppColors.scarletRed,
+              size: 20,
             ),
           ],
         ),

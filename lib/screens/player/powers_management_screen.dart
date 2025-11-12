@@ -7,6 +7,7 @@ import '../../models/character.dart';
 import '../../models/power.dart';
 import '../../core/database/power_repository.dart';
 import '../../core/database/character_repository.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 import 'power_form_screen.dart';
 
 /// Tela completa de gerenciamento de poderes e rituais
@@ -132,12 +133,6 @@ class _PowersManagementScreenState extends State<PowersManagementScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addPower,
-        backgroundColor: AppColors.medoPurple,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: const Icon(Icons.add, color: AppColors.deepBlack),
-      ),
       body: Column(
         children: [
           // Header: Info de PE
@@ -190,20 +185,23 @@ class _PowersManagementScreenState extends State<PowersManagementScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.medoPurple.withOpacity(0.2),
-              border: Border.all(color: AppColors.medoPurple),
-            ),
-            child: Text(
-              '${_allPowers.length} PODERES',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
-                color: AppColors.medoPurple,
-                letterSpacing: 1.0,
-              ),
+          // Botão de adicionar como texto vermelho (substitui FAB)
+          InkWell(
+            onTap: _addPower,
+            child: Row(
+              children: [
+                Icon(Icons.add, size: 16, color: AppColors.scarletRed),
+                const SizedBox(width: 4),
+                Text(
+                  'NOVO PODER',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.scarletRed,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -255,9 +253,9 @@ class _PowersManagementScreenState extends State<PowersManagementScreen> {
                 borderRadius: BorderRadius.zero,
                 borderSide: BorderSide(color: AppColors.silver.withOpacity(0.3)),
               ),
-              focusedBorder: const OutlineInputBorder(
+              focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.zero,
-                borderSide: BorderSide(color: AppColors.medoPurple, width: 2),
+                borderSide: BorderSide(color: AppColors.silver.withOpacity(0.5), width: 1),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             ),
@@ -334,18 +332,14 @@ class _PowersManagementScreenState extends State<PowersManagementScreen> {
   Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap, Color color) {
     return InkWell(
       onTap: onTap,
-      child: Container(
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
-          border: Border.all(color: isSelected ? color : AppColors.silver.withOpacity(0.3)),
-        ),
         child: Text(
           label.toUpperCase(),
           style: TextStyle(
             fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? color : AppColors.silver.withOpacity(0.7),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? AppColors.scarletRed : AppColors.silver.withOpacity(0.7),
             letterSpacing: 1.0,
           ),
         ),
@@ -395,204 +389,162 @@ class _PowersManagementScreenState extends State<PowersManagementScreen> {
   }
 
   Widget _buildPowerCard(Power power) {
-    final elementoColor = _getElementoColor(power.elemento);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border(
-          left: BorderSide(color: elementoColor, width: 4),
-          top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: elementoColor.withOpacity(0.2),
-                        border: Border.all(color: elementoColor),
-                      ),
-                      child: Text(
-                        _getElementoNome(power.elemento),
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                          color: elementoColor,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  // Elemento como texto vermelho
+                  Text(
+                    _getElementoNome(power.elemento).toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.scarletRed,
+                      letterSpacing: 1.0,
                     ),
-                    if (power.isRitual) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.medoPurple.withOpacity(0.2),
-                          border: Border.all(color: AppColors.medoPurple),
-                        ),
-                        child: Text(
-                          '${power.circulo}º CÍRCULO',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.medoPurple,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const Spacer(),
-                    Icon(Icons.flash_on, size: 14, color: AppColors.energiaYellow),
-                    const SizedBox(width: 4),
+                  ),
+                  if (power.isRitual) ...[
+                    const SizedBox(width: 8),
                     Text(
-                      '${power.custoPE} PE',
+                      '• ${power.circulo}º CÍRCULO',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.energiaYellow,
+                        color: AppColors.scarletRed,
+                        letterSpacing: 1.0,
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-
-                // Nome
-                Text(
-                  power.nome.toUpperCase(),
-                  style: AppTextStyles.uppercase.copyWith(
-                    fontSize: 13,
-                    color: AppColors.lightGray,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Descrição
-                Text(
-                  power.descricao,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.silver.withOpacity(0.6),
-                    fontSize: 11,
-                  ),
-                ),
-
-                if (power.efeitos != null) ...[
-                  const SizedBox(height: 8),
+                  const Spacer(),
+                  Icon(Icons.flash_on, size: 14, color: AppColors.energiaYellow),
+                  const SizedBox(width: 4),
                   Text(
-                    'EFEITOS: ${power.efeitos}',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.silver.withOpacity(0.7),
-                      fontSize: 10,
+                    '${power.custoPE} PE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.energiaYellow,
                     ),
                   ),
                 ],
-
-                if (power.duracao != null || power.alcance != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (power.duracao != null) ...[
-                        const Icon(Icons.timer, size: 12, color: AppColors.silver),
-                        const SizedBox(width: 4),
-                        Text(
-                          power.duracao!,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.silver.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                      if (power.duracao != null && power.alcance != null) const SizedBox(width: 16),
-                      if (power.alcance != null) ...[
-                        const Icon(Icons.my_location, size: 12, color: AppColors.silver),
-                        const SizedBox(width: 4),
-                        Text(
-                          power.alcance!,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.silver.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          // Ações
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.deepBlack.withOpacity(0.5),
-              border: Border(
-                top: BorderSide(color: AppColors.silver.withOpacity(0.1)),
               ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildActionButton(
+              const SizedBox(height: 12),
+
+              // Nome
+              Text(
+                power.nome.toUpperCase(),
+                style: AppTextStyles.uppercase.copyWith(
+                  fontSize: 13,
+                  color: AppColors.lightGray,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Descrição
+              Text(
+                power.descricao,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.silver.withOpacity(0.6),
+                  fontSize: 11,
+                ),
+              ),
+
+              if (power.efeitos != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'EFEITOS: ${power.efeitos}',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.silver.withOpacity(0.7),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+
+              if (power.duracao != null || power.alcance != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (power.duracao != null) ...[
+                      const Icon(Icons.timer, size: 12, color: AppColors.silver),
+                      const SizedBox(width: 4),
+                      Text(
+                        power.duracao!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.silver.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                    if (power.duracao != null && power.alcance != null) const SizedBox(width: 16),
+                    if (power.alcance != null) ...[
+                      const Icon(Icons.my_location, size: 12, color: AppColors.silver),
+                      const SizedBox(width: 4),
+                      Text(
+                        power.alcance!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.silver.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+
+              // Ações como texto simples
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _buildActionButton(
                     'EDITAR',
                     Icons.edit,
-                    AppColors.conhecimentoGreen,
+                    AppColors.scarletRed,
                     () => _editPower(power),
                   ),
-                ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: AppColors.silver.withOpacity(0.1),
-                ),
-                Expanded(
-                  child: _buildActionButton(
+                  const SizedBox(width: 16),
+                  _buildActionButton(
                     'EXCLUIR',
                     Icons.delete,
-                    AppColors.neonRed,
+                    AppColors.scarletRed,
                     () => _deletePower(power),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+
+        // Divisor arranhado entre poderes
+        const GrungeDivider(heavy: false),
+      ],
     );
   }
 
   Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 16),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: color,
-                letterSpacing: 1.0,
-              ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+              letterSpacing: 1.0,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

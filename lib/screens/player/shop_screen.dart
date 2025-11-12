@@ -9,6 +9,7 @@ import '../../models/item.dart';
 import '../../core/database/character_repository.dart';
 import '../../core/database/shop_repository.dart';
 import '../../core/database/item_repository.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 
 /// Tela de Loja para Jogadores
 /// Compra de itens, validação de créditos e espaço
@@ -304,25 +305,20 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border(
-          bottom: BorderSide(color: AppColors.conhecimentoGreen.withOpacity(0.3), width: 2),
-        ),
-      ),
+      color: AppColors.darkGray,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.store, color: AppColors.conhecimentoGreen, size: 20),
+              const Icon(Icons.store, color: AppColors.scarletRed, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   (_currentShop?.nome ?? 'LOJA').toUpperCase(),
                   style: AppTextStyles.uppercase.copyWith(
                     fontSize: 14,
-                    color: AppColors.conhecimentoGreen,
+                    color: AppColors.lightGray,
                   ),
                 ),
               ),
@@ -366,11 +362,11 @@ class _ShopScreenState extends State<ShopScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildStatChip('CRÉDITOS', '\$${_character.creditos}', AppColors.conhecimentoGreen),
-              const SizedBox(width: 12),
-              _buildStatChip('CARRINHO', '${_cart.length}', AppColors.magenta),
-              const SizedBox(width: 12),
-              _buildStatChip('ITENS', '${_filteredItems.length}', AppColors.energiaYellow),
+              _buildStatText('CRÉDITOS', '\$${_character.creditos}', AppColors.conhecimentoGreen),
+              const SizedBox(width: 16),
+              _buildStatText('CARRINHO', '${_cart.length}', AppColors.scarletRed),
+              const SizedBox(width: 16),
+              _buildStatText('ITENS', '${_filteredItems.length}', AppColors.silver),
             ],
           ),
         ],
@@ -378,36 +374,29 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  Widget _buildStatChip(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        border: Border.all(color: color),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              color: color,
-              letterSpacing: 1.0,
-            ),
+  Widget _buildStatText(String label, String value, Color valueColor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.normal,
+            color: AppColors.silver.withOpacity(0.7),
+            letterSpacing: 1.0,
           ),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: valueColor,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -637,10 +626,9 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildShopInventory() {
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _filteredItems.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = _filteredItems[index];
         final inCart = _cart.any((i) => i.id == item.id);
@@ -651,118 +639,116 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Widget _buildItemCard(ShopItem item, bool inCart) {
     final canAfford = _character.creditos >= item.preco;
-    final color = _getItemTypeColor(item.tipo);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: inCart ? color.withOpacity(0.1) : AppColors.darkGray,
-        border: Border.all(
-          color: inCart ? color : AppColors.silver.withOpacity(0.3),
-          width: inCart ? 2 : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Badge de tipo
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  border: Border.all(color: color, width: 1),
-                ),
-                child: Text(
-                  _getItemTypeName(item.tipo).toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.nome.toUpperCase(),
-                      style: AppTextStyles.uppercase.copyWith(
-                        fontSize: 13,
-                        color: canAfford ? AppColors.lightGray : AppColors.silver.withOpacity(0.5),
-                      ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tipo como texto vermelho
+                  Text(
+                    _getItemTypeName(item.tipo).toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.scarletRed,
+                      letterSpacing: 1.0,
                     ),
-                    const SizedBox(height: 4),
+                  ),
+                  if (inCart) ...[
+                    const SizedBox(width: 8),
                     Text(
-                      item.descricao,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.silver.withOpacity(0.7),
-                        fontSize: 11,
+                      '• NO CARRINHO',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.scarletRed,
+                        letterSpacing: 1.0,
                       ),
                     ),
                   ],
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '\$${item.preco}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: canAfford ? AppColors.conhecimentoGreen : AppColors.neonRed,
+                        ),
+                      ),
+                      Text(
+                        '${item.espacoUnitario} esp.',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: AppColors.silver.withOpacity(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.nome.toUpperCase(),
+                style: AppTextStyles.uppercase.copyWith(
+                  fontSize: 13,
+                  color: canAfford ? AppColors.lightGray : AppColors.silver.withOpacity(0.5),
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              const SizedBox(height: 4),
+              Text(
+                item.descricao,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.silver.withOpacity(0.7),
+                  fontSize: 11,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
                 children: [
-                  Text(
-                    '\$${item.preco}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: canAfford ? AppColors.conhecimentoGreen : AppColors.neonRed,
+                  Expanded(
+                    child: Text(
+                      'Patente mínima: ${_getPatenteLabel(item.patenteMinima)}',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: AppColors.silver.withOpacity(0.5),
+                        letterSpacing: 1.0,
+                      ),
                     ),
                   ),
-                  Text(
-                    '${item.espacoUnitario} esp.',
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: AppColors.silver.withOpacity(0.5),
+                  SizedBox(
+                    height: 36,
+                    child: ElevatedButton(
+                      onPressed: canAfford ? () => _toggleCart(item) : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: inCart ? AppColors.neonRed : AppColors.scarletRed,
+                        disabledBackgroundColor: AppColors.darkGray,
+                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      child: Text(
+                        inCart ? 'REMOVER' : 'ADICIONAR',
+                        style: const TextStyle(fontSize: 11, letterSpacing: 1.0),
+                      ),
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Patente mínima: ${_getPatenteLabel(item.patenteMinima)}',
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: AppColors.silver.withOpacity(0.5),
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 36,
-                child: ElevatedButton(
-                  onPressed: canAfford ? () => _toggleCart(item) : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: inCart ? AppColors.neonRed : color,
-                    disabledBackgroundColor: AppColors.darkGray,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                  child: Text(
-                    inCart ? 'REMOVER' : 'ADICIONAR',
-                    style: const TextStyle(fontSize: 11, letterSpacing: 1.0),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+
+        // Divisor arranhado entre itens
+        const GrungeDivider(heavy: false),
+      ],
     );
   }
 

@@ -6,6 +6,7 @@ import '../../core/database/character_repository.dart';
 import '../../core/database/item_repository.dart';
 import '../../core/database/power_repository.dart';
 import '../../core/database/local_storage.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 import 'inventory_management_screen.dart';
 import 'powers_management_screen.dart';
 import 'dart:math' as math;
@@ -165,27 +166,45 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // NEX e Patente
+          // NEX e Patente (SEM CAIXAS - design minimalista)
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Expanded(
-                child: _buildInfoCard('NEX', '${_character.nex}%', AppColors.magenta),
+              SimpleStat(
+                label: 'NEX',
+                value: '${_character.nex}%',
+                labelColor: AppColors.magenta,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildInfoCard('PATENTE', 'Recruta', AppColors.conhecimentoGreen),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppColors.silver.withValues(alpha: 0.2),
+              ),
+              SimpleStat(
+                label: 'PATENTE',
+                value: _character.patente ?? 'Recruta',
+                labelColor: AppColors.conhecimentoGreen,
               ),
             ],
           ),
 
           const SizedBox(height: 24),
 
-          // PV
-          _buildResourceSection(
-            label: 'PONTOS DE VIDA',
+          // Divisor Grunge
+          GrungeDivider(
+            color: AppColors.scarletRed.withValues(alpha: 0.3),
+            height: 2,
+            heavy: false,
+          ),
+
+          const SizedBox(height: 24),
+
+          // PV (barra minimalista SEM BORDAS)
+          HexatombeStatusBar(
+            title: 'PONTOS DE VIDA',
             current: _character.pvAtual,
             max: _character.pvMax,
-            color: AppColors.pvRed,
+            fillColor: AppColors.pvRed,
             onIncrement: () {
               setState(() {
                 if (_character.pvAtual < _character.pvMax) {
@@ -202,14 +221,14 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
             },
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // PE
-          _buildResourceSection(
-            label: 'PONTOS DE ESFORÇO',
+          // PE (barra minimalista SEM BORDAS)
+          HexatombeStatusBar(
+            title: 'PONTOS DE ESFORÇO',
             current: _character.peAtual,
             max: _character.peMax,
-            color: AppColors.pePurple,
+            fillColor: AppColors.pePurple,
             onIncrement: () {
               setState(() {
                 if (_character.peAtual < _character.peMax) {
@@ -226,14 +245,14 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
             },
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // SAN
-          _buildResourceSection(
-            label: 'SANIDADE',
+          // SAN (barra minimalista SEM BORDAS)
+          HexatombeStatusBar(
+            title: 'SANIDADE',
             current: _character.sanAtual,
             max: _character.sanMax,
-            color: AppColors.sanYellow,
+            fillColor: AppColors.sanYellow,
             onIncrement: () {
               setState(() {
                 if (_character.sanAtual < _character.sanMax) {
@@ -252,24 +271,64 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
 
           const SizedBox(height: 32),
 
-          // Stats de combate
-          Text('COMBATE', style: AppTextStyles.title),
+          // Divisor Grunge
+          GrungeDivider(
+            color: AppColors.scarletRed.withValues(alpha: 0.3),
+            height: 2,
+            heavy: true,
+          ),
+
+          const SizedBox(height: 24),
+
+          // Stats de combate (minimalista)
+          Text(
+            'COMBATE',
+            style: AppTextStyles.uppercase.copyWith(
+              fontSize: 16,
+              color: AppColors.scarletRed,
+              letterSpacing: 2.0,
+            ),
+          ),
           const SizedBox(height: 16),
 
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Expanded(
-                child: _buildStatCard('DEFESA', _character.defesaCalculada.toString(), AppColors.forRed),
+              SimpleStat(
+                label: 'DEFESA',
+                value: _character.defesaCalculada.toString(),
+                labelColor: AppColors.forRed,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard('BLOQUEIO', _character.bloqueioCalculado.toString(), AppColors.vigBlue),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppColors.silver.withValues(alpha: 0.2),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard('DESL', '${_character.deslocamentoCalculado}m', AppColors.agiGreen),
+              SimpleStat(
+                label: 'BLOQUEIO',
+                value: _character.bloqueioCalculado.toString(),
+                labelColor: AppColors.vigBlue,
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: AppColors.silver.withValues(alpha: 0.2),
+              ),
+              SimpleStat(
+                label: 'DESLOCAMENTO',
+                value: '${_character.deslocamentoCalculado}m',
+                labelColor: AppColors.agiGreen,
               ),
             ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Divisor Grunge
+          GrungeDivider(
+            color: AppColors.scarletRed.withValues(alpha: 0.3),
+            height: 2,
+            heavy: false,
           ),
 
           const SizedBox(height: 16),
@@ -281,159 +340,6 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
 
           // Créditos
           _buildCreditSection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border.all(color: color),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.uppercase.copyWith(
-              fontSize: 10,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTextStyles.title.copyWith(
-              fontSize: 24,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResourceSection({
-    required String label,
-    required int current,
-    required int max,
-    required Color color,
-    required VoidCallback onIncrement,
-    required VoidCallback onDecrement,
-  }) {
-    final percentage = current / max;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.uppercase.copyWith(
-            fontSize: 12,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Barra
-        Container(
-          height: 32,
-          decoration: BoxDecoration(
-            color: AppColors.darkGray,
-            border: Border.all(color: color, width: 2),
-          ),
-          child: Stack(
-            children: [
-              FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: percentage.clamp(0.0, 1.0),
-                child: Container(color: color.withOpacity(0.3)),
-              ),
-              Center(
-                child: Text(
-                  '$current / $max',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // Controles
-        Row(
-          children: [
-            Expanded(
-              child: _buildControlButton('-', onDecrement, color),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildControlButton('+', onIncrement, color),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildControlButton(String label, VoidCallback onTap, Color color) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.darkGray,
-          border: Border.all(color: color),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border.all(color: color),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              color: color,
-              letterSpacing: 1.0,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
         ],
       ),
     );
@@ -737,13 +643,10 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
         color: AppColors.deepBlack,
         border: Border(
           left: BorderSide(color: color, width: 6),
-          top: BorderSide(color: color.withOpacity(0.3), width: 1),
-          right: BorderSide(color: color.withOpacity(0.3), width: 1),
-          bottom: BorderSide(color: color.withOpacity(0.3), width: 1),
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             blurRadius: 8,
             spreadRadius: 0,
             offset: const Offset(0, 2),
@@ -754,14 +657,13 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            // Círculo com ícone
+            // Círculo com ícone (SEM BORDA)
             Container(
               width: 56,
               height: 56,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: color.withOpacity(0.15),
-                border: Border.all(color: color, width: 2.5),
+                color: color.withValues(alpha: 0.15),
               ),
               child: Icon(icon, color: color, size: 28),
             ),
@@ -785,7 +687,7 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                   Text(
                     descriptions[label] ?? '',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.silver.withOpacity(0.7),
+                      color: AppColors.silver.withValues(alpha: 0.7),
                       fontSize: 11,
                       height: 1.4,
                     ),
@@ -796,8 +698,7 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.2),
-                          border: Border.all(color: color, width: 1),
+                          color: color.withValues(alpha: 0.2),
                         ),
                         child: Text(
                           'MODIFICADOR: $modifier',
@@ -817,13 +718,12 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
 
             const SizedBox(width: 16),
 
-            // Valor grande
+            // Valor grande (SEM BORDA)
             Container(
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                border: Border.all(color: color, width: 2.5),
+                color: color.withValues(alpha: 0.1),
               ),
               child: Center(
                 child: Text(
@@ -888,8 +788,10 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: AppColors.conhecimentoGreen.withOpacity(0.1),
-              border: Border.all(color: AppColors.conhecimentoGreen),
+              color: AppColors.conhecimentoGreen.withValues(alpha: 0.1),
+              border: Border(
+                left: BorderSide(color: AppColors.conhecimentoGreen, width: 4),
+              ),
             ),
             child: Row(
               children: [
@@ -921,14 +823,16 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: isTreinada ? AppColors.conhecimentoGreen.withOpacity(0.1) : AppColors.darkGray,
-                border: Border.all(
-                  color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver.withOpacity(0.3),
-                ),
+                color: isTreinada ? AppColors.conhecimentoGreen.withValues(alpha: 0.1) : AppColors.darkGray,
+                border: isTreinada
+                    ? Border(
+                        left: BorderSide(color: AppColors.conhecimentoGreen, width: 4),
+                      )
+                    : null,
               ),
               child: Row(
                 children: [
-                  // Checkbox
+                  // Checkbox (SEM BORDA)
                   InkWell(
                     onTap: () {
                       setState(() {
@@ -943,11 +847,9 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: isTreinada ? AppColors.conhecimentoGreen : Colors.transparent,
-                        border: Border.all(
-                          color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
-                          width: 2,
-                        ),
+                        color: isTreinada
+                            ? AppColors.conhecimentoGreen
+                            : AppColors.darkGray.withValues(alpha: 0.3),
                       ),
                       child: isTreinada
                           ? const Icon(Icons.check, color: AppColors.deepBlack, size: 16)
@@ -968,12 +870,11 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                     ),
                   ),
 
-                  // Atributo
+                  // Atributo (SEM BORDA)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: _getAttrColor(attr).withOpacity(0.2),
-                      border: Border.all(color: _getAttrColor(attr)),
+                      color: _getAttrColor(attr).withValues(alpha: 0.2),
                     ),
                     child: Text(
                       attr,
@@ -1061,22 +962,21 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
               ),
             ).then((_) => setState(() {})); // Refresh ao voltar
           },
-          borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.energiaYellow.withOpacity(0.1),
-              border: Border.all(color: AppColors.energiaYellow.withOpacity(0.3), width: 2),
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.energiaYellow.withValues(alpha: 0.1),
+              border: Border(
+                left: BorderSide(color: AppColors.energiaYellow, width: 6),
+              ),
             ),
             child: Row(
               children: [
-                // Ícone grande
+                // Ícone grande (SEM BORDERRADIUS)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.energiaYellow.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.energiaYellow.withValues(alpha: 0.2),
                   ),
                   child: const Icon(
                     Icons.inventory_2,
@@ -1104,12 +1004,11 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.energiaYellow.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(12),
+                              color: AppColors.energiaYellow.withValues(alpha: 0.3),
                             ),
                             child: Text(
                               '$itemCount ITENS',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.energiaYellow,
@@ -1123,7 +1022,7 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                       Text(
                         'Gerencie seus itens e equipamentos',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.silver.withOpacity(0.6),
+                          color: AppColors.silver.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -1161,22 +1060,21 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
               ),
             ).then((_) => setState(() {})); // Refresh ao voltar
           },
-          borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.medoPurple.withOpacity(0.1),
-              border: Border.all(color: AppColors.medoPurple.withOpacity(0.3), width: 2),
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.medoPurple.withValues(alpha: 0.1),
+              border: Border(
+                left: BorderSide(color: AppColors.medoPurple, width: 6),
+              ),
             ),
             child: Row(
               children: [
-                // Ícone grande
+                // Ícone grande (SEM BORDERRADIUS)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.medoPurple.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.medoPurple.withValues(alpha: 0.2),
                   ),
                   child: const Icon(
                     Icons.auto_awesome,
@@ -1204,12 +1102,11 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.medoPurple.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(12),
+                              color: AppColors.medoPurple.withValues(alpha: 0.3),
                             ),
                             child: Text(
                               '$powerCount PODERES',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.medoPurple,
@@ -1223,7 +1120,7 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                       Text(
                         'Gerencie seus poderes paranormais',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.silver.withOpacity(0.6),
+                          color: AppColors.silver.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -1268,9 +1165,6 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
               color: AppColors.darkGray,
               border: Border(
                 left: BorderSide(color: AppColors.conhecimentoGreen, width: 4),
-                top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-                right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-                bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
               ),
             ),
             child: Column(
@@ -1287,7 +1181,7 @@ class _CharacterGrimoireScreenState extends State<CharacterGrimoireScreen>
                 Text(
                   entry.value,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.silver.withOpacity(0.7),
+                    color: AppColors.silver.withValues(alpha: 0.7),
                   ),
                 ),
               ],

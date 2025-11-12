@@ -3,6 +3,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../models/dice_roll_history.dart';
 import '../../core/database/dice_repository.dart';
+import '../../widgets/dice/hexagon_result_badge.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 
 /// Tela de histórico completo de rolagens de dados
 /// Mostra TODOS os rolls com opção de limpar histórico
@@ -98,84 +100,47 @@ class _DiceHistoryScreenState extends State<DiceHistoryScreen> {
         '${entry.timestamp.minute.toString().padLeft(2, '0')}:'
         '${entry.timestamp.second.toString().padLeft(2, '0')}';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border(
-          left: BorderSide(color: AppColors.magenta, width: 4),
-          top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Número do roll
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.magenta.withOpacity(0.2),
-              border: Border.all(color: AppColors.magenta),
-            ),
-            child: Center(
-              child: Text(
-                '${_history.length - index}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.magenta,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          // Horário
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
             children: [
+              // Timestamp
               Text(
                 time,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 11,
-                  color: AppColors.silver.withOpacity(0.7),
+                  color: Color(0xFF888888),
                   fontFamily: 'monospace',
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                entry.formula,
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.lightGray,
-                  fontSize: 13,
+              const SizedBox(width: 16),
+
+              // Fórmula
+              Expanded(
+                child: Text(
+                  entry.formula,
+                  style: const TextStyle(
+                    color: Color(0xFFe0e0e0),
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                  ),
                 ),
+              ),
+              const SizedBox(width: 16),
+
+              // Total em hexágono vermelho
+              HexagonResultBadge(
+                value: entry.total,
+                isSmall: true,
               ),
             ],
           ),
-
-          const Spacer(),
-
-          // Resultado
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.energiaYellow.withOpacity(0.2),
-              border: Border.all(color: AppColors.energiaYellow),
-            ),
-            child: Text(
-              entry.total.toString(),
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.energiaYellow,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+        // Divisor arranhado
+        const GrungeDivider(heavy: false),
+      ],
     );
   }
 

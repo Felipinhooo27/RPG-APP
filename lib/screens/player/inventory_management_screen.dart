@@ -6,6 +6,7 @@ import '../../models/item.dart';
 import '../../core/database/item_repository.dart';
 import '../../core/database/character_repository.dart';
 import '../../core/utils/item_export_helper.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 import 'item_form_screen.dart';
 
 /// Tela completa de gerenciamento de inventário
@@ -133,12 +134,6 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addItem,
-        backgroundColor: AppColors.magenta,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: const Icon(Icons.add, color: AppColors.deepBlack),
-      ),
       body: Column(
         children: [
           // Header: Créditos e Peso
@@ -199,14 +194,43 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                 ),
               ),
               const Spacer(),
+              // Link de texto para adicionar créditos
               InkWell(
                 onTap: _addCredits,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.conhecimentoGreen),
-                  ),
-                  child: const Icon(Icons.add, color: AppColors.conhecimentoGreen, size: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.add, size: 14, color: AppColors.scarletRed),
+                    const SizedBox(width: 4),
+                    Text(
+                      'ADICIONAR',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.scarletRed,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Botão de adicionar item
+              InkWell(
+                onTap: _addItem,
+                child: Row(
+                  children: [
+                    Icon(Icons.add, size: 14, color: AppColors.scarletRed),
+                    const SizedBox(width: 4),
+                    Text(
+                      'NOVO ITEM',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.scarletRed,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -240,10 +264,7 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
           const SizedBox(height: 8),
           Container(
             height: 6,
-            decoration: BoxDecoration(
-              color: AppColors.deepBlack,
-              border: Border.all(color: weightColor.withOpacity(0.3)),
-            ),
+            color: AppColors.deepBlack,
             child: FractionallySizedBox(
               widthFactor: percentual.clamp(0.0, 1.0),
               alignment: Alignment.centerLeft,
@@ -310,9 +331,9 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                 borderRadius: BorderRadius.zero,
                 borderSide: BorderSide(color: AppColors.silver.withOpacity(0.3)),
               ),
-              focusedBorder: const OutlineInputBorder(
+              focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.zero,
-                borderSide: BorderSide(color: AppColors.magenta, width: 2),
+                borderSide: BorderSide(color: AppColors.silver.withOpacity(0.5), width: 1),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             ),
@@ -336,12 +357,20 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                       _applyFilters();
                     });
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.neonRed),
-                    ),
-                    child: const Icon(Icons.clear, color: AppColors.neonRed, size: 20),
+                  child: Row(
+                    children: [
+                      Icon(Icons.clear, size: 14, color: AppColors.scarletRed),
+                      const SizedBox(width: 4),
+                      Text(
+                        'LIMPAR',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.scarletRed,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -439,10 +468,9 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
   }
 
   Widget _buildItemList() {
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _filteredItems.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = _filteredItems[index];
         return _buildItemCard(item);
@@ -451,67 +479,56 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
   }
 
   Widget _buildItemCard(Item item) {
-    final tipoColor = _getItemTypeColor(item.tipo);
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border(
-          left: BorderSide(color: tipoColor, width: 4),
-          top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Nome e Tipo
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              // Header: Tipo e Nome
+              Row(
+                children: [
+                  // Tipo como texto vermelho
+                  Text(
+                    _getTipoNome(item.tipo).toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.scarletRed,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  if (item.categoria != null) ...[
+                    const SizedBox(width: 8),
                     Text(
-                      item.nome.toUpperCase(),
-                      style: AppTextStyles.uppercase.copyWith(
-                        fontSize: 13,
-                        color: AppColors.lightGray,
+                      '• ${item.categoria}',
+                      style: TextStyle(
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
+                        color: AppColors.scarletRed,
+                        letterSpacing: 1.0,
                       ),
                     ),
-                    if (item.categoria != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        item.categoria!,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: tipoColor.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
                   ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: tipoColor.withOpacity(0.2),
-                  border: Border.all(color: tipoColor),
-                ),
-                child: Text(
-                  _getTipoNome(item.tipo).toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: tipoColor,
+                  const Spacer(),
+                  // Ícone de compartilhar
+                  InkWell(
+                    onTap: () => _exportItem(item),
+                    child: const Icon(Icons.share, size: 16, color: AppColors.scarletRed),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.nome.toUpperCase(),
+                style: AppTextStyles.uppercase.copyWith(
+                  fontSize: 13,
+                  color: AppColors.lightGray,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
-          ),
 
           if (item.descricao.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -545,41 +562,31 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
 
           const SizedBox(height: 12),
 
-          // Ações
+          // Ações como texto simples
           Row(
             children: [
-              Expanded(
-                child: _buildActionButton(
-                  'EDITAR',
-                  Icons.edit,
-                  AppColors.conhecimentoGreen,
-                  () => _editItem(item),
-                ),
+              _buildActionLink(
+                'EDITAR',
+                Icons.edit,
+                AppColors.scarletRed,
+                () => _editItem(item),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildActionButton(
-                  'EXCLUIR',
-                  Icons.delete,
-                  AppColors.neonRed,
-                  () => _deleteItem(item),
-                ),
-              ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () => _exportItem(item),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.magenta),
-                  ),
-                  child: const Icon(Icons.share, color: AppColors.magenta, size: 16),
-                ),
+              const SizedBox(width: 16),
+              _buildActionLink(
+                'EXCLUIR',
+                Icons.delete,
+                AppColors.scarletRed,
+                () => _deleteItem(item),
               ),
             ],
           ),
         ],
       ),
+    ),
+
+    // Divisor arranhado entre itens
+    const GrungeDivider(heavy: false),
+      ],
     );
   }
 
@@ -606,29 +613,24 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionLink(String label, IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          border: Border.all(color: color),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 14),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+              letterSpacing: 1.0,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

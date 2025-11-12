@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 
 /// Tela de Notas da Campanha (Mestre)
 /// Sistema de anotações organizadas por categorias
@@ -98,49 +99,42 @@ class _NotesScreenState extends State<NotesScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createNote,
-        backgroundColor: AppColors.magenta,
-        child: const Icon(Icons.add),
-      ),
     );
   }
 
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border(
-          bottom: BorderSide(color: AppColors.magenta.withOpacity(0.3), width: 2),
-        ),
-      ),
+      color: AppColors.darkGray,
       child: Row(
         children: [
-          const Icon(Icons.notes, color: AppColors.magenta, size: 20),
+          const Icon(Icons.notes, color: AppColors.scarletRed, size: 20),
           const SizedBox(width: 8),
           Text(
             'NOTAS DA CAMPANHA',
             style: AppTextStyles.uppercase.copyWith(
               fontSize: 14,
-              color: AppColors.magenta,
+              color: AppColors.lightGray,
             ),
           ),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.magenta.withOpacity(0.2),
-              border: Border.all(color: AppColors.magenta),
-            ),
-            child: Text(
-              '${_notes.length} NOTAS',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: AppColors.magenta,
-                letterSpacing: 1.0,
-              ),
+          // Botão de adicionar como texto vermelho (substitui FAB)
+          InkWell(
+            onTap: _createNote,
+            child: Row(
+              children: [
+                Icon(Icons.add, size: 16, color: AppColors.scarletRed),
+                const SizedBox(width: 4),
+                Text(
+                  'NOVA NOTA',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.scarletRed,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -156,30 +150,20 @@ class _NotesScreenState extends State<NotesScreen> {
         scrollDirection: Axis.horizontal,
         children: NoteCategory.values.map((category) {
           final isSelected = _selectedCategory == category;
-          final color = _getCategoryColor(category);
 
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 16),
             child: InkWell(
               onTap: () => setState(() => _selectedCategory = category),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: isSelected ? color.withOpacity(0.2) : AppColors.darkGray,
-                  border: Border.all(
-                    color: isSelected ? color : AppColors.silver.withOpacity(0.3),
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    _getCategoryLabel(category),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? color : AppColors.silver,
-                      letterSpacing: 1.0,
-                    ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                child: Text(
+                  _getCategoryLabel(category),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? AppColors.scarletRed : AppColors.silver.withOpacity(0.7),
+                    letterSpacing: 1.0,
                   ),
                 ),
               ),
@@ -220,10 +204,9 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNotesList(List<CampaignNote> notes) {
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: notes.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final note = notes[index];
         return _buildNoteCard(note);
@@ -232,72 +215,62 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNoteCard(CampaignNote note) {
-    final color = _getCategoryColor(note.category);
-
     return InkWell(
       onTap: () => _viewNote(note),
       onLongPress: () => _deleteNote(note),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.darkGray,
-          border: Border(
-            left: BorderSide(color: color, width: 4),
-            top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-            right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-            bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    border: Border.all(color: color),
-                  ),
-                  child: Text(
-                    _getCategoryLabel(note.category),
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                      letterSpacing: 1.0,
+                Row(
+                  children: [
+                    // Categoria como texto vermelho
+                    Text(
+                      _getCategoryLabel(note.category).toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.scarletRed,
+                        letterSpacing: 1.0,
+                      ),
                     ),
+                    const Spacer(),
+                    Text(
+                      _formatTimestamp(note.timestamp),
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: AppColors.silver.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  note.title.toUpperCase(),
+                  style: AppTextStyles.uppercase.copyWith(
+                    fontSize: 13,
+                    color: AppColors.lightGray,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 8),
                 Text(
-                  _formatTimestamp(note.timestamp),
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: AppColors.silver.withOpacity(0.5),
+                  note.content,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.silver.withOpacity(0.7),
                   ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              note.title.toUpperCase(),
-              style: AppTextStyles.uppercase.copyWith(
-                fontSize: 13,
-                color: AppColors.lightGray,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              note.content,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.silver.withOpacity(0.7),
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+          ),
+          // Divisor arranhado entre notas
+          const GrungeDivider(heavy: false),
+        ],
       ),
     );
   }
