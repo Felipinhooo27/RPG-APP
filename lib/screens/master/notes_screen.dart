@@ -148,6 +148,7 @@ class _NotesScreenState extends State<NotesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListView(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         children: NoteCategory.values.map((category) {
           final isSelected = _selectedCategory == category;
 
@@ -165,6 +166,8 @@ class _NotesScreenState extends State<NotesScreen> {
                     color: isSelected ? AppColors.scarletRed : AppColors.silver.withOpacity(0.7),
                     letterSpacing: 1.0,
                   ),
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
                 ),
               ),
             ),

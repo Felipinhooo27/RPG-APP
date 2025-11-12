@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:uuid/uuid.dart';
 import '../../models/character.dart';
 
@@ -108,10 +109,10 @@ class CharacterGenerator {
   ///
   /// Regras:
   /// - Todos começam em 0
-  /// - Você tem 4 pontos para distribuir
-  /// - Máximo +3 inicial
-  /// - Pode reduzir 1 atributo para -1 e ganhar +1 ponto extra (total 5 pontos)
-  /// - Apenas 1 atributo pode ser -1
+  /// - Limite recomendado: 4 pontos para distribuir
+  /// - Máximo +5 por atributo
+  /// - Mínimo: 0
+  /// - Total de pontos: flexível (até 25)
   static bool isValidAttributeDistribution(
     int forca,
     int agilidade,
@@ -122,17 +123,11 @@ class CharacterGenerator {
     // Verifica limites
     final attributes = [forca, agilidade, vigor, intelecto, presenca];
 
-    // Conta quantos são -1
-    final negativeCount = attributes.where((a) => a == -1).length;
+    // Nenhum pode ser menor que 0
+    if (attributes.any((a) => a < 0)) return false;
 
-    // Só pode ter no máximo 1 atributo em -1
-    if (negativeCount > 1) return false;
-
-    // Nenhum pode ser menor que -1
-    if (attributes.any((a) => a < -1)) return false;
-
-    // Nenhum pode ser maior que 3 inicialmente
-    if (attributes.any((a) => a > 3)) return false;
+    // Nenhum pode ser maior que 5
+    if (attributes.any((a) => a > 5)) return false;
 
     // Calcula pontos gastos
     int pontosGastos = 0;
@@ -142,26 +137,22 @@ class CharacterGenerator {
       }
     }
 
-    // Se tem 1 atributo em -1, ganha +1 ponto (total 5)
-    // Se não tem nenhum em -1, tem 4 pontos
-    final pontosDisponiveis = negativeCount == 1 ? 5 : 4;
-
-    return pontosGastos == pontosDisponiveis;
+    // Permite distribuição flexível (até 25 pontos total)
+    return pontosGastos <= 25;
   }
 
   /// Gera uma distribuição de atributos COMPLETAMENTE ALEATÓRIA e válida
   ///
   /// Usa um algoritmo que:
-  /// 1. Decide aleatoriamente se vai usar um atributo negativo (-1) ou não
+  /// 1. SEMPRE distribui exatamente 4 pontos
   /// 2. Distribui os pontos de forma aleatória respeitando as regras
-  /// 3. Garante que todos os builds sejam válidos mas MUITO variados
+  /// 3. Máximo +5 por atributo, mínimo 0 (NUNCA usa -1)
   static Map<String, int> generateRandomDistribution() {
-    final random = DateTime.now().millisecondsSinceEpoch;
+    final random = Random();
     final attributes = ['forca', 'agilidade', 'vigor', 'intelecto', 'presenca'];
 
-    // 30% de chance de usar um atributo negativo para ter 5 pontos
-    final useNegative = (random % 100) < 30;
-    final pontosDisponiveis = useNegative ? 5 : 4;
+    // SEMPRE usa 4 pontos (nunca atributo negativo)
+    final pontosDisponiveis = 4;
 
     // Inicializa todos em 0
     final distribution = <String, int>{
@@ -172,35 +163,24 @@ class CharacterGenerator {
       'presenca': 0,
     };
 
-    // Se usar negativo, escolhe um atributo aleatório para ser -1
-    if (useNegative) {
-      final negativeIndex = (random ~/ 7) % attributes.length;
-      distribution[attributes[negativeIndex]] = -1;
-    }
-
-    // Distribui os pontos de forma aleatória
+    // Distribui os 4 pontos um por um, de forma aleatória
     var pontosRestantes = pontosDisponiveis;
-    var tentativas = 0;
 
-    while (pontosRestantes > 0 && tentativas < 100) {
-      // Escolhe um atributo aleatório que não seja negativo
-      final attrIndex = (random + tentativas * 13) % attributes.length;
-      final attr = attributes[attrIndex];
+    while (pontosRestantes > 0) {
+      // Filtra atributos que podem receber pontos (< 5)
+      final atributosDisponiveis = attributes.where((attr) {
+        return distribution[attr]! < 5;
+      }).toList();
 
-      if (distribution[attr]! < 3 && distribution[attr]! >= 0) {
-        // Decide quantos pontos colocar (1 a 3, mas não pode exceder restantes)
-        final pontosAColocar = ((random + tentativas * 7) % 3) + 1;
-        final pontos = pontosAColocar.clamp(1, pontosRestantes);
+      // Se não houver atributos disponíveis, para (não deveria acontecer)
+      if (atributosDisponiveis.isEmpty) break;
 
-        // Garante que não ultrapasse 3
-        final novoValor = (distribution[attr]! + pontos).clamp(0, 3);
-        final pontosUsados = novoValor - distribution[attr]!;
+      // Escolhe um atributo aleatório da lista de disponíveis
+      final attr = atributosDisponiveis[random.nextInt(atributosDisponiveis.length)];
 
-        distribution[attr] = novoValor;
-        pontosRestantes -= pontosUsados;
-      }
-
-      tentativas++;
+      // Adiciona 1 ponto
+      distribution[attr] = distribution[attr]! + 1;
+      pontosRestantes--;
     }
 
     return distribution;

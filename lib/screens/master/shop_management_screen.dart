@@ -4,6 +4,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../models/shop.dart';
 import '../../core/database/shop_repository.dart';
 import '../../core/utils/clipboard_helper.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 import 'shop_edit_screen.dart';
 
 /// Tela de gerenciamento de lojas para mestres
@@ -48,18 +49,58 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.deepBlack,
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.magenta),
-            )
-          : _shops.isEmpty
-              ? _buildEmptyState()
-              : _buildShopList(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createShop,
-        backgroundColor: AppColors.magenta,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        child: const Icon(Icons.add, color: AppColors.deepBlack),
+      body: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.scarletRed),
+                  )
+                : _shops.isEmpty
+                    ? _buildEmptyState()
+                    : _buildShopList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.darkGray,
+        border: Border(
+          bottom: BorderSide(color: AppColors.scarletRed.withOpacity(0.3), width: 2),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.store, color: AppColors.scarletRed, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            'GERENCIAR LOJAS',
+            style: AppTextStyles.uppercase.copyWith(
+              fontSize: 14,
+              color: AppColors.lightGray,
+            ),
+          ),
+          const Spacer(),
+          InkWell(
+            onTap: _createShop,
+            child: Text(
+              '[ + NOVA LOJA ]',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: AppColors.scarletRed,
+                letterSpacing: 1.0,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -91,7 +132,10 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _shops.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      separatorBuilder: (context, index) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: GrungeDivider(heavy: true, color: AppColors.scarletRed),
+      ),
       itemBuilder: (context, index) {
         final shop = _shops[index];
         return _buildShopCard(shop);
@@ -100,18 +144,13 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
   }
 
   Widget _buildShopCard(Shop shop) {
-    final typeColor = _getShopTypeColor(shop.tipo);
     final typeIcon = _getShopTypeIcon(shop.tipo);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.darkGray,
         border: Border(
-          left: BorderSide(color: typeColor, width: 4),
-          top: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          right: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-          bottom: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+          bottom: BorderSide(color: AppColors.silver.withOpacity(0.1)),
         ),
       ),
       child: Column(
@@ -120,7 +159,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
           // Header: Nome e Tipo
           Row(
             children: [
-              Icon(typeIcon, color: typeColor, size: 24),
+              Icon(typeIcon, color: AppColors.scarletRed, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -139,25 +178,17 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
                       _getShopTypeName(shop.tipo),
                       style: TextStyle(
                         fontSize: 11,
-                        color: typeColor.withOpacity(0.7),
+                        color: AppColors.silver.withOpacity(0.7),
                       ),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: typeColor.withOpacity(0.2),
-                  border: Border.all(color: typeColor),
-                ),
-                child: Text(
-                  '${shop.itens.length} ITENS',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: typeColor,
-                  ),
+              Text(
+                '(${shop.itens.length} itens)',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.silver.withOpacity(0.6),
                 ),
               ),
             ],
@@ -177,73 +208,63 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
 
           const SizedBox(height: 16),
 
-          // Ações
+          // Ações como links de texto
           Row(
             children: [
-              Expanded(
-                child: _buildActionButton(
+              InkWell(
+                onTap: () => _editShop(shop),
+                child: Text(
                   'EDITAR',
-                  Icons.edit,
-                  AppColors.conhecimentoGreen,
-                  () => _editShop(shop),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.lightGray,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildActionButton(
+              Text('  |  ', style: TextStyle(color: AppColors.silver.withOpacity(0.3))),
+              InkWell(
+                onTap: () => _exportShop(shop),
+                child: Text(
                   'EXPORTAR',
-                  Icons.share,
-                  AppColors.magenta,
-                  () => _exportShop(shop),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.lightGray,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildActionButton(
+              Text('  |  ', style: TextStyle(color: AppColors.silver.withOpacity(0.3))),
+              InkWell(
+                onTap: () => _duplicateShop(shop),
+                child: Text(
                   'DUPLICAR',
-                  Icons.content_copy,
-                  AppColors.energiaYellow,
-                  () => _duplicateShop(shop),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.lightGray,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildActionButton(
+              Text('  |  ', style: TextStyle(color: AppColors.silver.withOpacity(0.3))),
+              InkWell(
+                onTap: () => _deleteShop(shop),
+                child: Text(
                   'EXCLUIR',
-                  Icons.delete,
-                  AppColors.neonRed,
-                  () => _deleteShop(shop),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.scarletRed,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          border: Border.all(color: color),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -327,7 +348,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${shop.nome} duplicada!'),
-            backgroundColor: AppColors.conhecimentoGreen,
+            backgroundColor: AppColors.scarletRed,
           ),
         );
       }
@@ -377,7 +398,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('${shop.nome} excluída'),
-                backgroundColor: AppColors.conhecimentoGreen,
+                backgroundColor: AppColors.scarletRed,
               ),
             );
           }
@@ -417,14 +438,14 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
             title: Row(
               children: [
-                const Icon(Icons.share, color: AppColors.magenta, size: 20),
+                const Icon(Icons.share, color: AppColors.scarletRed, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'EXPORTAR LOJA',
                     style: AppTextStyles.uppercase.copyWith(
                       fontSize: 14,
-                      color: AppColors.magenta,
+                      color: AppColors.scarletRed,
                     ),
                   ),
                 ),
@@ -501,7 +522,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${shop.nome} copiada para área de transferência!'),
-                        backgroundColor: AppColors.conhecimentoGreen,
+                        backgroundColor: AppColors.scarletRed,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -511,8 +532,8 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
                 icon: const Icon(Icons.copy),
                 label: const Text('COPIAR'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.magenta,
-                  foregroundColor: AppColors.deepBlack,
+                  backgroundColor: AppColors.scarletRed,
+                  foregroundColor: AppColors.lightGray,
                   shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                 ),
               ),

@@ -31,12 +31,34 @@ class CharacterSelectionScreen extends StatefulWidget {
 class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   final CharacterRepository _characterRepo = CharacterRepository();
   List<Character> _characters = [];
+  List<Character> _filteredCharacters = [];
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadCharacters();
+    _searchController.addListener(_filterCharacters);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterCharacters() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredCharacters = _characters;
+      } else {
+        _filteredCharacters = _characters
+            .where((char) => char.nome.toLowerCase().contains(query))
+            .toList();
+      }
+    });
   }
 
   Future<void> _loadCharacters() async {
@@ -49,6 +71,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
 
       setState(() {
         _characters = characters;
+        _filteredCharacters = characters;
         _isLoading = false;
       });
     } catch (e) {
@@ -66,7 +89,10 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
     return Scaffold(
       backgroundColor: AppColors.deepBlack,
       appBar: AppBar(
-        title: const Text('COM QUEM VOCÊ QUER JOGAR?'),
+        title: Text(
+          widget.isMasterMode ? 'SELECIONAR NPC' : 'SELECIONAR PERSONAGEM',
+          style: AppTextStyles.title,
+        ),
         actions: [
           if (!widget.isMasterMode)
             IconButton(
@@ -86,13 +112,98 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.scarletRed),
             )
-          : _characters.isEmpty
-              ? _buildEmptyState()
-              : _buildCharacterList(),
+          : Column(
+              children: [
+                if (_characters.isNotEmpty) _buildSearchBar(),
+                Expanded(
+                  child: _filteredCharacters.isEmpty && _searchController.text.isNotEmpty
+                      ? _buildNoResultsState()
+                      : _characters.isEmpty
+                          ? _buildEmptyState()
+                          : _buildCharacterList(),
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _createNewCharacter,
         backgroundColor: AppColors.scarletRed,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.scarletRed.withOpacity(0.3)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search, color: AppColors.silver.withOpacity(0.7), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              style: AppTextStyles.body.copyWith(color: AppColors.lightGray),
+              decoration: InputDecoration(
+                hintText: widget.isMasterMode ? 'Pesquisar NPCs...' : 'Pesquisar personagens...',
+                hintStyle: AppTextStyles.body.copyWith(
+                  color: AppColors.silver.withOpacity(0.3),
+                ),
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.scarletRed.withOpacity(0.5)),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.scarletRed.withOpacity(0.3)),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.scarletRed, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+          if (_searchController.text.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.close, color: AppColors.silver.withOpacity(0.7), size: 20),
+              onPressed: () {
+                _searchController.clear();
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoResultsState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: AppColors.silver.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'NENHUM RESULTADO',
+            style: AppTextStyles.title.copyWith(
+              color: AppColors.silver.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Nenhum personagem encontrado com "${_searchController.text}"',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.silver.withOpacity(0.5),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -130,21 +241,19 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   Widget _buildCharacterList() {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _characters.length,
+      itemCount: _filteredCharacters.length,
       separatorBuilder: (_, __) => Divider(
         color: AppColors.silver.withOpacity(0.2),
         height: 1,
       ),
       itemBuilder: (context, index) {
-        final character = _characters[index];
+        final character = _filteredCharacters[index];
         return _buildCharacterTile(character);
       },
     );
   }
 
   Widget _buildCharacterTile(Character character) {
-    final classColor = _getClassColor(character.classe);
-
     return InkWell(
       onTap: () => _selectCharacter(character),
       onLongPress: () => _showContextMenu(character),
@@ -152,24 +261,11 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           children: [
-            // Avatar hexagonal (simplificado por enquanto)
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: classColor.withOpacity(0.2),
-                border: Border.all(color: classColor, width: 2),
-              ),
-              child: Center(
-                child: Text(
-                  character.nome[0].toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: classColor,
-                  ),
-                ),
-              ),
+            // Ícone simples em vermelho-sangue
+            Icon(
+              Icons.person,
+              color: AppColors.scarletRed,
+              size: 32,
             ),
 
             const SizedBox(width: 16),
@@ -182,7 +278,10 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                   // Nome
                   Text(
                     character.nome.toUpperCase(),
-                    style: AppTextStyles.uppercase,
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 14,
+                      color: AppColors.lightGray,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -195,18 +294,17 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                       Text(
                         character.classe.name.toUpperCase(),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: classColor,
+                          color: AppColors.scarletRed,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'NEX ${character.nex}%',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.magenta,
+                        '• NEX ${character.nex}%',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.silver.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -214,7 +312,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
 
                   const SizedBox(height: 8),
 
-                  // Barras inline (SEM CONTAINER)
+                  // Barras inline
                   Row(
                     children: [
                       _buildInlineBar(
@@ -243,11 +341,11 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
               ),
             ),
 
-            // Ícone classe
+            // Seta direita
             Icon(
-              _getClassIcon(character.classe),
-              color: classColor,
-              size: 32,
+              Icons.chevron_right,
+              color: AppColors.scarletRed,
+              size: 24,
             ),
           ],
         ),
@@ -330,7 +428,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
             selectedCharacter: character,
           ),
         ),
-      );
+      ).then((_) => _loadCharacters()); // FIX: Recarrega dados ao voltar!
     }
   }
 
@@ -343,7 +441,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: const Icon(Icons.edit, color: AppColors.conhecimentoGreen),
+            leading: const Icon(Icons.edit, color: AppColors.lightGray),
             title: Text('EDITAR', style: TextStyle(color: AppColors.lightGray)),
             onTap: () async {
               Navigator.pop(context);
@@ -362,7 +460,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.share, color: AppColors.magenta),
+            leading: const Icon(Icons.share, color: AppColors.lightGray),
             title: Text('EXPORTAR', style: TextStyle(color: AppColors.lightGray)),
             onTap: () {
               Navigator.pop(context);
@@ -370,8 +468,8 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.delete, color: AppColors.neonRed),
-            title: Text('DELETAR', style: TextStyle(color: AppColors.lightGray)),
+            leading: const Icon(Icons.delete, color: AppColors.scarletRed),
+            title: Text('DELETAR', style: TextStyle(color: AppColors.scarletRed)),
             onTap: () {
               Navigator.pop(context);
               _deleteCharacter(character);
@@ -400,7 +498,14 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.darkGray,
-        title: const Text('IMPORTAR PERSONAGENS'),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: Text(
+          'IMPORTAR PERSONAGEM',
+          style: AppTextStyles.uppercase.copyWith(
+            fontSize: 14,
+            color: AppColors.scarletRed,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -409,28 +514,44 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver),
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () async {
-                Navigator.pop(context);
-                await _importFromClipboard();
-              },
-              icon: const Icon(Icons.content_paste),
-              label: const Text('COLAR DA ÁREA DE TRANSFERÊNCIA'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _importFromClipboard();
+                },
+                icon: const Icon(Icons.content_paste),
+                label: const Text('COLAR DA ÁREA DE TRANSFERÊNCIA'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.scarletRed,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                ),
+              ),
             ),
             const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _showManualImport();
-              },
-              icon: const Icon(Icons.edit),
-              label: const Text('DIGITAR MANUALMENTE'),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showManualImport();
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('DIGITAR MANUALMENTE'),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColors.scarletRed),
+                  foregroundColor: AppColors.scarletRed,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                ),
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: AppColors.silver),
             child: const Text('CANCELAR'),
           ),
         ],
@@ -536,21 +657,39 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.darkGray,
-        title: const Text('DIGITAR JSON'),
-        content: SizedBox(
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        title: Text(
+          'DIGITAR JSON',
+          style: AppTextStyles.uppercase.copyWith(
+            fontSize: 14,
+            color: AppColors.scarletRed,
+          ),
+        ),
+        content: Container(
           width: double.maxFinite,
+          height: 300,
+          padding: const EdgeInsets.all(12),
+          color: AppColors.deepBlack,
           child: TextField(
             controller: controller,
-            maxLines: 10,
-            style: AppTextStyles.bodySmall,
-            decoration: const InputDecoration(
-              hintText: '{\n  "version": "1.0",\n  "type": "character",\n  ...\n}',
+            maxLines: null,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.lightGray,
+              fontFamily: 'monospace',
+            ),
+            decoration: InputDecoration(
+              hintText: '{\n  "version": "2.0",\n  "type": "character",\n  ...\n}',
+              hintStyle: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.silver.withOpacity(0.3),
+              ),
+              border: InputBorder.none,
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: AppColors.silver),
             child: const Text('CANCELAR'),
           ),
           ElevatedButton(
@@ -625,6 +764,10 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                 );
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.scarletRed,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
             child: const Text('IMPORTAR'),
           ),
         ],
@@ -644,20 +787,12 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
           builder: (context) => AlertDialog(
             backgroundColor: AppColors.darkGray,
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-            title: Row(
-              children: [
-                const Icon(Icons.share, color: AppColors.magenta, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'EXPORTAR PERSONAGEM',
-                    style: AppTextStyles.uppercase.copyWith(
-                      fontSize: 14,
-                      color: AppColors.magenta,
-                    ),
-                  ),
-                ),
-              ],
+            title: Text(
+              'EXPORTAR PERSONAGEM',
+              style: AppTextStyles.uppercase.copyWith(
+                fontSize: 14,
+                color: AppColors.scarletRed,
+              ),
             ),
             content: SizedBox(
               width: double.maxFinite,
@@ -716,7 +851,7 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${character.nome} copiado para área de transferência!'),
-                        backgroundColor: AppColors.conhecimentoGreen,
+                        backgroundColor: AppColors.scarletRed,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -726,7 +861,8 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
                 icon: const Icon(Icons.copy),
                 label: const Text('COPIAR'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.magenta,
+                  backgroundColor: AppColors.scarletRed,
+                  foregroundColor: AppColors.lightGray,
                   shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                 ),
               ),

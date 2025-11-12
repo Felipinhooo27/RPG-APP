@@ -46,6 +46,7 @@ class AppTheme {
       ),
 
       // Elevated Button - SEM elevation, SEM borderRadius
+      // NOTA: Use Text com softWrap: false para evitar quebras de linha
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
@@ -54,10 +55,12 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           textStyle: AppTextStyles.button,
+          minimumSize: const Size(0, 48), // altura mínima para evitar cortes
         ),
       ),
 
       // Outlined Button - SEM borderRadius
+      // NOTA: Use Text com softWrap: false para evitar quebras de linha
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.scarletRed, width: 1),
@@ -65,15 +68,18 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           textStyle: AppTextStyles.button,
+          minimumSize: const Size(0, 48), // altura mínima para evitar cortes
         ),
       ),
 
       // Text Button - minimalista
+      // NOTA: Use Text com softWrap: false para evitar quebras de linha
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.scarletRed,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           textStyle: AppTextStyles.button,
+          minimumSize: const Size(0, 40), // altura mínima para evitar cortes
         ),
       ),
 

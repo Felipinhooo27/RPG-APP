@@ -219,16 +219,20 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              TextButton.icon(
-                onPressed: _addFromCharacters,
-                icon: const Icon(Icons.person_add, color: AppColors.lightGray, size: 18),
-                label: Text(
-                  'ADICIONAR PERSONAGEM',
-                  style: TextStyle(
-                    color: AppColors.lightGray,
-                    fontSize: 12,
-                    letterSpacing: 1.0,
-                    fontWeight: FontWeight.bold,
+              Flexible(
+                child: TextButton.icon(
+                  onPressed: _addFromCharacters,
+                  icon: const Icon(Icons.person_add, color: AppColors.lightGray, size: 18),
+                  label: Text(
+                    'ADICIONAR PERSONAGEM',
+                    style: TextStyle(
+                      color: AppColors.lightGray,
+                      fontSize: 11,
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -237,16 +241,20 @@ class _IniciativaScreenState extends State<IniciativaScreen> {
                 height: 30,
                 color: AppColors.silver.withValues(alpha: 0.2),
               ),
-              TextButton.icon(
-                onPressed: _addCustomCombatant,
-                icon: const Icon(Icons.group_add, color: AppColors.lightGray, size: 18),
-                label: Text(
-                  'ADICIONAR INIMIGO',
-                  style: TextStyle(
-                    color: AppColors.lightGray,
-                    fontSize: 12,
-                    letterSpacing: 1.0,
-                    fontWeight: FontWeight.bold,
+              Flexible(
+                child: TextButton.icon(
+                  onPressed: _addCustomCombatant,
+                  icon: const Icon(Icons.group_add, color: AppColors.lightGray, size: 18),
+                  label: Text(
+                    'ADICIONAR INIMIGO',
+                    style: TextStyle(
+                      color: AppColors.lightGray,
+                      fontSize: 11,
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),

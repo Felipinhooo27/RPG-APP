@@ -6,6 +6,11 @@ import '../../core/utils/unified_character_generator.dart';
 import '../../core/database/character_repository.dart';
 import '../../core/database/item_repository.dart';
 import '../../core/database/power_repository.dart';
+import '../../widgets/generator/tier_list_item.dart';
+import '../../widgets/generator/sexo_selector.dart';
+import '../../widgets/generator/generate_button.dart';
+import '../../widgets/common/minimal_text_field.dart';
+import 'package:flutter/services.dart';
 
 /// Tela Unificada de Geração de Personagens
 /// Combina Gerador Rápido + Avançado em uma interface
@@ -63,11 +68,15 @@ class _UnifiedCharacterGeneratorScreenState
           children: [
             Icon(Icons.flash_on, color: AppColors.neonRed, size: 24),
             const SizedBox(width: 8),
-            Text(
-              'GERADOR DE PERSONAGENS',
-              style: AppTextStyles.title.copyWith(
-                color: AppColors.neonRed,
-                fontSize: 16,
+            Flexible(
+              child: Text(
+                'GERADOR DE PERSONAGENS',
+                style: AppTextStyles.title.copyWith(
+                  color: AppColors.neonRed,
+                  fontSize: 16,
+                ),
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -135,95 +144,28 @@ class _UnifiedCharacterGeneratorScreenState
             letterSpacing: 1.5,
           ),
         ),
-        const SizedBox(height: 12),
-        ...CharacterTier.values.map((tier) {
+        const SizedBox(height: 16),
+        ...CharacterTier.values.asMap().entries.map((entry) {
+          final index = entry.key;
+          final tier = entry.value;
           final config = UnifiedCharacterGenerator.tierConfig[tier]!;
           final isSelected = _selectedTier == tier;
+          final isLast = index == CharacterTier.values.length - 1;
 
-          return GestureDetector(
+          return TierListItem(
+            title: tier.displayName.toUpperCase(),
+            description: tier.description,
+            nexPercentage: '${config['nex']}%',
+            points: config['pontos'] as int,
+            pvRange: '${config['pvMin']}-${config['pvMax']}',
+            peRange: '${config['peMin']}-${config['peMax']}',
+            isSelected: isSelected,
             onTap: () {
               setState(() {
                 _selectedTier = tier;
               });
             },
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.neonRed.withValues(alpha: 0.2)
-                    : AppColors.darkGray,
-                border: Border.all(
-                  color: isSelected ? AppColors.neonRed : AppColors.silver.withValues(alpha: 0.3),
-                  width: isSelected ? 2 : 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  // Indicador visual
-                  Container(
-                    width: 4,
-                    height: 40,
-                    color: _getTierColor(tier),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              tier.displayName.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? AppColors.neonRed : AppColors.lightGray,
-                              ),
-                            ),
-                            Text(
-                              'NEX ${config['nex']}%',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.magenta,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          tier.description,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.silver.withValues(alpha: 0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            _buildStatBadge(
-                              '${config['pontos']} pts',
-                              AppColors.conhecimentoGreen,
-                            ),
-                            _buildStatBadge(
-                              'PV ${config['pvMin']}-${config['pvMax']}',
-                              AppColors.neonRed,
-                            ),
-                            _buildStatBadge(
-                              'PE ${config['peMin']}-${config['peMax']}',
-                              AppColors.magenta,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            showDivider: !isLast,
           );
         }),
       ],
@@ -242,90 +184,35 @@ class _UnifiedCharacterGeneratorScreenState
             letterSpacing: 1.5,
           ),
         ),
-        const SizedBox(height: 12),
-
-        // Sexo
-        Text(
-          'SEXO',
-          style: TextStyle(
-            fontSize: 10,
-            color: AppColors.silver.withValues(alpha: 0.7),
-            letterSpacing: 1.0,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _buildSexoChip('Aleatório', null),
-            _buildSexoChip('Homem', Sexo.masculino),
-            _buildSexoChip('Mulher', Sexo.feminino),
-            _buildSexoChip('Não-binário', Sexo.naoBinario),
-          ],
-        ),
         const SizedBox(height: 16),
 
-        // Nome
-        Text(
-          'NOME (OPCIONAL)',
-          style: TextStyle(
-            fontSize: 10,
-            color: AppColors.silver.withValues(alpha: 0.7),
-            letterSpacing: 1.0,
-          ),
+        // Seletor de Sexo
+        SexoSelector(
+          selectedSexo: _selectedSexo,
+          onChanged: (sexo) {
+            setState(() {
+              _selectedSexo = sexo;
+            });
+          },
         ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.darkGray,
-            border: Border.all(color: AppColors.silver.withValues(alpha: 0.3)),
-          ),
-          child: TextField(
-            controller: _nameController,
-            style: TextStyle(color: AppColors.lightGray, fontSize: 14),
-            decoration: InputDecoration(
-              hintText: 'Deixe vazio para gerar automaticamente',
-              hintStyle: TextStyle(
-                color: AppColors.silver.withValues(alpha: 0.5),
-                fontSize: 12,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(12),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
 
-        // Iniciativa
-        Text(
-          'INICIATIVA BASE (OPCIONAL)',
-          style: TextStyle(
-            fontSize: 10,
-            color: AppColors.silver.withValues(alpha: 0.7),
-            letterSpacing: 1.0,
-          ),
+        // Campo Nome
+        MinimalTextField(
+          label: 'NOME (OPCIONAL)',
+          hintText: 'Deixe vazio para gerar automaticamente',
+          controller: _nameController,
         ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.darkGray,
-            border: Border.all(color: AppColors.silver.withValues(alpha: 0.3)),
-          ),
-          child: TextField(
-            controller: _iniciativaController,
-            style: TextStyle(color: AppColors.lightGray, fontSize: 14),
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: '0',
-              hintStyle: TextStyle(
-                color: AppColors.silver.withValues(alpha: 0.5),
-                fontSize: 12,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(12),
-            ),
-          ),
+        const SizedBox(height: 24),
+
+        // Campo Iniciativa
+        MinimalTextField(
+          label: 'INICIATIVA BASE (OPCIONAL)',
+          hintText: '0',
+          controller: _iniciativaController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          maxLength: 3,
         ),
       ],
     );
@@ -422,41 +309,9 @@ class _UnifiedCharacterGeneratorScreenState
   }
 
   Widget _buildGenerateButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isGenerating ? null : _handleGenerate,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.neonRed,
-          disabledBackgroundColor: AppColors.darkGray,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          elevation: 4,
-        ),
-        child: _isGenerating
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.flash_on, size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    'GERAR PERSONAGEM',
-                    style: AppTextStyles.body.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-      ),
+    return GenerateButton(
+      onPressed: _handleGenerate,
+      isLoading: _isGenerating,
     );
   }
 
@@ -533,75 +388,4 @@ class _UnifiedCharacterGeneratorScreenState
     }
   }
 
-  Widget _buildSexoChip(String label, Sexo? sexo) {
-    final isSelected = _selectedSexo == sexo;
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedSexo = sexo;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.neonRed.withValues(alpha: 0.3)
-              : Colors.transparent,
-          border: Border.all(
-            color: isSelected ? AppColors.neonRed : AppColors.silver.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? AppColors.neonRed : AppColors.silver,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatBadge(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        border: Border.all(color: color, width: 1),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  Color _getTierColor(CharacterTier tier) {
-    switch (tier) {
-      case CharacterTier.civilIniciante:
-        return Colors.grey;
-      case CharacterTier.mercenario:
-        return Colors.brown;
-      case CharacterTier.soldado:
-        return Colors.blue;
-      case CharacterTier.profissional:
-        return Colors.cyan;
-      case CharacterTier.lider:
-        return Colors.green;
-      case CharacterTier.chefe:
-        return Colors.purple;
-      case CharacterTier.elite:
-        return Colors.orange;
-      case CharacterTier.entidadeMenor:
-        return Colors.red;
-      case CharacterTier.entidadeMaior:
-        return Colors.amber;
-    }
-  }
 }

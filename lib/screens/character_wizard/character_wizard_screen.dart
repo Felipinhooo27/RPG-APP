@@ -4,6 +4,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/database/character_repository.dart';
 import '../../core/utils/character_generator.dart';
 import '../../models/character.dart';
+import '../../widgets/hexatombe_ui_components.dart';
 
 /// Wizard de criação de personagem em 6 etapas
 /// Design inline sem caixas, seguindo regras de Ordem Paranormal
@@ -62,11 +63,12 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
     _selectedOrigemValue = char.origem;
     _selectedClasse = char.classe;
     _selectedTrilha = char.trilha;
-    _forca = char.forca;
-    _agilidade = char.agilidade;
-    _vigor = char.vigor;
-    _intelecto = char.intelecto;
-    _presenca = char.presenca;
+    // Garante que valores estão no range correto (0 a 5)
+    _forca = char.forca.clamp(0, 5);
+    _agilidade = char.agilidade.clamp(0, 5);
+    _vigor = char.vigor.clamp(0, 5);
+    _intelecto = char.intelecto.clamp(0, 5);
+    _presenca = char.presenca.clamp(0, 5);
     _periciasTreinadasSelecionadas = List.from(char.periciasTreinadas);
   }
 
@@ -101,28 +103,30 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          // Conteúdo das etapas
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              onPageChanged: (index) => setState(() => _currentStep = index),
-              children: [
-                _buildStep1InfoBasica(),
-                _buildStep2OrigemClasse(),
-                _buildStep3Atributos(),
-                _buildStep4Stats(),
-                _buildStep5Pericias(),
-                _buildStep6Review(),
-              ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Conteúdo das etapas
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                onPageChanged: (index) => setState(() => _currentStep = index),
+                children: [
+                  _buildStep1InfoBasica(),
+                  _buildStep2OrigemClasse(),
+                  _buildStep3Atributos(),
+                  _buildStep4Stats(),
+                  _buildStep5Pericias(),
+                  _buildStep6Review(),
+                ],
+              ),
             ),
-          ),
 
-          // Botões de navegação
-          _buildNavigationButtons(),
-        ],
+            // Botões de navegação
+            _buildNavigationButtons(),
+          ],
+        ),
       ),
     );
   }
@@ -156,45 +160,44 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
           Text('INFORMAÇÕES BÁSICAS', style: AppTextStyles.title),
           const SizedBox(height: 24),
 
-          // Nome
-          Text('NOME DO PERSONAGEM', style: AppTextStyles.label),
-          const SizedBox(height: 8),
-          TextField(
+          // Nome - usando componente temático
+          HexatombeTextField(
+            label: 'NOME DO PERSONAGEM',
+            hintText: 'Ex: Enzo Rodrigues',
             controller: _nomeController,
-            style: AppTextStyles.body,
-            decoration: const InputDecoration(
-              hintText: 'Ex: Enzo Rodrigues',
-            ),
             textCapitalization: TextCapitalization.words,
+            onChanged: (value) => setState(() {}), // FIX: Reage em tempo real para validação
           ),
 
-          const SizedBox(height: 24),
-
-          // Patente (opcional)
-          Text('PATENTE (OPCIONAL)', style: AppTextStyles.label),
           const SizedBox(height: 8),
-          TextField(
-            controller: _patenteController,
-            style: AppTextStyles.body,
-            decoration: const InputDecoration(
-              hintText: 'Ex: Líder, Recruta, Operador',
+
+          // Link de nome aleatório (não é mais um botão com caixa)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _nomeController.text = CharacterGenerator.generateRandomName();
+              });
+            },
+            child: Text(
+              '[ GERAR NOME ALEATÓRIO ]',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+                color: AppColors.scarletRed,
+                fontFamily: 'monospace',
+              ),
             ),
-            textCapitalization: TextCapitalization.words,
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
-          // Botão nome aleatório
-          Center(
-            child: OutlinedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _nomeController.text = CharacterGenerator.generateRandomName();
-                });
-              },
-              icon: const Icon(Icons.shuffle),
-              label: const Text('NOME ALEATÓRIO'),
-            ),
+          // Patente (opcional) - usando componente temático
+          HexatombeTextField(
+            label: 'PATENTE (OPCIONAL)',
+            hintText: 'Ex: Líder, Recruta, Operador',
+            controller: _patenteController,
+            textCapitalization: TextCapitalization.words,
           ),
         ],
       ),
@@ -204,6 +207,9 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
   // ==================== STEP 2: ORIGEM & CLASSE ====================
 
   Widget _buildStep2OrigemClasse() {
+    // Controller temporário para Trilha (para usar HexatombeTextField)
+    final trilhaController = TextEditingController(text: _selectedTrilha ?? '');
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -212,97 +218,76 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
           Text('ORIGEM & CLASSE', style: AppTextStyles.title),
           const SizedBox(height: 24),
 
-          // Origem
-          Text('ORIGEM', style: AppTextStyles.label),
-          const SizedBox(height: 8),
-          _buildOrigemDropdown(),
+          // Origem - usando componente temático
+          HexatombeDropdown<Origem>(
+            label: 'ORIGEM',
+            value: _selectedOrigemValue,
+            hintText: 'Selecione uma origem',
+            items: Origem.values.map((origem) {
+              return DropdownMenuItem(
+                value: origem,
+                child: Text(origem.name.toUpperCase()),
+              );
+            }).toList(),
+            onChanged: (value) => setState(() => _selectedOrigemValue = value),
+          ),
 
+          // Descrição da origem (sem caixa, apenas texto cinza "typewriter")
           if (_selectedOrigemValue != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.silver.withOpacity(0.3)),
-              ),
-              child: Text(
-                CharacterGenerator.getOrigemDescription(_selectedOrigemValue!),
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver),
+            const SizedBox(height: 12),
+            Text(
+              CharacterGenerator.getOrigemDescription(_selectedOrigemValue!),
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF888888),
+                height: 1.5,
+                fontFamily: 'monospace',
               ),
             ),
           ],
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
-          // Classe
-          Text('CLASSE', style: AppTextStyles.label),
-          const SizedBox(height: 8),
-          _buildClasseDropdown(),
+          // Classe - usando componente temático
+          HexatombeDropdown<CharacterClass>(
+            label: 'CLASSE',
+            value: _selectedClasse,
+            hintText: 'Selecione uma classe',
+            items: CharacterClass.values.map((classe) {
+              return DropdownMenuItem(
+                value: classe,
+                child: Text(classe.name.toUpperCase()),
+              );
+            }).toList(),
+            onChanged: (value) => setState(() => _selectedClasse = value),
+          ),
 
+          // Descrição da classe (sem caixa, apenas texto cinza "typewriter")
           if (_selectedClasse != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.silver.withOpacity(0.3)),
-              ),
-              child: Text(
-                CharacterGenerator.getClasseDescription(_selectedClasse!),
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver),
+            const SizedBox(height: 12),
+            Text(
+              CharacterGenerator.getClasseDescription(_selectedClasse!),
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF888888),
+                height: 1.5,
+                fontFamily: 'monospace',
               ),
             ),
           ],
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
-          // Trilha (opcional por enquanto)
-          Text('TRILHA (OPCIONAL)', style: AppTextStyles.label),
-          const SizedBox(height: 8),
-          TextField(
-            onChanged: (value) => setState(() => _selectedTrilha = value.isEmpty ? null : value),
-            style: AppTextStyles.body,
-            decoration: const InputDecoration(
-              hintText: 'Ex: Operações Especiais, Medicina',
-            ),
+          // Trilha (opcional) - usando componente temático
+          HexatombeTextField(
+            label: 'TRILHA (OPCIONAL)',
+            hintText: 'Ex: Operações Especiais, Medicina',
+            controller: trilhaController,
             textCapitalization: TextCapitalization.words,
+            onChanged: (value) => setState(() => _selectedTrilha = value.isEmpty ? null : value),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildOrigemDropdown() {
-    return DropdownButtonFormField<Origem>(
-      value: _selectedOrigemValue,
-      style: AppTextStyles.body,
-      dropdownColor: AppColors.darkGray,
-      decoration: const InputDecoration(
-        hintText: 'Selecione uma origem',
-      ),
-      items: Origem.values.map((origem) {
-        return DropdownMenuItem(
-          value: origem,
-          child: Text(origem.name.toUpperCase()),
-        );
-      }).toList(),
-      onChanged: (value) => setState(() => _selectedOrigemValue = value),
-    );
-  }
-
-  Widget _buildClasseDropdown() {
-    return DropdownButtonFormField<CharacterClass>(
-      value: _selectedClasse,
-      style: AppTextStyles.body,
-      dropdownColor: AppColors.darkGray,
-      decoration: const InputDecoration(
-        hintText: 'Selecione uma classe',
-      ),
-      items: CharacterClass.values.map((classe) {
-        return DropdownMenuItem(
-          value: classe,
-          child: Text(classe.name.toUpperCase()),
-        );
-      }).toList(),
-      onChanged: (value) => setState(() => _selectedClasse = value),
     );
   }
 
@@ -325,13 +310,7 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
       'presenca': _presenca,
     });
 
-    final isValid = CharacterGenerator.isValidAttributeDistribution(
-      _forca,
-      _agilidade,
-      _vigor,
-      _intelecto,
-      _presenca,
-    );
+    final pontosRestantes = pontosDisponiveis - pontosUsados;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -339,147 +318,127 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('DISTRIBUIR ATRIBUTOS', style: AppTextStyles.title),
+          const SizedBox(height: 24),
+
+          // Display de pontos restantes (sem caixa, apenas texto temático)
+          Row(
+            children: [
+              Text(
+                'PONTOS RESTANTES:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                  color: Color(0xFFe0e0e0),
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                '$pontosRestantes',
+                style: TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.scarletRed,
+                  height: 1.0,
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 8),
 
-          // Info pontos
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isValid ? AppColors.conhecimentoGreen.withOpacity(0.1) : AppColors.neonRed.withOpacity(0.1),
-              border: Border.all(
-                color: isValid ? AppColors.conhecimentoGreen : AppColors.neonRed,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'PONTOS: $pontosUsados / $pontosDisponiveis',
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: isValid ? AppColors.conhecimentoGreen : AppColors.neonRed,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Máximo +3 inicial. Reduza 1 para -1 e ganhe +1 ponto extra.',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver),
-                ),
-              ],
+          // Dica em cinza-claro
+          Text(
+            'Distribua até 4 pontos (recomendado). Máximo +5 por atributo. Você pode avançar com pontos restantes.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFF888888),
+              height: 1.5,
             ),
           ),
 
           const SizedBox(height: 24),
-
-          // Sliders
-          _buildAttributeSlider('FORÇA', _forca, (v) => setState(() => _forca = v), AppColors.forRed),
-          const SizedBox(height: 16),
-          _buildAttributeSlider('AGILIDADE', _agilidade, (v) => setState(() => _agilidade = v), AppColors.agiGreen),
-          const SizedBox(height: 16),
-          _buildAttributeSlider('VIGOR', _vigor, (v) => setState(() => _vigor = v), AppColors.vigBlue),
-          const SizedBox(height: 16),
-          _buildAttributeSlider('INTELECTO', _intelecto, (v) => setState(() => _intelecto = v), AppColors.intMagenta),
-          const SizedBox(height: 16),
-          _buildAttributeSlider('PRESENÇA', _presenca, (v) => setState(() => _presenca = v), AppColors.preGold),
-
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3)),
           const SizedBox(height: 24),
 
-          // Botão de distribuição aleatória (destaque)
+          // Sliders - usando componentes temáticos (mínimo 0, máximo 5)
+          HexatombeSlider(
+            label: 'FORÇA',
+            value: _forca,
+            min: 0,
+            max: 5,
+            color: AppColors.forRed,
+            onChanged: (v) => setState(() => _forca = v),
+          ),
+          const SizedBox(height: 20),
+
+          HexatombeSlider(
+            label: 'AGILIDADE',
+            value: _agilidade,
+            min: 0,
+            max: 5,
+            color: AppColors.agiGreen,
+            onChanged: (v) => setState(() => _agilidade = v),
+          ),
+          const SizedBox(height: 20),
+
+          HexatombeSlider(
+            label: 'VIGOR',
+            value: _vigor,
+            min: 0,
+            max: 5,
+            color: AppColors.vigBlue,
+            onChanged: (v) => setState(() => _vigor = v),
+          ),
+          const SizedBox(height: 20),
+
+          HexatombeSlider(
+            label: 'INTELECTO',
+            value: _intelecto,
+            min: 0,
+            max: 5,
+            color: AppColors.intMagenta,
+            onChanged: (v) => setState(() => _intelecto = v),
+          ),
+          const SizedBox(height: 20),
+
+          HexatombeSlider(
+            label: 'PRESENÇA',
+            value: _presenca,
+            min: 0,
+            max: 5,
+            color: AppColors.preGold,
+            onChanged: (v) => setState(() => _presenca = v),
+          ),
+
+          const SizedBox(height: 32),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3)),
+          const SizedBox(height: 24),
+
+          // Link de distribuição aleatória (não é mais um botão com caixa)
           Center(
-            child: ElevatedButton.icon(
-              onPressed: () {
+            child: InkWell(
+              onTap: () {
                 final randomDist = CharacterGenerator.generateRandomDistribution();
                 _applySuggestedDistribution(randomDist);
               },
-              icon: const Icon(Icons.casino, size: 20),
-              label: const Text('DISTRIBUIÇÃO ALEATÓRIA'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.scarletRed,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              child: Text(
+                '[ DISTRIBUIÇÃO ALEATÓRIA ]',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: AppColors.scarletRed,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
           ),
 
-          const SizedBox(height: 24),
-
-          // Distribuições sugeridas
-          Text('DISTRIBUIÇÕES SUGERIDAS', style: AppTextStyles.labelMedium),
-          const SizedBox(height: 4),
-          Text(
-            'Clique em uma build para aplicar',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.silver.withOpacity(0.7),
-              fontSize: 10,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: CharacterGenerator.getSuggestedDistributions().map((dist) {
-              return OutlinedButton(
-                onPressed: () => _applySuggestedDistribution(dist),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.silver.withOpacity(0.3)),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                ),
-                child: Text(
-                  'FOR${dist['forca']} AGI${dist['agilidade']} VIG${dist['vigor']} INT${dist['intelecto']} PRE${dist['presenca']}',
-                  style: const TextStyle(fontSize: 10),
-                ),
-              );
-            }).toList(),
-          ),
+          // REMOVIDO: Distribuições sugeridas (conforme solicitado)
         ],
       ),
-    );
-  }
-
-  Widget _buildAttributeSlider(String label, int value, ValueChanged<int> onChanged, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: AppTextStyles.label),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                border: Border.all(color: color),
-              ),
-              child: Text(
-                value >= 0 ? '+$value' : '$value',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: color,
-            inactiveTrackColor: color.withOpacity(0.3),
-            thumbColor: color,
-            overlayColor: color.withOpacity(0.2),
-          ),
-          child: Slider(
-            value: value.toDouble(),
-            min: -1,
-            max: 3,
-            divisions: 4,
-            onChanged: (val) => onChanged(val.toInt()),
-          ),
-        ),
-        Container(height: 1, color: AppColors.silver.withOpacity(0.2)),
-      ],
     );
   }
 
@@ -507,92 +466,95 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
       agilidade: _agilidade,
     );
 
+    // Calcular Carga Máxima: 2 + (Força x 5)
+    final cargaMaxima = (2 + (_forca * 5)).clamp(5, 999); // Mínimo 5
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('ESTATÍSTICAS CALCULADAS', style: AppTextStyles.title),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
 
-          _buildStatRow('PV (PONTOS DE VIDA)', stats['pvMax']!, AppColors.pvRed, 'Base ${CharacterGenerator.pvBase[_selectedClasse]} + Vigor $_vigor'),
-          const SizedBox(height: 16),
-
-          _buildStatRow('PE (PONTOS DE ESFORÇO)', stats['peMax']!, AppColors.pePurple, 'Base ${CharacterGenerator.peBase[_selectedClasse]} + Presença $_presenca'),
-          const SizedBox(height: 16),
-
-          _buildStatRow('SAN (SANIDADE)', stats['sanMax']!, AppColors.sanYellow, 'Base ${CharacterGenerator.sanBase[_selectedClasse]}'),
-          const SizedBox(height: 16),
-
-          _buildStatRow('DEFESA', stats['defesa']!, AppColors.silver, '10 + Agilidade $_agilidade'),
-          const SizedBox(height: 16),
-
-          _buildStatRow('BLOQUEIO', 10, AppColors.silver, 'Padrão'),
-          const SizedBox(height: 16),
-
-          _buildStatRow('DESLOCAMENTO', 9, AppColors.silver, '9 metros (padrão)'),
-
-          const SizedBox(height: 32),
-
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.conhecimentoGreen.withOpacity(0.1),
-              border: Border.all(color: AppColors.conhecimentoGreen),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'RESUMO',
-                  style: AppTextStyles.labelMedium.copyWith(color: AppColors.conhecimentoGreen),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Seu personagem está pronto para começar sua jornada no Outro Lado.',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver),
-                ),
-              ],
+          // Subtítulo
+          Text(
+            'Estatísticas derivadas dos atributos do seu agente',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFF888888),
+              height: 1.5,
             ),
           ),
+
+          const SizedBox(height: 24),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3)),
+          const SizedBox(height: 16),
+
+          // Usando componente StatDisplay para layout de dossiê limpo
+          StatDisplay(
+            label: 'PV - PONTOS DE VIDA',
+            formula: 'Base ${CharacterGenerator.pvBase[_selectedClasse]} + Vigor $_vigor',
+            value: '${stats['pvMax']}',
+          ),
+
+          GrungeDivider(color: AppColors.silver.withOpacity(0.1)),
+
+          StatDisplay(
+            label: 'PE - PONTOS DE ESFORÇO',
+            formula: 'Base ${CharacterGenerator.peBase[_selectedClasse]} + Presença $_presenca',
+            value: '${stats['peMax']}',
+          ),
+
+          GrungeDivider(color: AppColors.silver.withOpacity(0.1)),
+
+          StatDisplay(
+            label: 'SAN - SANIDADE',
+            formula: 'Base ${CharacterGenerator.sanBase[_selectedClasse]}',
+            value: '${stats['sanMax']}',
+          ),
+
+          const SizedBox(height: 16),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3)),
+          const SizedBox(height: 16),
+
+          StatDisplay(
+            label: 'DEFESA',
+            formula: '10 + Agilidade $_agilidade',
+            value: '${stats['defesa']}',
+          ),
+
+          GrungeDivider(color: AppColors.silver.withOpacity(0.1)),
+
+          StatDisplay(
+            label: 'BLOQUEIO',
+            formula: 'Padrão',
+            value: '10',
+          ),
+
+          GrungeDivider(color: AppColors.silver.withOpacity(0.1)),
+
+          StatDisplay(
+            label: 'DESLOCAMENTO',
+            formula: '9 metros (padrão)',
+            value: '9m',
+          ),
+
+          GrungeDivider(color: AppColors.silver.withOpacity(0.1)),
+
+          // NOVO: Carga Máxima
+          StatDisplay(
+            label: 'CARGA MÁXIMA',
+            formula: 'Base 2 + (Força $_forca × 5)',
+            value: '$cargaMaxima',
+          ),
+
+          const SizedBox(height: 16),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3)),
+
+          // REMOVIDO: Caixa de resumo verde (não faz parte do tema Hexatombe)
         ],
       ),
-    );
-  }
-
-  Widget _buildStatRow(String label, int value, Color color, String formula) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: AppTextStyles.labelMedium),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                border: Border.all(color: color, width: 2),
-              ),
-              child: Text(
-                '$value',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          formula,
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.silver),
-        ),
-        const SizedBox(height: 8),
-        Container(height: 1, color: AppColors.silver.withOpacity(0.2)),
-      ],
     );
   }
 
@@ -638,43 +600,46 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
           Text('SELEÇÃO DE PERÍCIAS', style: AppTextStyles.title),
           const SizedBox(height: 16),
 
-          // Contador
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: AppColors.conhecimentoGreen.withOpacity(0.1),
-              border: Border.all(color: AppColors.conhecimentoGreen),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Contador (sem caixa, apenas texto)
+          RichText(
+            text: TextSpan(
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2.0,
+                color: Color(0xFFe0e0e0),
+                fontFamily: 'monospace',
+              ),
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.info_outline, color: AppColors.conhecimentoGreen, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_periciasTreinadasSelecionadas.length} PERÍCIAS SELECIONADAS',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.conhecimentoGreen,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Perícias treinadas ganham +5 de bônus. Recomendado: 4-5 perícias.',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.conhecimentoGreen,
-                    fontSize: 11,
+                TextSpan(
+                  text: '${_periciasTreinadasSelecionadas.length}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: AppColors.scarletRed,
                   ),
                 ),
+                TextSpan(text: ' PERÍCIAS SELECIONADAS'),
               ],
             ),
           ),
 
-          // Lista de perícias
+          const SizedBox(height: 8),
+
+          // Dica em cinza-claro
+          Text(
+            'Perícias treinadas ganham +5 de bônus. Recomendado: 4-5 perícias.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFF888888),
+              height: 1.5,
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3)),
+          const SizedBox(height: 16),
+
+          // Lista de perícias (sem caixas, apenas divisórias)
           ...pericias.entries.map((entry) {
             final nome = entry.key;
             final isTreinada = _periciasTreinadasSelecionadas.contains(nome);
@@ -683,87 +648,72 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
             final total = bonus + bonusTreinada;
             final attr = entry.value['attr'] as String;
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: isTreinada ? AppColors.conhecimentoGreen.withOpacity(0.1) : AppColors.darkGray,
-                border: Border.all(
-                  color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  // Checkbox
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        if (isTreinada) {
-                          _periciasTreinadasSelecionadas.remove(nome);
-                        } else {
-                          _periciasTreinadasSelecionadas.add(nome);
-                        }
-                      });
-                    },
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: isTreinada ? AppColors.conhecimentoGreen : Colors.transparent,
-                        border: Border.all(
-                          color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
-                          width: 2,
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      // Checkbox hexagonal
+                      HexagonCheckbox(
+                        value: isTreinada,
+                        size: 24,
+                        onChanged: (value) {
+                          setState(() {
+                            if (value) {
+                              _periciasTreinadasSelecionadas.add(nome);
+                            } else {
+                              _periciasTreinadasSelecionadas.remove(nome);
+                            }
+                          });
+                        },
+                      ),
+
+                      const SizedBox(width: 16),
+
+                      // Nome
+                      Expanded(
+                        child: Text(
+                          nome.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                            color: Color(0xFFe0e0e0),
+                            fontFamily: 'monospace',
+                          ),
                         ),
                       ),
-                      child: isTreinada
-                          ? const Icon(Icons.check, color: AppColors.deepBlack, size: 16)
-                          : null,
-                    ),
-                  ),
 
-                  const SizedBox(width: 12),
-
-                  // Nome
-                  Expanded(
-                    child: Text(
-                      nome.toUpperCase(),
-                      style: AppTextStyles.uppercase.copyWith(
-                        fontSize: 11,
-                        color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
+                      // Tag de atributo (apenas texto colorido, sem caixa)
+                      Text(
+                        attr,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: _getAttrColor(attr),
+                        ),
                       ),
-                    ),
-                  ),
 
-                  // Atributo
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getAttrColor(attr).withOpacity(0.2),
-                      border: Border.all(color: _getAttrColor(attr)),
-                    ),
-                    child: Text(
-                      attr,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: _getAttrColor(attr),
+                      const SizedBox(width: 16),
+
+                      // Bônus total
+                      Text(
+                        total >= 0 ? '+$total' : '$total',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFe0e0e0),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+                ),
 
-                  const SizedBox(width: 12),
-
-                  // Bônus total
-                  Text(
-                    total >= 0 ? '+$total' : '$total',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
-                    ),
-                  ),
-                ],
-              ),
+                // Divisória arranhada cinza-escura
+                GrungeDivider(color: Color(0xFF2a2a2a)),
+              ],
             );
           }).toList(),
         ],
@@ -780,33 +730,89 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('REVISÃO FINAL', style: AppTextStyles.title),
+          const SizedBox(height: 8),
+
+          // Subtítulo
+          Text(
+            'Revise as informações do dossiê antes de finalizar',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFF888888),
+              height: 1.5,
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3), heavy: true),
           const SizedBox(height: 24),
 
-          _buildReviewSection('INFORMAÇÕES BÁSICAS', [
-            'Nome: ${_nomeController.text}',
-            if (_patenteController.text.isNotEmpty) 'Patente: ${_patenteController.text}',
-          ]),
-
+          // Seção: Informações Básicas (sem caixa, apenas divisórias)
+          Text(
+            'INFORMAÇÕES BÁSICAS',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.5,
+              color: AppColors.scarletRed,
+              fontFamily: 'monospace',
+            ),
+          ),
           const SizedBox(height: 16),
 
-          _buildReviewSection('ORIGEM & CLASSE', [
-            'Origem: ${_selectedOrigemValue?.name.toUpperCase() ?? '-'}',
-            'Classe: ${_selectedClasse?.name.toUpperCase() ?? '-'}',
-            if (_selectedTrilha != null) 'Trilha: $_selectedTrilha',
-          ]),
+          _buildDossierEntry('Nome', _nomeController.text),
+          if (_patenteController.text.isNotEmpty)
+            _buildDossierEntry('Patente', _patenteController.text),
 
+          const SizedBox(height: 24),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3), heavy: true),
+          const SizedBox(height: 24),
+
+          // Seção: Origem & Classe
+          Text(
+            'ORIGEM & CLASSE',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.5,
+              color: AppColors.scarletRed,
+              fontFamily: 'monospace',
+            ),
+          ),
           const SizedBox(height: 16),
 
-          _buildReviewSection('ATRIBUTOS', [
-            'Força: ${_forca >= 0 ? '+$_forca' : _forca}',
-            'Agilidade: ${_agilidade >= 0 ? '+$_agilidade' : _agilidade}',
-            'Vigor: ${_vigor >= 0 ? '+$_vigor' : _vigor}',
-            'Intelecto: ${_intelecto >= 0 ? '+$_intelecto' : _intelecto}',
-            'Presença: ${_presenca >= 0 ? '+$_presenca' : _presenca}',
-          ]),
+          _buildDossierEntry('Origem', _selectedOrigemValue?.name.toUpperCase() ?? '-'),
+          _buildDossierEntry('Classe', _selectedClasse?.name.toUpperCase() ?? '-'),
+          if (_selectedTrilha != null)
+            _buildDossierEntry('Trilha', _selectedTrilha!),
+
+          const SizedBox(height: 24),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3), heavy: true),
+          const SizedBox(height: 24),
+
+          // Seção: Atributos
+          Text(
+            'ATRIBUTOS',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.5,
+              color: AppColors.scarletRed,
+              fontFamily: 'monospace',
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          _buildDossierEntry('Força', _forca >= 0 ? '+$_forca' : '$_forca'),
+          _buildDossierEntry('Agilidade', _agilidade >= 0 ? '+$_agilidade' : '$_agilidade'),
+          _buildDossierEntry('Vigor', _vigor >= 0 ? '+$_vigor' : '$_vigor'),
+          _buildDossierEntry('Intelecto', _intelecto >= 0 ? '+$_intelecto' : '$_intelecto'),
+          _buildDossierEntry('Presença', _presenca >= 0 ? '+$_presenca' : '$_presenca'),
 
           const SizedBox(height: 32),
+          GrungeDivider(color: AppColors.scarletRed.withOpacity(0.3), heavy: true),
+          const SizedBox(height: 32),
 
+          // Botão final
           if (_isLoading)
             const Center(child: CircularProgressIndicator(color: AppColors.scarletRed))
           else
@@ -826,21 +832,36 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
     );
   }
 
-  Widget _buildReviewSection(String title, List<String> items) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.silver.withOpacity(0.3)),
-      ),
-      child: Column(
+  Widget _buildDossierEntry(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppTextStyles.labelMedium.copyWith(color: AppColors.scarletRed)),
-          const SizedBox(height: 12),
-          ...items.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(item, style: AppTextStyles.body),
-              )),
+          Expanded(
+            flex: 2,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+                color: Color(0xFF888888),
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFFe0e0e0),
+                height: 1.4,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -859,19 +880,49 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
       ),
       child: Row(
         children: [
+          // Botão ANTERIOR (apenas texto, sem borda)
           if (_currentStep > 0)
             Expanded(
-              child: OutlinedButton(
-                onPressed: _previousStep,
-                child: const Text('ANTERIOR'),
+              child: InkWell(
+                onTap: _previousStep,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'ANTERIOR',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2.0,
+                      color: Color(0xFFe0e0e0),
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
               ),
             ),
           if (_currentStep > 0) const SizedBox(width: 16),
+
+          // Botão PRÓXIMO (vermelho sólido)
           if (_currentStep < 5)
             Expanded(
               child: ElevatedButton(
                 onPressed: _canProceed() ? _nextStep : null,
-                child: const Text('PRÓXIMO'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.scarletRed,
+                  disabledBackgroundColor: Color(0xFF2a2a2a),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text(
+                  'PRÓXIMO',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2.0,
+                    color: _canProceed() ? Colors.white : Color(0xFF666666),
+                    fontFamily: 'monospace',
+                  ),
+                ),
               ),
             ),
         ],
@@ -903,14 +954,9 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
         return _nomeController.text.trim().isNotEmpty;
       case 1: // Origem & Classe
         return _selectedOrigemValue != null && _selectedClasse != null;
-      case 2: // Atributos
-        return CharacterGenerator.isValidAttributeDistribution(
-          _forca,
-          _agilidade,
-          _vigor,
-          _intelecto,
-          _presenca,
-        );
+      case 2: // Atributos - Permite avançar mesmo ultrapassando o limite
+        final pontosUsados = _forca + _agilidade + _vigor + _intelecto + _presenca;
+        return pontosUsados <= 25; // Máximo possível: 5×5 = 25 pontos
       case 3: // Stats
         return true;
       case 4: // Perícias
@@ -935,6 +981,67 @@ class _CharacterWizardScreenState extends State<CharacterWizardScreen> {
 
   Future<void> _finishWizard() async {
     if (!_canFinish() || _isLoading) return;
+
+    // Verificar se estourou o limite de 4 pontos
+    final pontosUsados = _forca + _agilidade + _vigor + _intelecto + _presenca;
+
+    if (pontosUsados > 4) {
+      // Mostrar dialog de confirmação
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.darkGray,
+          title: Text(
+            'ATENÇÃO',
+            style: TextStyle(
+              color: AppColors.scarletRed,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.0,
+            ),
+          ),
+          content: Text(
+            'Você distribuiu $pontosUsados pontos (limite recomendado: 4).\n\n'
+            'Tem certeza que deseja criar seu personagem estourando o limite de pontos?',
+            style: TextStyle(
+              color: Color(0xFFe0e0e0),
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'CANCELAR',
+                style: TextStyle(
+                  color: Color(0xFF888888),
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.scarletRed,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: Text(
+                'CRIAR MESMO ASSIM',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return; // Usuário cancelou
+    }
 
     setState(() => _isLoading = true);
 

@@ -143,6 +143,29 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
+    // Text area para descrição - com fundo cinza
+    if (maxLines > 1) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        color: AppColors.darkGray,
+        child: TextFormField(
+          controller: controller,
+          style: AppTextStyles.body.copyWith(color: AppColors.lightGray),
+          maxLines: maxLines,
+          validator: validator,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppTextStyles.body.copyWith(
+              color: AppColors.silver.withOpacity(0.3),
+            ),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      );
+    }
+
+    // Input normal - apenas linha inferior vermelha
     return TextFormField(
       controller: controller,
       style: AppTextStyles.body.copyWith(color: AppColors.lightGray),
@@ -153,31 +176,27 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
         hintStyle: AppTextStyles.body.copyWith(
           color: AppColors.silver.withOpacity(0.3),
         ),
-        filled: true,
-        fillColor: AppColors.darkGray,
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.silver),
+        filled: false,
+        border: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed.withOpacity(0.5)),
         ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.magenta, width: 2),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
       ),
     );
   }
 
   Widget _buildTipoDropdown() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border.all(color: AppColors.silver.withOpacity(0.3)),
+        border: Border(
+          bottom: BorderSide(color: AppColors.scarletRed.withOpacity(0.5)),
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<ShopType>(
@@ -185,6 +204,7 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
           isExpanded: true,
           dropdownColor: AppColors.darkGray,
           style: AppTextStyles.body.copyWith(color: AppColors.lightGray),
+          icon: Icon(Icons.arrow_drop_down, color: AppColors.scarletRed),
           onChanged: (ShopType? newValue) {
             if (newValue != null) {
               setState(() {
@@ -219,94 +239,68 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
   }
 
   Widget _buildItensSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border.all(color: AppColors.magenta.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'ITENS DA LOJA',
-                style: AppTextStyles.uppercase.copyWith(
-                  fontSize: 12,
-                  color: AppColors.magenta,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.magenta.withOpacity(0.2),
-                  border: Border.all(color: AppColors.magenta),
-                ),
-                child: Text(
-                  '${_itens.length} ITENS',
-                  style: const TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.magenta,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          if (_itens.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Nenhum item adicionado',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.silver.withOpacity(0.5),
-                  ),
-                ),
-              ),
-            )
-          else
-            ..._itens.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              return _buildItemCard(item, index);
-            }).toList(),
-
-          const SizedBox(height: 16),
-
-          // Botão adicionar item
-          InkWell(
-            onTap: _addItem,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.conhecimentoGreen),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add, color: AppColors.conhecimentoGreen, size: 18),
-                  SizedBox(width: 8),
-                  Text(
-                    'ADICIONAR ITEM',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.conhecimentoGreen,
-                    ),
-                  ),
-                ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'ITENS DA LOJA',
+              style: AppTextStyles.uppercase.copyWith(
+                fontSize: 12,
+                color: AppColors.scarletRed,
+                letterSpacing: 1.5,
               ),
             ),
+            const SizedBox(width: 12),
+            Text(
+              '(${_itens.length} itens)',
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.silver.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        if (_itens.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Nenhum item adicionado',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.silver.withOpacity(0.5),
+                ),
+              ),
+            ),
+          )
+        else
+          ..._itens.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            return _buildItemCard(item, index);
+          }).toList(),
+
+        const SizedBox(height: 16),
+
+        // Link para adicionar item
+        InkWell(
+          onTap: _addItem,
+          child: Text(
+            '[ + ADICIONAR ITEM ]',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppColors.scarletRed,
+              letterSpacing: 1.0,
+              fontFamily: 'monospace',
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -346,14 +340,14 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
             onTap: () => _editItem(index),
             child: const Padding(
               padding: EdgeInsets.all(8),
-              child: Icon(Icons.edit, color: AppColors.conhecimentoGreen, size: 18),
+              child: Icon(Icons.edit, color: AppColors.lightGray, size: 18),
             ),
           ),
           InkWell(
             onTap: () => _removeItem(index),
             child: const Padding(
               padding: EdgeInsets.all(8),
-              child: Icon(Icons.delete, color: AppColors.neonRed, size: 18),
+              child: Icon(Icons.delete, color: AppColors.scarletRed, size: 18),
             ),
           ),
         ],
@@ -362,23 +356,14 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
   }
 
   Widget _buildCancelButton() {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.silver.withOpacity(0.5)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => Navigator.pop(context),
-          child: Center(
-            child: Text(
-              'CANCELAR',
-              style: AppTextStyles.uppercase.copyWith(
-                fontSize: 12,
-                color: AppColors.silver,
-              ),
-            ),
+    return InkWell(
+      onTap: () => Navigator.pop(context),
+      child: Center(
+        child: Text(
+          'CANCELAR',
+          style: AppTextStyles.uppercase.copyWith(
+            fontSize: 12,
+            color: AppColors.silver,
           ),
         ),
       ),
@@ -389,7 +374,7 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
     return Container(
       height: 48,
       decoration: const BoxDecoration(
-        color: AppColors.magenta,
+        color: AppColors.scarletRed,
       ),
       child: Material(
         color: Colors.transparent,
@@ -401,7 +386,7 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
-                      color: AppColors.deepBlack,
+                      color: AppColors.lightGray,
                       strokeWidth: 2,
                     ),
                   )
@@ -409,7 +394,7 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
                     widget.shopToEdit != null ? 'SALVAR' : 'CRIAR LOJA',
                     style: AppTextStyles.uppercase.copyWith(
                       fontSize: 12,
-                      color: AppColors.deepBlack,
+                      color: AppColors.lightGray,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -484,7 +469,7 @@ class _ShopEditScreenState extends State<ShopEditScreen> {
                   ? '${shop.nome} atualizada!'
                   : '${shop.nome} criada!',
             ),
-            backgroundColor: AppColors.conhecimentoGreen,
+            backgroundColor: AppColors.scarletRed,
           ),
         );
       }

@@ -283,24 +283,14 @@ class BladeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: color,
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.5),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.bold,
           letterSpacing: 2.0,
-          color: Colors.white,
+          color: color,
         ),
       ),
     );
@@ -876,4 +866,425 @@ class _RunaAtributoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// =============================================================================
+// HEXATOMBE TEXT FIELD - Input padrão "Dossiê" (label + linha vermelha)
+// =============================================================================
+
+class HexatombeTextField extends StatelessWidget {
+  final String label;
+  final String? hintText;
+  final TextEditingController? controller;
+  final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
+  final ValueChanged<String>? onChanged;
+  final int? maxLines;
+
+  const HexatombeTextField({
+    super.key,
+    required this.label,
+    this.hintText,
+    this.controller,
+    this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
+    this.onChanged,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label em Branco-Osso
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2.0,
+            color: Color(0xFFe0e0e0),
+            fontFamily: 'monospace',
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // TextField sem bordas, apenas linha inferior vermelha
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
+          onChanged: onChanged,
+          maxLines: maxLines,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Color(0xFFe0e0e0),
+            letterSpacing: 0.5,
+          ),
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(
+              color: const Color(0xFF666666),
+              fontSize: 16,
+            ),
+            border: InputBorder.none,
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: AppColors.scarletRed.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: AppColors.scarletRed,
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// HEXATOMBE DROPDOWN - Dropdown temático (label + valor + seta vermelha)
+// =============================================================================
+
+class HexatombeDropdown<T> extends StatelessWidget {
+  final String label;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?>? onChanged;
+  final String? hintText;
+
+  const HexatombeDropdown({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.hintText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label em Branco-Osso
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2.0,
+            color: Color(0xFFe0e0e0),
+            fontFamily: 'monospace',
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Dropdown sem caixa, apenas linha inferior vermelha
+        Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: AppColors.scarletRed.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<T>(
+              value: value,
+              isExpanded: true,
+              dropdownColor: AppColors.darkGray,
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: AppColors.scarletRed,
+                size: 28,
+              ),
+              hint: hintText != null
+                  ? Text(
+                      hintText!,
+                      style: const TextStyle(
+                        color: Color(0xFF666666),
+                        fontSize: 16,
+                      ),
+                    )
+                  : null,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFFe0e0e0),
+                letterSpacing: 0.5,
+              ),
+              items: items,
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// HEXATOMBE SLIDER - Slider com visual aprimorado (trilha escura, polegar colorido)
+// =============================================================================
+
+class HexatombeSlider extends StatelessWidget {
+  final String label;
+  final int value;
+  final int min;
+  final int max;
+  final Color color;
+  final ValueChanged<int> onChanged;
+
+  const HexatombeSlider({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.color,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label com cor do atributo
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2.0,
+                color: color,
+                fontFamily: 'monospace',
+              ),
+            ),
+            // Valor atual
+            Text(
+              value >= 0 ? '+$value' : '$value',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFe0e0e0),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Slider customizado
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 6,
+            activeTrackColor: color,
+            inactiveTrackColor: const Color(0xFF2a2a2a),
+            thumbColor: color,
+            overlayColor: color.withOpacity(0.2),
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+          ),
+          child: Slider(
+            value: value.toDouble(),
+            min: min.toDouble(),
+            max: max.toDouble(),
+            divisions: max - min,
+            onChanged: (val) => onChanged(val.toInt()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// HEXAGON CHECKBOX - Checkbox hexagonal temático
+// =============================================================================
+
+class HexagonCheckbox extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final double size;
+
+  const HexagonCheckbox({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.size = 24,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: CustomPaint(
+        size: Size(size, size),
+        painter: _HexagonCheckboxPainter(
+          isChecked: value,
+          color: AppColors.scarletRed,
+        ),
+      ),
+    );
+  }
+}
+
+class _HexagonCheckboxPainter extends CustomPainter {
+  final bool isChecked;
+  final Color color;
+
+  _HexagonCheckboxPainter({required this.isChecked, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    // Desenha hexágono
+    final path = Path();
+    for (int i = 0; i < 6; i++) {
+      final angle = (math.pi / 3) * i - math.pi / 2;
+      final x = center.dx + radius * math.cos(angle);
+      final y = center.dy + radius * math.sin(angle);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    // Preenchimento se marcado
+    if (isChecked) {
+      final fillPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, fillPaint);
+    }
+
+    // Contorno
+    final strokePaint = Paint()
+      ..color = isChecked ? color : color.withOpacity(0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawPath(path, strokePaint);
+
+    // Marca de check se marcado
+    if (isChecked) {
+      final checkPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round;
+
+      final checkPath = Path();
+      checkPath.moveTo(center.dx - radius * 0.4, center.dy);
+      checkPath.lineTo(center.dx - radius * 0.1, center.dy + radius * 0.3);
+      checkPath.lineTo(center.dx + radius * 0.4, center.dy - radius * 0.3);
+
+      canvas.drawPath(checkPath, checkPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// =============================================================================
+// STAT DISPLAY - Linha de estatística para Step 4 (layout de dossiê)
+// =============================================================================
+
+class StatDisplay extends StatelessWidget {
+  final String label;
+  final String formula;
+  final String value;
+
+  const StatDisplay({
+    super.key,
+    required this.label,
+    required this.formula,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          // Coluna esquerda (label + fórmula)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Label em Branco-Osso
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2.0,
+                    color: Color(0xFFe0e0e0),
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(height: 4),
+
+                // Fórmula em cinza-claro
+                Text(
+                  formula,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF888888),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          // Valor em selo hexagonal vermelho
+          _buildHexagonalBadge(value),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHexagonalBadge(String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.scarletRed,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.scarletRed.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        value,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
 }

@@ -14,6 +14,7 @@ import 'iniciativa_screen.dart';
 import 'notes_screen.dart';
 import 'mass_payment_screen.dart';
 import 'npc_generator_screen.dart';
+import '../../widgets/master/generator_list_item.dart';
 
 /// Dashboard Principal do Mestre com BottomNavigationBar
 /// 6 abas: NPCs | Gerador | Loja | Iniciativa | Notas | Dados
@@ -33,12 +34,21 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
   int _currentIndex = 0;
   final CharacterRepository _repo = CharacterRepository();
   List<Character> _allCharacters = [];
+  List<Character> _filteredCharacters = [];
+  final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadCharacters();
+    _searchController.addListener(_filterCharacters);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCharacters() async {
@@ -48,6 +58,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
       final characters = await _repo.getByUserId(widget.userId);
       setState(() {
         _allCharacters = characters;
+        _filteredCharacters = characters;
         _isLoading = false;
       });
     } catch (e) {
@@ -60,27 +71,27 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
     }
   }
 
+  void _filterCharacters() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredCharacters = _allCharacters;
+      } else {
+        _filteredCharacters = _allCharacters
+            .where((char) =>
+                char.nome.toLowerCase().contains(query) ||
+                char.classe.name.toLowerCase().contains(query))
+            .toList();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.deepBlack,
       appBar: _buildAppBar(),
       body: _buildBody(),
-      floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MassPaymentScreen(),
-                  ),
-                ).then((_) => _loadCharacters());
-              },
-              backgroundColor: AppColors.conhecimentoGreen,
-              icon: const Icon(Icons.payments),
-              label: const Text('PAGAMENTO EM MASSA'),
-            )
-          : null,
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -185,20 +196,117 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadCharacters,
-      color: AppColors.scarletRed,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _allCharacters.length,
-        separatorBuilder: (_, __) => Divider(
-          color: AppColors.silver.withOpacity(0.2),
-          height: 24,
+    return Column(
+      children: [
+        _buildSearchBar(),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadCharacters,
+            color: AppColors.scarletRed,
+            child: _filteredCharacters.isEmpty
+                ? Center(
+                    child: Text(
+                      'Nenhum NPC encontrado',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.silver.withOpacity(0.5),
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _filteredCharacters.length + 1,
+                    separatorBuilder: (_, __) => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Divider(
+                        color: AppColors.silver,
+                        height: 1,
+                        thickness: 1,
+                      ),
+                    ),
+                    itemBuilder: (context, index) {
+                      if (index == _filteredCharacters.length) {
+                        return _buildMassPaymentFooter();
+                      }
+                      final character = _filteredCharacters[index];
+                      return _buildNPCCard(character);
+                    },
+                  ),
+          ),
         ),
-        itemBuilder: (context, index) {
-          final character = _allCharacters[index];
-          return _buildNPCCard(character);
-        },
+      ],
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppColors.scarletRed.withOpacity(0.3)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search, color: AppColors.silver.withOpacity(0.7), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              style: AppTextStyles.body.copyWith(color: AppColors.lightGray),
+              decoration: InputDecoration(
+                hintText: 'Buscar por nome ou classe...',
+                hintStyle: AppTextStyles.body.copyWith(
+                  color: AppColors.silver.withOpacity(0.3),
+                ),
+                border: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.scarletRed.withOpacity(0.5)),
+                ),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.scarletRed.withOpacity(0.5)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.scarletRed, width: 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+          if (_searchController.text.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.close, color: AppColors.silver.withOpacity(0.7), size: 20),
+              onPressed: () {
+                _searchController.clear();
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMassPaymentFooter() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Center(
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MassPaymentScreen(),
+              ),
+            ).then((_) => _loadCharacters());
+          },
+          child: Text(
+            '[ PAGAMENTO EM MASSA ]',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppColors.scarletRed,
+              letterSpacing: 1.0,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -207,34 +315,12 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
     return InkWell(
       onTap: () => _showNPCDetails(character),
       onLongPress: () => _showNPCOptions(character),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.darkGray,
-          border: Border.all(color: AppColors.silver.withOpacity(0.3)),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            // Avatar
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: AppColors.scarletRed.withOpacity(0.2),
-                border: Border.all(color: AppColors.scarletRed, width: 2),
-              ),
-              child: Center(
-                child: Text(
-                  character.nome[0].toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.scarletRed,
-                  ),
-                ),
-              ),
-            ),
-
+            // Icon
+            const Icon(Icons.person, color: AppColors.scarletRed, size: 32),
             const SizedBox(width: 16),
 
             // Info
@@ -244,7 +330,10 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                 children: [
                   Text(
                     character.nome.toUpperCase(),
-                    style: AppTextStyles.uppercase.copyWith(fontSize: 14),
+                    style: AppTextStyles.uppercase.copyWith(
+                      fontSize: 14,
+                      color: AppColors.lightGray,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -270,7 +359,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
             ),
 
             // Arrow
-            Icon(Icons.chevron_right, color: AppColors.silver.withOpacity(0.5)),
+            const Icon(Icons.chevron_right, color: AppColors.scarletRed, size: 24),
           ],
         ),
       ),
@@ -343,7 +432,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: const Icon(Icons.edit, color: AppColors.conhecimentoGreen),
+            leading: const Icon(Icons.edit, color: AppColors.lightGray),
             title: const Text('EDITAR'),
             onTap: () async {
               Navigator.pop(context);
@@ -362,7 +451,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.share, color: AppColors.magenta),
+            leading: const Icon(Icons.share, color: AppColors.lightGray),
             title: const Text('EXPORTAR'),
             onTap: () {
               Navigator.pop(context);
@@ -370,7 +459,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.delete, color: AppColors.neonRed),
+            leading: const Icon(Icons.delete, color: AppColors.scarletRed),
             title: const Text('EXCLUIR'),
             onTap: () async {
               Navigator.pop(context);
@@ -432,20 +521,12 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
           builder: (context) => AlertDialog(
             backgroundColor: AppColors.darkGray,
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-            title: Row(
-              children: [
-                const Icon(Icons.share, color: AppColors.magenta, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'EXPORTAR PERSONAGEM',
-                    style: AppTextStyles.uppercase.copyWith(
-                      fontSize: 14,
-                      color: AppColors.magenta,
-                    ),
-                  ),
-                ),
-              ],
+            title: Text(
+              'EXPORTAR PERSONAGEM',
+              style: AppTextStyles.uppercase.copyWith(
+                fontSize: 14,
+                color: AppColors.scarletRed,
+              ),
             ),
             content: SizedBox(
               width: double.maxFinite,
@@ -504,7 +585,7 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('${character.nome} copiado para área de transferência!'),
-                        backgroundColor: AppColors.conhecimentoGreen,
+                        backgroundColor: AppColors.scarletRed,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -514,7 +595,8 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
                 icon: const Icon(Icons.copy),
                 label: const Text('COPIAR'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.magenta,
+                  backgroundColor: AppColors.scarletRed,
+                  foregroundColor: AppColors.lightGray,
                   shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                 ),
               ),
@@ -543,281 +625,99 @@ class _MasterDashboardScreenState extends State<MasterDashboardScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Unified Generator Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.darkGray,
-            border: Border.all(color: AppColors.neonRed, width: 2),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.flash_on, color: AppColors.neonRed, size: 32),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'GERADOR DE PERSONAGENS',
-                      style: AppTextStyles.uppercase.copyWith(
-                        fontSize: 16,
-                        color: AppColors.neonRed,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Gere NPCs balanceados para combates e encontros. '
-                '10 níveis de poder + customização completa de sexo, nome e atributos. '
-                'Toggle entre modo Rápido e Avançado.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.silver,
-                  height: 1.5,
+        // Gerador de Personagens
+        GeneratorListItem(
+          icon: Icons.flash_on,
+          title: 'GERADOR DE PERSONAGENS',
+          description: 'Gere NPCs balanceados para combates e encontros. '
+              '10 níveis de poder + customização completa de sexo, nome e atributos. '
+              'Toggle entre modo Rápido e Avançado.',
+          features: const ['10 Tiers', 'Sexo Customizável', 'Rápido/Avançado'],
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UnifiedCharacterGeneratorScreen(
+                  userId: widget.userId,
                 ),
               ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildFeatureBadge('10 Tiers'),
-                  _buildFeatureBadge('Sexo Customizável'),
-                  _buildFeatureBadge('Rápido/Avançado'),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UnifiedCharacterGeneratorScreen(
-                          userId: widget.userId,
-                        ),
-                      ),
-                    );
-                    _loadCharacters();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.neonRed,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                  ),
-                  child: const Text(
-                    'ABRIR GERADOR',
-                    style: TextStyle(letterSpacing: 1.5),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+            _loadCharacters();
+          },
+          showDivider: true,
         ),
 
-        const SizedBox(height: 20),
-
-        // NPC Personality Generator Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.darkGray,
-            border: Border.all(color: AppColors.energiaYellow, width: 2),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.psychology, color: AppColors.energiaYellow, size: 32),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'GERADOR DE PERSONALIDADE',
-                      style: AppTextStyles.uppercase.copyWith(
-                        fontSize: 16,
-                        color: AppColors.energiaYellow,
-                      ),
-                    ),
-                  ),
-                ],
+        // Gerador de Personalidade
+        GeneratorListItem(
+          icon: Icons.psychology,
+          title: 'GERADOR DE PERSONALIDADE',
+          description: 'Gere NPCs com personalidades únicas e profundas. '
+              'Motivações, segredos, medos, backgrounds e peculiaridades gerados proceduralmente.',
+          features: const ['Geração Procedural', '9 Aspectos Únicos'],
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NPCGeneratorScreen(),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Gere NPCs com personalidades únicas e profundas. '
-                'Motivações, segredos, medos, backgrounds e peculiaridades gerados proceduralmente.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.silver,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildFeatureBadge('Geração Procedural'),
-                  const SizedBox(width: 8),
-                  _buildFeatureBadge('9 Aspectos Únicos'),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NPCGeneratorScreen(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.energiaYellow,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                  ),
-                  child: Text(
-                    'ABRIR GERADOR DE PERSONALIDADE',
-                    style: TextStyle(
-                      letterSpacing: 1.5,
-                      color: AppColors.deepBlack,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
+          showDivider: true,
         ),
 
-        const SizedBox(height: 20),
+        // Gerador de Lojas
+        GeneratorListItem(
+          icon: Icons.store,
+          title: 'GERADOR DE LOJAS',
+          description: 'Crie lojas completas instantaneamente com itens variados. '
+              'Armas, curas, equipamentos, itens amaldiçoados e muito mais. 400+ itens únicos!',
+          features: const ['400+ Itens', '7 Presets Prontos', 'Sistema de Raridade'],
+          onTap: () async {
+            final result = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ShopGeneratorScreen(),
+              ),
+            );
 
-        // Shop Generator Card
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.darkGray,
-            border: Border.all(color: Colors.orange, width: 2),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.store, color: Colors.orange, size: 32),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'GERADOR DE LOJAS',
-                      style: AppTextStyles.uppercase.copyWith(
-                        fontSize: 16,
-                        color: Colors.orange,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Crie lojas completas instantaneamente com itens variados. '
-                'Armas, curas, equipamentos, itens amaldiçoados e muito mais. 400+ itens únicos!',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.silver,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildFeatureBadge('400+ Itens'),
-                  const SizedBox(width: 8),
-                  _buildFeatureBadge('7 Presets Prontos'),
-                  const SizedBox(width: 8),
-                  _buildFeatureBadge('Sistema de Raridade'),
-                ],
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ShopGeneratorScreen(),
-                      ),
-                    );
-
-                    // Atualiza lojas se necessário
-                    if (result == true) {
-                      // Pode adicionar callback aqui se precisar atualizar alguma lista
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                  ),
-                  child: const Text(
-                    'ABRIR GERADOR DE LOJAS',
-                    style: TextStyle(
-                      letterSpacing: 1.5,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            // Atualiza lojas se necessário
+            if (result == true) {
+              // Pode adicionar callback aqui se precisar atualizar alguma lista
+            }
+          },
+          showDivider: false,
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
-        // Info Card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.darkGray,
-            border: Border.all(color: AppColors.conhecimentoGreen.withOpacity(0.5)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.info_outline, color: AppColors.conhecimentoGreen, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Use o Gerador Rápido para combates, Avançado para NPCs importantes e Personalidade para criar backgrounds únicos',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.silver.withOpacity(0.8),
-                    fontSize: 10,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Info text (sem caixa verde)
+        _buildInfoText(),
       ],
     );
   }
 
-  Widget _buildFeatureBadge(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.conhecimentoGreen.withOpacity(0.2),
-        border: Border.all(color: AppColors.conhecimentoGreen.withOpacity(0.5)),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 8,
-          color: AppColors.conhecimentoGreen,
-          letterSpacing: 1.0,
-          fontWeight: FontWeight.bold,
+  /// Info text sem caixa - apenas ícone + texto
+  Widget _buildInfoText() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.info_outline,
+          color: AppColors.neonRed,
+          size: 20,
         ),
-      ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Use o Gerador Rápido para combates, Avançado para NPCs importantes e Personalidade para criar backgrounds únicos',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.silver.withValues(alpha: 0.7),
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

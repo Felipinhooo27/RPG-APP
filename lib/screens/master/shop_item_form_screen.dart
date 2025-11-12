@@ -212,6 +212,29 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
+    // Text area para descrição - com fundo cinza
+    if (maxLines > 1) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        color: AppColors.darkGray,
+        child: TextFormField(
+          controller: controller,
+          style: AppTextStyles.body.copyWith(color: AppColors.lightGray),
+          maxLines: maxLines,
+          validator: validator,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppTextStyles.body.copyWith(
+              color: AppColors.silver.withOpacity(0.3),
+            ),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      );
+    }
+
+    // Input normal - apenas linha inferior vermelha
     return TextFormField(
       controller: controller,
       style: AppTextStyles.body.copyWith(color: AppColors.lightGray),
@@ -222,21 +245,17 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
         hintStyle: AppTextStyles.body.copyWith(
           color: AppColors.silver.withOpacity(0.3),
         ),
-        filled: true,
-        fillColor: AppColors.darkGray,
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.silver),
+        filled: false,
+        border: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed.withOpacity(0.5)),
         ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.magenta, width: 2),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
       ),
     );
   }
@@ -260,31 +279,27 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
         hintStyle: AppTextStyles.body.copyWith(
           color: AppColors.silver.withOpacity(0.3),
         ),
-        filled: true,
-        fillColor: AppColors.darkGray,
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.silver),
+        filled: false,
+        border: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.silver.withOpacity(0.3)),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed.withOpacity(0.5)),
         ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.magenta, width: 2),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.scarletRed, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
       ),
     );
   }
 
   Widget _buildTipoDropdown() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.darkGray,
-        border: Border.all(color: AppColors.silver.withOpacity(0.3)),
+        border: Border(
+          bottom: BorderSide(color: AppColors.scarletRed.withOpacity(0.5)),
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<ItemType>(
@@ -292,6 +307,7 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
           isExpanded: true,
           dropdownColor: AppColors.darkGray,
           style: AppTextStyles.body.copyWith(color: AppColors.lightGray),
+          icon: Icon(Icons.arrow_drop_down, color: AppColors.scarletRed),
           onChanged: (ItemType? newValue) {
             if (newValue != null) {
               setState(() {
@@ -327,23 +343,17 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
 
   List<Widget> _buildArmaFields() {
     return [
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.darkGray,
-          border: Border.all(color: AppColors.neonRed.withOpacity(0.5)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'PROPRIEDADES DE ARMA',
-              style: AppTextStyles.uppercase.copyWith(
-                fontSize: 12,
-                color: AppColors.neonRed,
-                letterSpacing: 1.5,
-              ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'PROPRIEDADES DE ARMA',
+            style: AppTextStyles.uppercase.copyWith(
+              fontSize: 12,
+              color: AppColors.scarletRed,
+              letterSpacing: 1.5,
             ),
+          ),
             const SizedBox(height: 16),
 
             _buildLabel('FÓRMULA DE DANO'),
@@ -402,14 +412,14 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: _isAmaldicoado ? AppColors.neonRed : Colors.transparent,
+                      color: _isAmaldicoado ? AppColors.scarletRed : Colors.transparent,
                       border: Border.all(
-                        color: _isAmaldicoado ? AppColors.neonRed : AppColors.silver,
+                        color: _isAmaldicoado ? AppColors.scarletRed : AppColors.silver,
                         width: 2,
                       ),
                     ),
                     child: _isAmaldicoado
-                        ? const Icon(Icons.check, color: AppColors.deepBlack, size: 16)
+                        ? const Icon(Icons.check, color: AppColors.lightGray, size: 16)
                         : null,
                   ),
                   const SizedBox(width: 12),
@@ -417,7 +427,7 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
                     'ARMA AMALDIÇOADA',
                     style: AppTextStyles.uppercase.copyWith(
                       fontSize: 11,
-                      color: _isAmaldicoado ? AppColors.neonRed : AppColors.silver,
+                      color: _isAmaldicoado ? AppColors.scarletRed : AppColors.silver,
                     ),
                   ),
                 ],
@@ -436,30 +446,23 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
             ],
           ],
         ),
-      ),
       const SizedBox(height: 24),
     ];
   }
 
   List<Widget> _buildCuraFields() {
     return [
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.darkGray,
-          border: Border.all(color: AppColors.conhecimentoGreen.withOpacity(0.5)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'PROPRIEDADES DE CURA',
-              style: AppTextStyles.uppercase.copyWith(
-                fontSize: 12,
-                color: AppColors.conhecimentoGreen,
-                letterSpacing: 1.5,
-              ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'PROPRIEDADES DE CURA',
+            style: AppTextStyles.uppercase.copyWith(
+              fontSize: 12,
+              color: AppColors.scarletRed,
+              letterSpacing: 1.5,
             ),
+          ),
             const SizedBox(height: 16),
 
             _buildLabel('FÓRMULA DE CURA'),
@@ -480,29 +483,19 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
             ),
           ],
         ),
-      ),
       const SizedBox(height: 24),
     ];
   }
 
   Widget _buildCancelButton() {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.silver.withOpacity(0.5)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => Navigator.pop(context),
-          child: Center(
-            child: Text(
-              'CANCELAR',
-              style: AppTextStyles.uppercase.copyWith(
-                fontSize: 12,
-                color: AppColors.silver,
-              ),
-            ),
+    return InkWell(
+      onTap: () => Navigator.pop(context),
+      child: Center(
+        child: Text(
+          'CANCELAR',
+          style: AppTextStyles.uppercase.copyWith(
+            fontSize: 12,
+            color: AppColors.silver,
           ),
         ),
       ),
@@ -513,7 +506,7 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
     return Container(
       height: 48,
       decoration: const BoxDecoration(
-        color: AppColors.magenta,
+        color: AppColors.scarletRed,
       ),
       child: Material(
         color: Colors.transparent,
@@ -524,7 +517,7 @@ class _ShopItemFormScreenState extends State<ShopItemFormScreen> {
               widget.itemToEdit != null ? 'SALVAR' : 'CRIAR ITEM',
               style: AppTextStyles.uppercase.copyWith(
                 fontSize: 12,
-                color: AppColors.deepBlack,
+                color: AppColors.lightGray,
                 fontWeight: FontWeight.bold,
               ),
             ),
