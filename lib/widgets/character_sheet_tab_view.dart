@@ -3,10 +3,12 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 import '../models/character.dart';
 import '../core/database/local_storage.dart';
+import '../core/database/character_repository.dart';
 import '../core/database/item_repository.dart';
 import '../core/database/power_repository.dart';
 import '../screens/player/inventory_management_screen.dart';
 import '../screens/player/powers_management_screen.dart';
+import 'hexatombe_ui_components.dart';
 import 'dart:math' as math;
 
 /// Widget de visualização da ficha do personagem com abas
@@ -29,6 +31,7 @@ class _CharacterSheetTabViewState extends State<CharacterSheetTabView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late Character _character;
+  final _characterRepo = CharacterRepository();
 
   @override
   void initState() {
@@ -41,6 +44,11 @@ class _CharacterSheetTabViewState extends State<CharacterSheetTabView>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  /// Salva personagem no storage local
+  Future<void> _saveCharacter() async {
+    await _characterRepo.update(_character);
   }
 
   @override
@@ -93,129 +101,157 @@ class _CharacterSheetTabViewState extends State<CharacterSheetTabView>
   }
 
   // ==========================================================================
-  // TAB 1: STATUS (PV/PE/SAN com controles)
+  // TAB 1: STATUS (Design Hexatombe - SEM CAIXAS)
   // ==========================================================================
   Widget _buildStatusTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // NEX e Patente
-          Row(
-            children: [
-              Expanded(
-                child: _buildInfoCard('NEX', '${_character.nex}%', AppColors.magenta),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildInfoCard('PATENTE', 'Recruta', AppColors.conhecimentoGreen),
-              ),
-            ],
-          ),
+    return GrungeBackground(
+      baseColor: const Color(0xFF0d0d0d),
+      opacity: 0.06,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // NEX e Patente (SEM caixas, texto hierárquico)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                SimpleStat(
+                  label: 'NEX',
+                  value: '${_character.nex}%',
+                  labelColor: AppColors.magenta,
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: AppColors.silver.withOpacity(0.2),
+                ),
+                SimpleStat(
+                  label: 'PATENTE',
+                  value: _character.patente ?? 'Recruta',
+                  labelColor: AppColors.conhecimentoGreen,
+                ),
+              ],
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 32),
+            const GrungeDivider(heavy: true),
+            const SizedBox(height: 32),
 
-          // PV
-          _buildResourceSection(
-            label: 'PONTOS DE VIDA',
-            current: _character.pvAtual,
-            max: _character.pvMax,
-            color: AppColors.pvRed,
-            onIncrement: () {
-              setState(() {
-                if (_character.pvAtual < _character.pvMax) {
-                  _character.pvAtual++;
-                  widget.onCharacterChanged?.call();
-                }
-              });
-            },
-            onDecrement: () {
-              setState(() {
-                if (_character.pvAtual > 0) {
-                  _character.pvAtual--;
-                  widget.onCharacterChanged?.call();
-                }
-              });
-            },
-          ),
+            // PV - Barra de status temática
+            HexatombeStatusBar(
+              title: 'PONTOS DE VIDA',
+              current: _character.pvAtual,
+              max: _character.pvMax,
+              fillColor: AppColors.pvRed,
+              onIncrement: () {
+                setState(() {
+                  if (_character.pvAtual < _character.pvMax) {
+                    _character.pvAtual++;
+                    _saveCharacter();
+                    widget.onCharacterChanged?.call();
+                  }
+                });
+              },
+              onDecrement: () {
+                setState(() {
+                  if (_character.pvAtual > 0) {
+                    _character.pvAtual--;
+                    _saveCharacter();
+                    widget.onCharacterChanged?.call();
+                  }
+                });
+              },
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // PE
-          _buildResourceSection(
-            label: 'PONTOS DE ESFORÇO',
-            current: _character.peAtual,
-            max: _character.peMax,
-            color: AppColors.pePurple,
-            onIncrement: () {
-              setState(() {
-                if (_character.peAtual < _character.peMax) {
-                  _character.peAtual++;
-                  widget.onCharacterChanged?.call();
-                }
-              });
-            },
-            onDecrement: () {
-              setState(() {
-                if (_character.peAtual > 0) {
-                  _character.peAtual--;
-                  widget.onCharacterChanged?.call();
-                }
-              });
-            },
-          ),
+            // PE
+            HexatombeStatusBar(
+              title: 'PONTOS DE ESFORÇO',
+              current: _character.peAtual,
+              max: _character.peMax,
+              fillColor: AppColors.pePurple,
+              onIncrement: () {
+                setState(() {
+                  if (_character.peAtual < _character.peMax) {
+                    _character.peAtual++;
+                    _saveCharacter();
+                    widget.onCharacterChanged?.call();
+                  }
+                });
+              },
+              onDecrement: () {
+                setState(() {
+                  if (_character.peAtual > 0) {
+                    _character.peAtual--;
+                    _saveCharacter();
+                    widget.onCharacterChanged?.call();
+                  }
+                });
+              },
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // SAN
-          _buildResourceSection(
-            label: 'SANIDADE',
-            current: _character.sanAtual,
-            max: _character.sanMax,
-            color: AppColors.sanYellow,
-            onIncrement: () {
-              setState(() {
-                if (_character.sanAtual < _character.sanMax) {
-                  _character.sanAtual++;
-                  widget.onCharacterChanged?.call();
-                }
-              });
-            },
-            onDecrement: () {
-              setState(() {
-                if (_character.sanAtual > 0) {
-                  _character.sanAtual--;
-                  widget.onCharacterChanged?.call();
-                }
-              });
-            },
-          ),
+            // SAN
+            HexatombeStatusBar(
+              title: 'SANIDADE',
+              current: _character.sanAtual,
+              max: _character.sanMax,
+              fillColor: AppColors.sanYellow,
+              onIncrement: () {
+                setState(() {
+                  if (_character.sanAtual < _character.sanMax) {
+                    _character.sanAtual++;
+                    _saveCharacter();
+                    widget.onCharacterChanged?.call();
+                  }
+                });
+              },
+              onDecrement: () {
+                setState(() {
+                  if (_character.sanAtual > 0) {
+                    _character.sanAtual--;
+                    _saveCharacter();
+                    widget.onCharacterChanged?.call();
+                  }
+                });
+              },
+            ),
 
-          const SizedBox(height: 32),
+            const SizedBox(height: 40),
+            const GrungeDivider(heavy: true),
+            const SizedBox(height: 32),
 
-          // Stats de combate
-          Text('COMBATE', style: AppTextStyles.title),
-          const SizedBox(height: 16),
+            // Stats de combate - Hexágonos temáticos
+            const SectionTitle(title: 'COMBATE'),
+            const SizedBox(height: 20),
 
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard('DEFESA', _character.defesa.toString(), AppColors.forRed),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard('BLOQUEIO', _character.bloqueio.toString(), AppColors.vigBlue),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard('DESL', _character.deslocamento.toString(), AppColors.agiGreen),
-              ),
-            ],
-          ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                HexagonStat(
+                  label: 'DEFESA',
+                  value: _character.defesa.toString(),
+                  color: AppColors.forRed,
+                ),
+                HexagonStat(
+                  label: 'BLOQUEIO',
+                  value: _character.bloqueio.toString(),
+                  color: AppColors.vigBlue,
+                ),
+                HexagonStat(
+                  label: 'DESL',
+                  value: '${_character.deslocamento}m',
+                  color: AppColors.agiGreen,
+                ),
+              ],
+            ),
 
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
@@ -374,156 +410,53 @@ class _CharacterSheetTabViewState extends State<CharacterSheetTabView>
   }
 
   // ==========================================================================
-  // TAB 2: ATRIBUTOS (Display hexagonal)
+  // TAB 2: ATRIBUTOS (Runa Paranormal)
   // ==========================================================================
   Widget _buildAtributosTab() {
-    return Container(
-      color: AppColors.deepBlack,
+    return GrungeBackground(
+      baseColor: const Color(0xFF0d0d0d),
+      opacity: 0.06,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Título da seção
-            Center(
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  Text(
-                    'ATRIBUTOS',
-                    style: AppTextStyles.uppercase.copyWith(
-                      fontSize: 20,
-                      color: AppColors.scarletRed,
-                      letterSpacing: 3.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 2,
-                    width: 100,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          AppColors.scarletRed,
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 16),
 
-            const SizedBox(height: 32),
-
-            // Display hexagonal dos atributos (maior)
+            // Runa de Atributo (pentágono paranormal)
             Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.scarletRed.withOpacity(0.2),
-                      blurRadius: 30,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: SizedBox(
-                  width: 340,
-                  height: 340,
-                  child: CustomPaint(
-                    painter: HexagonalAttributesPainter(
-                      forca: _character.forca,
-                      agilidade: _character.agilidade,
-                      vigor: _character.vigor,
-                      intelecto: _character.intelecto,
-                      presenca: _character.presenca,
-                    ),
-                  ),
-                ),
+              child: RunaAtributo(
+                forca: _character.forca,
+                agilidade: _character.agilidade,
+                vigor: _character.vigor,
+                intelecto: _character.intelecto,
+                presenca: _character.presenca,
               ),
             ),
 
             const SizedBox(height: 40),
+            const GrungeDivider(heavy: true),
+            const SizedBox(height: 32),
 
-            // Info sobre atributos
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.scarletRed.withOpacity(0.1),
-                border: Border.all(color: AppColors.scarletRed.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: AppColors.scarletRed, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Os atributos determinam suas capacidades e modificam seus testes',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.silver,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Cabeçalho de Lâmina para detalhamento
+            const BladeHeader(title: 'DETALHAMENTO'),
 
             const SizedBox(height: 24),
 
-            // Divisor
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 1,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.transparent,
-                          AppColors.scarletRed.withOpacity(0.5),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'DETALHAMENTO',
-                    style: AppTextStyles.uppercase.copyWith(
-                      fontSize: 10,
-                      color: AppColors.scarletRed,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    height: 1,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.scarletRed.withOpacity(0.5),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            // Lista detalhada de atributos (SEM CAIXAS)
+            _buildAttributeDetailMinimal('FORÇA', _character.forca, AppColors.forRed, 'Poder físico, dano em combate corpo a corpo'),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 24),
+            _buildAttributeDetailMinimal('AGILIDADE', _character.agilidade, AppColors.agiGreen, 'Reflexos, esquiva, ataques à distância'),
+            const SizedBox(height: 20),
 
-            // Lista detalhada de atributos
-            _buildAttributeDetail('FORÇA', _character.forca, AppColors.forRed, Icons.fitness_center),
-            _buildAttributeDetail('AGILIDADE', _character.agilidade, AppColors.agiGreen, Icons.directions_run),
-            _buildAttributeDetail('VIGOR', _character.vigor, AppColors.vigBlue, Icons.favorite),
-            _buildAttributeDetail('INTELECTO', _character.intelecto, AppColors.intMagenta, Icons.psychology),
-            _buildAttributeDetail('PRESENÇA', _character.presenca, AppColors.preGold, Icons.group),
+            _buildAttributeDetailMinimal('VIGOR', _character.vigor, AppColors.vigBlue, 'Resistência, pontos de vida, fortitude'),
+            const SizedBox(height: 20),
+
+            _buildAttributeDetailMinimal('INTELECTO', _character.intelecto, AppColors.intMagenta, 'Raciocínio, investigação, perícias mentais'),
+            const SizedBox(height: 20),
+
+            _buildAttributeDetailMinimal('PRESENÇA', _character.presenca, AppColors.preGold, 'Carisma, intimidação, pontos de esforço'),
 
             const SizedBox(height: 24),
           ],
@@ -655,8 +588,91 @@ class _CharacterSheetTabViewState extends State<CharacterSheetTabView>
     );
   }
 
+  // Versão minimal SEM CAIXAS para atributos
+  Widget _buildAttributeDetailMinimal(String label, int value, Color color, String description) {
+    final modifier = value >= 0 ? '+$value' : '$value';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label do atributo (pequeno, colorido)
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2.5,
+            color: color,
+            fontFamily: 'monospace',
+          ),
+        ),
+        const SizedBox(height: 6),
+
+        // Linha com valor grande + modificador + descrição
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Valor grande
+            Text(
+              value.toString(),
+              style: TextStyle(
+                fontSize: 42,
+                fontWeight: FontWeight.bold,
+                color: color,
+                height: 1.0,
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Modificador + Descrição
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+
+                  // Modificador
+                  Text(
+                    'MOD: $modifier',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                      color: color.withOpacity(0.8),
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // Descrição
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF888888),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        // Linha divisória grunge
+        Container(
+          height: 1,
+          color: color.withOpacity(0.2),
+        ),
+      ],
+    );
+  }
+
   // ==========================================================================
-  // TAB 3: PERÍCIAS (COMPLETO)
+  // TAB 3: PERÍCIAS (Refatorado - Apenas Treinadas)
   // ==========================================================================
   Widget _buildPericiasTab() {
     // Perícias padrão de Ordem Paranormal
@@ -691,117 +707,235 @@ class _CharacterSheetTabViewState extends State<CharacterSheetTabView>
       'Vontade': {'attr': 'PRE', 'bonus': _character.presenca},
     };
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Info
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: AppColors.conhecimentoGreen.withOpacity(0.1),
-              border: Border.all(color: AppColors.conhecimentoGreen),
+    // Filtra apenas perícias treinadas
+    final periciasTreinadas = pericias.entries
+        .where((entry) => _character.periciasTreinadas.contains(entry.key))
+        .toList();
+
+    return GrungeBackground(
+      baseColor: const Color(0xFF0d0d0d),
+      opacity: 0.06,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Título da seção
+            const SectionTitle(
+              title: 'PERÍCIAS TREINADAS',
+              color: AppColors.conhecimentoGreen,
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline, color: AppColors.conhecimentoGreen, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
+
+            const SizedBox(height: 8),
+
+            // Lista de perícias treinadas (SEM CAIXAS)
+            if (periciasTreinadas.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Center(
                   child: Text(
-                    'Perícias treinadas ganham +5 de bônus. Para treinar novas perícias, edite a ficha do personagem.',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.conhecimentoGreen,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Lista de perícias
-          ...pericias.entries.map((entry) {
-            final nome = entry.key;
-            final isTreinada = _character.periciasTreinadas.contains(nome);
-            final bonus = entry.value['bonus'] as int;
-            final bonusTreinada = isTreinada ? 5 : 0;
-            final total = bonus + bonusTreinada;
-            final attr = entry.value['attr'] as String;
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: isTreinada ? AppColors.conhecimentoGreen.withOpacity(0.1) : AppColors.darkGray,
-                border: Border.all(
-                  color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  // Checkbox (read-only)
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: isTreinada ? AppColors.conhecimentoGreen : Colors.transparent,
-                      border: Border.all(
-                        color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver.withOpacity(0.3),
-                        width: 2,
-                      ),
-                    ),
-                    child: isTreinada
-                        ? const Icon(Icons.check, color: AppColors.deepBlack, size: 16)
-                        : null,
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // Nome
-                  Expanded(
-                    child: Text(
-                      nome.toUpperCase(),
-                      style: AppTextStyles.uppercase.copyWith(
-                        fontSize: 11,
-                        color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
-                      ),
-                    ),
-                  ),
-
-                  // Atributo
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getAttrColor(attr).withOpacity(0.2),
-                      border: Border.all(color: _getAttrColor(attr)),
-                    ),
-                    child: Text(
-                      attr,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: _getAttrColor(attr),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // Bônus total
-                  Text(
-                    total >= 0 ? '+$total' : '$total',
+                    'Nenhuma perícia treinada',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isTreinada ? AppColors.conhecimentoGreen : AppColors.silver,
+                      fontSize: 12,
+                      color: AppColors.silver.withOpacity(0.5),
                     ),
                   ),
-                ],
+                ),
+              )
+            else
+              ...periciasTreinadas.map((entry) {
+                final nome = entry.key;
+                final bonus = entry.value['bonus'] as int;
+                final bonusTreinada = 5;
+                final total = bonus + bonusTreinada;
+                final attr = entry.value['attr'] as String;
+                final attrColor = _getAttrColor(attr);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+
+                    // Linha principal: Nome + Badge + Bônus
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        // Nome da perícia
+                        Expanded(
+                          child: Text(
+                            nome.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                              color: Color(0xFFe0e0e0),
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ),
+
+                        // Badge de atributo (sem caixa, apenas texto)
+                        Text(
+                          attr,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                            color: attrColor,
+                          ),
+                        ),
+
+                        const SizedBox(width: 16),
+
+                        // Bônus total (vermelho-sangue para destaque)
+                        Text(
+                          total >= 0 ? '+$total' : '$total',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.scarletRed,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    // Linha de modificadores (opcional)
+                    Text(
+                      'Modificadores: ${bonus >= 0 ? '+$bonus' : '$bonus'} ($attr), +$bonusTreinada (Treino)',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Divisor
+                    Container(
+                      height: 1,
+                      color: AppColors.conhecimentoGreen.withOpacity(0.2),
+                    ),
+                  ],
+                );
+              }).toList(),
+
+            const SizedBox(height: 32),
+
+            // Botão "Treinar Nova Perícia"
+            Center(
+              child: InkWell(
+                onTap: () {
+                  // TODO: Abrir modal de seleção de perícias
+                  _showTrainSkillDialog(pericias);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    '[ + TREINAR NOVA PERÍCIA ]',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2.0,
+                      color: AppColors.scarletRed,
+                      fontFamily: 'monospace',
+                      shadows: [
+                        Shadow(
+                          color: AppColors.scarletRed.withOpacity(0.5),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            );
-          }).toList(),
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Modal para treinar nova perícia
+  void _showTrainSkillDialog(Map<String, Map<String, dynamic>> pericias) {
+    // Lista de perícias disponíveis (não treinadas)
+    final disponiveisParaTreino = pericias.entries
+        .where((entry) => !_character.periciasTreinadas.contains(entry.key))
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.deepBlack,
+        title: Text(
+          'TREINAR NOVA PERÍCIA',
+          style: TextStyle(
+            color: AppColors.conhecimentoGreen,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2.0,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: disponiveisParaTreino.map((entry) {
+              final nome = entry.key;
+              final attr = entry.value['attr'] as String;
+
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    _character.periciasTreinadas.add(nome);
+                    _saveCharacter();
+                  });
+                  Navigator.of(context).pop();
+                  widget.onCharacterChanged?.call();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.silver.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          nome,
+                          style: const TextStyle(
+                            color: Color(0xFFe0e0e0),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        attr,
+                        style: TextStyle(
+                          color: _getAttrColor(attr),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('CANCELAR'),
+          ),
         ],
       ),
     );
@@ -825,25 +959,88 @@ class _CharacterSheetTabViewState extends State<CharacterSheetTabView>
   }
 
   // ==========================================================================
-  // TAB 4: OUTROS (Inventário e Poderes)
+  // TAB 4: OUTROS (Arquivo do Agente - Refatorado)
   // ==========================================================================
   Widget _buildOutrosTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Inventário
-          _buildInventarioSection(),
-          const SizedBox(height: 32),
+    return GrungeBackground(
+      baseColor: const Color(0xFF0d0d0d),
+      opacity: 0.06,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Item de navegação: Inventário
+            ArchiveListItem(
+              icon: Icons.inventory_2,
+              title: 'INVENTÁRIO',
+              subtitle: 'Gerencie seus itens, armas e equipamentos',
+              count: _character.inventarioIds.length,
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => InventoryManagementScreen(character: _character),
+                  ),
+                );
+                if (result == true && mounted) {
+                  setState(() {});
+                  widget.onCharacterChanged?.call();
+                }
+              },
+            ),
 
-          // Poderes
-          _buildPoderesSection(),
-          const SizedBox(height: 32),
+            const SizedBox(height: 8),
+            const GrungeDivider(heavy: true),
+            const SizedBox(height: 8),
 
-          // Habilidades de Classe
-          _buildHabilidadesSection(),
-        ],
+            // Item de navegação: Poderes
+            ArchiveListItem(
+              icon: Icons.auto_awesome,
+              title: 'PODERES E RITUAIS',
+              subtitle: 'Gerencie suas habilidades paranormais',
+              count: _character.poderesIds.length,
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PowersManagementScreen(character: _character),
+                  ),
+                );
+                if (result == true && mounted) {
+                  setState(() {});
+                  widget.onCharacterChanged?.call();
+                }
+              },
+            ),
+
+            const SizedBox(height: 8),
+            const GrungeDivider(heavy: true),
+            const SizedBox(height: 32),
+
+            // Seção de Habilidades de Classe
+            const SectionTitle(
+              title: 'HABILIDADES DE CLASSE',
+              color: AppColors.conhecimentoGreen,
+            ),
+
+            const SizedBox(height: 20),
+
+            // Lista de habilidades (SEM CAIXAS)
+            ..._getClasseHabilidades().entries.map((entry) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: DossierEntry(
+                  title: entry.key.toUpperCase(),
+                  description: entry.value,
+                  titleColor: AppColors.conhecimentoGreen,
+                ),
+              );
+            }).toList(),
+
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
